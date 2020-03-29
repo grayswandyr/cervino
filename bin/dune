@@ -1,0 +1,4 @@
+(executable
+ (name cervino) 
+ (promote (until-clean) (into ..))  
+ (libraries containers libcervino sexplib stdlib-shims))
