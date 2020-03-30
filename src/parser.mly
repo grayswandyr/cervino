@@ -1,9 +1,8 @@
 
-%token IMPLIES ELSE ALL SOME NO LONE COLON EOF EQ ARROW PRIME
+%token IMPLIES ELSE ALL SOME LONE COLON EOF EQ ARROW PRIME
 %token BAR AND OR IFF EVENTUALLY ALWAYS AFTER NOT ONE IN SIG EXPECT
 %token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET COMMA VAR
 %token PRED RUN CHECK ASSERT FACT BUT FOR EXACTLY SET MODULE
-%token DOT MINUS PLUS INTER OVERRIDE TILDE NONE UNIV IDEN
 %token <string> IDENT 
 %token <string> EVENT_IDENT 
 %token <int> NUMBER
@@ -14,14 +13,6 @@
 %right IMPLIES ELSE
 %left AND
 %nonassoc NOT AFTER ALWAYS EVENTUALLY 
-%nonassoc EQ IN 
-%left MINUS PLUS
-%left OVERRIDE
-%left INTER
-%left ARROW
-%left LBRACKET
-%left DOT
-%nonassoc TILDE 
 
 
 %start <unit>parse
@@ -70,7 +61,7 @@ multiplicity:
 
 predicate:
   PRED IDENT option(brackets(separated_list(COMMA, arg))) block
-  | PRED EVENT_IDENT option(brackets(separated_list(COMMA, arg))) epr
+  | PRED EVENT_IDENT option(brackets(separated_list(COMMA, arg))) epr_block
   {}
 
 %inline arg:
@@ -111,7 +102,7 @@ expect:
   {}
 
 formula :
-  expr comparator expr
+  applied_relation
   
   | formula lbinop formula
 	
@@ -128,7 +119,7 @@ formula :
 	| parens(formula)
   {}
 
-epr: 
+epr_block: 
   braces(epr_formula*)
   {}
 
@@ -141,7 +132,7 @@ epr_formula:
   {}
 
 epr_or_bar: 
-  epr | BAR epr_formula  
+  epr_block | BAR epr_formula  
   {}
 
 epr_basic:
@@ -150,28 +141,11 @@ epr_basic:
   {}
 
 applied_relation:
-  separated_nonempty_list(ARROW, IDENT) IN IDENT PRIME?
+  tuple comparator IDENT PRIME?
   {}
 
-expr:
-  NONE
-  | UNIV
-  | IDEN
-  | IDENT PRIME?
-  | TILDE expr 
-  | expr binary_rel expr 
-  | formula IMPLIES expr ELSE expr 
-  | expr brackets(comma_sep1(expr))
-  | parens(expr)
-  {}
-
-%inline binary_rel:
-  PLUS
-  | INTER
-  | MINUS
-  | OVERRIDE
-  | DOT
-  | ARROW
+tuple:
+  separated_nonempty_list(ARROW, IDENT)
   {}
 
 %inline comparator:
@@ -184,8 +158,6 @@ expr:
 %inline quant:
 	ALL
 	| SOME
-	| NO
-  | LONE
   {}
 
 %inline range_decl:

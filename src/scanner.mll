@@ -44,11 +44,6 @@ rule main = parse
         error lexbuf ("Invalid integer constant '" ^ i ^ "'")
     }  
 | "|" { BAR }
-| "." { DOT } 
-| "-" { MINUS } 
-| "+" { PLUS } 
-| "&" { INTER } 
-| "~" { TILDE } 
 | ":" { COLON } 
 | "=" { EQ } 
 | "->" { ARROW } 
@@ -69,7 +64,6 @@ rule main = parse
 | "else" { ELSE } 
 | "all" { ALL } 
 | "some" { SOME } 
-| "no" { NO } 
 | "lone" { LONE } 
 | "eventually" { EVENTUALLY } 
 | "always" { ALWAYS } 
@@ -89,9 +83,6 @@ rule main = parse
 | "exactly" { EXACTLY } 
 | "set" { SET } 
 | "module" { MODULE }
-| "none" { NONE } 
-| "univ" { UNIV } 
-| "iden" { IDEN } 
 | event_ident as x { EVENT_IDENT x }
 | ident as x { IDENT x }
 | comment_line 
@@ -122,6 +113,6 @@ and comment opened = parse
 | newline
     { new_line lexbuf; comment opened lexbuf }
 | eof
-    { error lexbuf "End of file reached unterminated comment" }
+    { error lexbuf "End of file reached within unterminated comment" }
 | _
     { comment opened lexbuf }
