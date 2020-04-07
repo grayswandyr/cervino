@@ -11,17 +11,17 @@ type t = Model of {
     assertions : assertion list;
     commands : command list;
   } [@unboxed]
-and module_ = Module of ident
+and module_ = Module of ident [@unboxed]
 and open_ = Open of {
     name : ident;
     parameters : ident list;
     alias : ident option;
-  }
+  } [@unboxed]
 and field = Field of {
     name : ident;
     profile : profile;
     is_var : bool;
-  }
+  } [@unboxed]
 and profile =
   | Partial_function of ident * ident
   | Relation of ident list (* non empty *)
@@ -39,21 +39,21 @@ and signature =
 and fact = Fact of {
     name : ident option;
     body : block;
-  }
+  } [@unboxed]
 and pred = Pred of {
     name : ident;
     parameters : (ident * ident) list;
     body : block;
-  }
+  } [@unboxed]
 and event = Event of {
     name : ident;
     parameters : (ident * ident) list;
     body : block;
-  }
+  } [@unboxed]
 and assertion = Assert of {
     name : ident;
     body : block;
-  }
+  } [@unboxed]
 and command = 
   | Run of command_spec
   | Check of command_spec
