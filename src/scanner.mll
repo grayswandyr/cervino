@@ -10,7 +10,7 @@ let update_line lexbuf =
     pos_bol = pos.pos_cnum;
   }
 
-let error = Messages.located_error
+let error = Messages.located_fail
 
 } (* END HEADER *)
 
@@ -41,7 +41,7 @@ rule main = parse
       try
         (NUMBER (int_of_string i))
       with Failure _ ->
-        error lexbuf ("Invalid integer constant '" ^ i ^ "'")
+        error lexbuf ("Invalid integer constant `" ^ i ^ "`")
     }  
 | "|" { BAR }
 | ":" { COLON } 
@@ -61,17 +61,21 @@ rule main = parse
 | ("&&" | "and") { AND } 
 | ("||" | "or") { OR } 
 | ("<=>" | "iff") { IFF } 
+| ("no" | "expect" | "." 
+    | "<:" | ":>" | "++" | "+" | "-" | "#" | "^" | "*" | "~" as x) 
+    { error lexbuf ("Forbidden keyword or operator: `" ^ x ^ "`")}
+| "as" { AS }
+| "open" { OPEN }
+| "lone" { LONE }
 | "else" { ELSE } 
 | "all" { ALL } 
 | "some" { SOME } 
-| "lone" { LONE } 
 | "eventually" { EVENTUALLY } 
 | "always" { ALWAYS } 
 | "after" { AFTER } 
 | "one" { ONE } 
 | "in" { IN } 
 | "sig" { SIG } 
-| "expect" { EXPECT }
 | "var" { VAR }
 | "pred" { PRED } 
 | "run" { RUN } 

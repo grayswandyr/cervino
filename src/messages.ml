@@ -1,7 +1,20 @@
 module C = Containers
 
+let print msg =
+  C.Format.(printf "%a@." (hovbox ~i:2 text) msg)
+
+
+let eprint msg =
+  C.Format.(eprintf "%a@." (hovbox ~i:2 text) msg)
+
+let info s =
+  print ("[INFO] " ^ s)
+
+let warning s =
+  eprint ("[WARNING] " ^ s)
+
 let fail s =
-  prerr_endline s;
+  eprint ("[ERROR] " ^ s);
   exit 1
 
 
@@ -14,8 +27,7 @@ let positions lexbuf =
   let line = pos1.pos_lnum in
   let char1 = pos1.pos_cnum - pos1.pos_bol in
   let char2 = pos2.pos_cnum - pos1.pos_bol in (* intentionally [pos1.pos_bol] *)
-  Printf.sprintf "File %S, line %d, characters %d-%d:\n" file line (char1 + 1) (char2 + 1)
+  C.Format.sprintf "File %S, line %d, characters %d-%d:@\n" file line (char1 + 1) (char2 + 1)
 
-
-let located_error lexbuf msg =
+let located_fail lexbuf msg =
   fail (positions lexbuf ^ msg)

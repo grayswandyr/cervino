@@ -11,8 +11,12 @@ let parse_file file =
     try 
       ignore @@ parse Scanner.main lexbuf
     with
-    | Error -> Messages.located_error lexbuf "Syntax error"
+    | Error -> Messages.located_fail lexbuf "Syntax error"
   end
 
 let () = 
+  let msg = 
+    {|This is a proof of concept program. Fed models are expected to be written in a well-formed fragment of Electrum; furthermore, many necessary verifications are not performed.|} 
+  in
+  Messages.info msg;
   parse_file Sys.argv.(1)

@@ -1,6 +1,6 @@
 (library
  (name libcervino)  
- (libraries containers menhirLib sexplib stdlib-shims) 
+ (libraries containers sexplib stdlib-shims) 
  (preprocess (pps ppx_deriving ppx_sexp_conv)))
 
 (menhir
