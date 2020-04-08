@@ -1,6 +1,6 @@
 (library
  (name libcervino)  
- (libraries containers stdlib-shims))
+ (libraries containers stdcompat stdlib-shims))
 
 (menhir
   (modules parser)
