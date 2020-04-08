@@ -57,6 +57,8 @@
         commands = []
       }
     in 
+    if not @@ CCList.is_empty opens then
+      M.warning "`open` statement(s) present in the model: it/they will be preserved but ignored otherwise.";
     walk model cs
   
 %}

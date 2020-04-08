@@ -98,3 +98,9 @@ and comparator =
   | Not_eq
 
 val multi_quant : quantifier -> ident list -> ident -> block -> foltl
+
+val sig_name : signature -> ident
+
+val domain_name : field -> ident 
+
+val print : Format.formatter -> t -> unit 
