@@ -1,11 +1,14 @@
 module C = Containers
 
 let print msg =
-  C.Format.(printf "%a@." (hovbox ~i:2 text) msg)
+  C.Format.(printf "%a@." (hovbox ~i:2 string) msg)
 
 
 let eprint msg =
-  C.Format.(eprintf "%a@." (hovbox ~i:2 text) msg)
+  C.Format.(eprintf "%a@." (hovbox ~i:2 string) msg)
+
+let show s =
+  print s
 
 let info s =
   print ("[INFO] " ^ s)
