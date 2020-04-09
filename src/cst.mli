@@ -11,17 +11,17 @@ type t = Model of {
     assertions : assertion list;
     commands : command list;
   } [@unboxed]
-and module_ = Module of ident
+and module_ = Module of ident [@unboxed]
 and open_ = Open of {
     name : ident;
     parameters : ident list;
     alias : ident option;
-  }
+  } [@unboxed]
 and field = Field of {
     name : ident;
     profile : profile;
     is_var : bool;
-  }
+  } [@unboxed]
 and profile =
   | Partial_function of ident * ident
   | Relation of ident list (* non empty *)
@@ -39,27 +39,24 @@ and signature =
 and fact = Fact of {
     name : ident option;
     body : block;
-  }
+  } [@unboxed]
 and pred = Pred of {
     name : ident;
     parameters : (ident * ident) list;
     body : block;
-  }
+  } [@unboxed]
 and event = Event of {
     name : ident;
     parameters : (ident * ident) list;
     body : block;
-  }
+  } [@unboxed]
 and assertion = Assert of {
     name : ident;
     body : block;
-  }
+  } [@unboxed]
 and command = 
-  | Run of command_spec
-  | Check of command_spec
-and command_spec = 
-  | Named_command of { name : ident; scope : scope option }
-  | Block_command of { body : block; scope : scope option }
+  | Run of { name : ident; scope : scope option }
+  | Check of { name : ident; scope : scope option }
 and scope =
   | With_default of int * typescope list
   | Without_default of typescope list (* non empty *)
@@ -75,7 +72,7 @@ and foltl =
   | Binop of foltl * lbinary * foltl
   | If_then_else of foltl * foltl * foltl
   | Call of ident * ident list 
-  | Quant of quantifier * ident * ident * block (* non empty list *)
+  | Quant of quantifier * ident * ident * block 
   | Block of block
 and block = foltl list
 and lunary = 
@@ -99,8 +96,5 @@ and comparator =
 
 val multi_quant : quantifier -> ident list -> ident -> block -> foltl
 
-val sig_name : signature -> ident
-
-val domain_name : field -> ident 
-
+val print_foltl : Format.formatter -> foltl -> unit 
 val print : Format.formatter -> t -> unit 

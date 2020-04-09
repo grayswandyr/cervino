@@ -168,14 +168,12 @@ assertion:
 
 command:
   c_o_r = check_or_run 
-  i_o_b = ident_or_block 
+  name = ident 
   scope = scope? 
   {
-    match c_o_r, i_o_b with
-    | `Check, `Ident name -> CCommand (Check (Named_command { name; scope }))
-    | `Run, `Ident name -> CCommand (Run (Named_command { name; scope }))
-    | `Check, `Block body -> CCommand (Check (Block_command { body; scope }))
-    | `Run, `Block body -> CCommand (Run (Block_command { body; scope }))
+    match c_o_r with
+    | `Check -> CCommand (Check { name; scope })
+    | `Run -> CCommand (Run { name; scope })
   }
 
 %inline check_or_run:
@@ -184,11 +182,6 @@ command:
   | RUN
   { `Run }  
 
-%inline ident_or_block:
-  id = ident 
-  { `Ident id }
-  | b = block
-  { `Block b }
 
 %inline scope:
   FOR num = NUMBER typescopes = loption(preceded(BUT, comma_sep1(typescope)))

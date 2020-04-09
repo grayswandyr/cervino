@@ -58,11 +58,8 @@ and assertion = Assert of {
     body : block;
   } [@unboxed]
 and command = 
-  | Run of command_spec
-  | Check of command_spec
-and command_spec = 
-  | Named_command of { name : ident; scope : scope option }
-  | Block_command of { body : block; scope : scope option }
+  | Run of { name : ident; scope : scope option }
+  | Check of { name : ident; scope : scope option }
 and scope =
   | With_default of int * typescope list
   | Without_default of typescope list (* non empty *)
@@ -78,7 +75,7 @@ and foltl =
   | Binop of foltl * lbinary * foltl
   | If_then_else of foltl * foltl * foltl
   | Call of ident * ident list 
-  | Quant of quantifier * ident * ident * block (* non empty list *)
+  | Quant of quantifier * ident * ident * block 
   | Block of block
 and block = foltl list
 and lunary = 
@@ -230,23 +227,18 @@ and print_event fmt (Event { name; parameters; body }) =
        @@ list ~sep:(const string ", ") 
        @@ pair ~sep:(const string ":") print_ident print_ident) parameters
     print_block body
-
 and print_command fmt = function
-  | Run c -> F.fprintf fmt "run %a" print_command_spec c
-  | Check c -> F.fprintf fmt "check %a" print_command_spec c
-
-and print_command_spec fmt = function
-  | Named_command { name; scope = None } ->
-    F.fprintf fmt "%a" print_ident name
-  | Named_command { name; scope = Some s } ->
-    F.fprintf fmt "%a %a"
+  | Run { name; scope = None } ->
+    F.fprintf fmt "run %a" print_ident name
+  | Run { name; scope = Some s } ->
+    F.fprintf fmt "run %a %a"
       print_ident name
       print_scope s
-  | Block_command { body; scope = None } -> 
-    F.fprintf fmt "%a" print_block body 
-  | Block_command { body; scope = Some s } -> 
-    F.fprintf fmt "%a@\n  %a" 
-      print_block body 
+  | Check { name; scope = None } ->
+    F.fprintf fmt "check %a" print_ident name
+  | Check { name; scope = Some s } ->
+    F.fprintf fmt "check %a %a"
+      print_ident name
       print_scope s
 
 and print_scope fmt = function
