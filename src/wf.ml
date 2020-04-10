@@ -3,7 +3,7 @@ open Cst
 
 (* "or" on options *)
 let ( <+> ) = Option.Infix.(<+>)
-
+  
 let find_pred_body (Model { preds; _ }) name =
   match 
     List.find_opt (fun (Pred p) -> String.equal p.name name) preds 
@@ -25,7 +25,7 @@ let find_assert_body (Model { assertions; _ }) name =
 (* Checks whether a [some] appears under an [always]. As formulas are not in NNF, we must take the polarity of subformulas into account (e.g. an [all] in negative position amounts to an [always]). The function goes top down.
    parameters:
    - m : the containing model (nedded to walk in preds)
-   - saw_g : already met an [always]
+   - saw_g : already met an [always] 
    - polarity : current polarity (true = positive)
    - f : analyzed subformula
      Returns: None if well-formed, Some info otherwise, where info contains information about the culprit subformula.
@@ -68,7 +68,7 @@ let rec analyze_foltl model saw_g polarity f =
     | _, _, Call (pred, _) -> 
       analyze_pred model saw_g pol pred 
   in
-  walk saw_g polarity f
+  walk saw_g polarity f 
 
 and analyze_pred model saw_g polarity pred = 
   let body = find_pred_body model pred in 

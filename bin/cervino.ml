@@ -45,6 +45,10 @@ let main_term =
 let main_info =
   let doc = "complete verification of (some) Electrum models" in
   let man = [
+    `S "RECOGNIZED LANGUAGE";
+    `P 
+    {|Cervino makes almost no analysis of fed models, so these must already be valid Electrum. Furthermore, only a small fragment of the language is recognized, which essentially corresponds to MS-FOLTL in Electrum syntax. The following is NOT accepted: relation qualifiers; `one`, `lone`  and `lone` quantifiers; opening modules; relation composition operators (except `->` to form tuples of constants and bound variables); unnamed commands; qantification over several signatures at the same time; `extend`. Also, zero-argument predicates must be called with `[]`. 
+    |};
     `S Manpage.s_authors
   ; `P {|Julien BRUNEL (ONERA), David CHEMOUIL (ONERA), \ 
     Quentin PEYRAS (ONERA).|}
