@@ -245,8 +245,6 @@ epr_or_bar:
 epr_basic:
   f = applied_relation 
   { f }
-  | NOT f = epr_basic
-  { Unop (Not, f) }
 
 applied_relation:
   tuple = tuple comp = comparator rel = ident prime = boption(PRIME)

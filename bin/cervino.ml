@@ -1,57 +1,23 @@
-open Libcervino
-open Containers
-
-let parse_file file =
-  let open Parser in 
-  IO.with_in file @@ fun ic -> begin
-    let lexbuf = Lexing.from_channel ic in
-    lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = file};
-    try 
-      parse Scanner.main lexbuf
-    with
-    | Error -> Messages.located_fail lexbuf "Syntax error"
-  end
-
-let main file = 
-  let msg = 
-    "This program is a proof-of-concept: fed models are taken to be 
-    valid Electrum." 
-  in
-  Messages.info msg;
-  let model = parse_file file in
-  Messages.info "Showing recognized model (reformatted):";
-  Messages.show (Format.to_string Cst.print model);
-  (match Wf.analyze_model model with
-   | None -> Messages.info "Model is well-formed."
-   | Some f -> 
-     let faulty = Format.to_string Cst.print_foltl f in
-     Messages.fail ("Model is not well-formed, an existential quantifier appears under an `always` connective:\n" ^ faulty))
-
-
-
 open Cmdliner
-let infile =
-  let doc = "File to process (must already be valid Electrum)." in
-  Arg.(
-    required
-    & pos 0 (some ~none:"missing FILE" non_dir_file) None
-    & info [] ~docv:"ELECTRUM_FILE" ~doc)
 
-let main_term =
-  Term.(
-    const main $ infile)
-
+(* DOC *)
 
 let main_info =
   let doc = "complete verification of (some) Electrum models" in
   let man = [
     `S "RECOGNIZED LANGUAGE";
     `P 
-    {|Cervino makes almost no analysis of fed models, so these must already be valid Electrum. Furthermore, only a small fragment of the language is recognized, which essentially corresponds to MS-FOLTL in Electrum syntax. The following is NOT accepted: relation qualifiers; `one`, `lone`  and `lone` quantifiers; opening modules; relation composition operators (except `->` to form tuples of constants and bound variables); unnamed commands; qantification over several signatures at the same time; `extend`. Also, zero-argument predicates must be called with `[]`. 
+    {|Cervino makes almost no analysis of fed models, so these must already be valid Electrum. Furthermore, only a small fragment of the language is recognized, which essentially corresponds to MS-FOLTL in Electrum syntax. The following is NOT accepted: opening modules; relation qualifiers; `one`, `lone`  and `no` quantifiers; qantification over several signatures at the same time; relation composition operators (except `->` to form tuples, of constants and bound variables only); unnamed commands;  `extends` keyword. Also, zero-argument predicates must be called with `[]`. 
     |};
+    `S "EVENTS and TRACES";
+    `P 
+    {|Cervino expects models where events are modelled as predicates  whose name begins with and underscore `_`. The body of such events can only contain conjuctions or disjunctions of universally-quantified relation applications (primed or not). Said otherwise, the body of events should look like:|};    
+    `P "{ (all x : S | x->c in r1) and (all y : T : d->y not in r2) ... }";
+    `P {|Cervino also expects that input models feature a fact called `_traces` that only says that, at any instant, there are suitable valuations of event parameters so that at least one event is fired. Said otherwise, the fact body looks like :|};
+    `P "{ always (some p1: S, p2: T | _e1[p1, p2] or _e2[p1] or...) }";
+    `P {|When Cervino applies its algorithm, this fact will be deleted, os it is important that it only contains the formula shown above (in particular, initial conditions should be stated elsewhere).|};
     `S Manpage.s_authors
-  ; `P {|Julien BRUNEL (ONERA), David CHEMOUIL (ONERA), \ 
-    Quentin PEYRAS (ONERA).|}
+  ; `P {|Julien BRUNEL (ONERA), David CHEMOUIL (ONERA), Quentin PEYRAS (ONERA).|}
   ; `S "COPYRIGHT"
   ; `P "Cervino (C) 2020 ONERA."
   ; `P
@@ -73,8 +39,23 @@ let main_info =
   Term.info "cervino" ~doc ~man
 
 
+(* OPTIONS *)
+
+let infile =
+  let doc = "File to process (must already be valid Electrum)." in
+  Arg.(
+    required
+    & pos 0 (some ~none:"missing FILE" non_dir_file) None
+    & info [] ~docv:"ELECTRUM_FILE" ~doc)
+
+let main_term =
+  Term.(
+    const Main.main $ infile)
+
+
+(* MAIN *)
+
 let () =
-  (* process commandline arguments and run the actual main (Main.main) function *)
   match Term.eval ~catch:true (main_term, main_info) with
-  | _ ->
-    exit 1
+  | `Error _ -> exit 1
+  | _ -> exit 0
