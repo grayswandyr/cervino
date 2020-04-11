@@ -27,7 +27,7 @@ let letter = [ 'A'-'Z' 'a'-'z' ]
 
 let ident = letter (letter | digit | '_')*
 
-let event_ident = '_' ident
+let event_ident = '_' letter (letter | digit | '_')+
 
 let comment_line = ("//" | "--")
 

@@ -7,11 +7,11 @@ let main_info =
   let man =
     [ `S "RECOGNIZED LANGUAGE"
     ; `P
-        {|Cervino makes almost no analysis of fed models, so these must already be valid Electrum. Furthermore, only a small fragment of the language is recognized, which essentially corresponds to MS-FOLTL in Electrum syntax. The following is NOT accepted: opening modules; relation qualifiers; `one`, `lone`  and `no` quantifiers; qantification over several signatures at the same time; relation composition operators (except `->` to form tuples, of constants and bound variables only); unnamed commands;  `extends` keyword. Also, zero-argument predicates must be called with `[]`. 
+        {|Cervino makes almost no analysis of fed models, so these must already be valid Electrum. Furthermore, only a small fragment of the language is recognized, which essentially corresponds to MS-FOLTL in Electrum syntax. The following is NOT accepted: opening modules; relation qualifiers; `one`, `lone`  and `no` quantifiers; relation composition operators (except `->` to form tuples, of constants and bound variables only); unnamed commands;  `extends` keyword. Also, zero-argument predicates must be called with `[]`. 
     |}
     ; `S "EVENTS and TRACES"
     ; `P
-        {|Cervino expects models where events are modelled as predicates  whose name begins with and underscore `_`. The body of such events can only contain conjuctions or disjunctions of universally-quantified relation applications (primed or not). Said otherwise, the body of events should look like:|}
+        {|Cervino expects models where events are modelled as predicates whose name begins with an underscore `_` and is at least 3 characters long (incl. `_`). The body of such events can only contain conjuctions or disjunctions of universally-quantified relation applications (primed or not). Said otherwise, the body of events should look like:|}
     ; `P "{ (all x : S | x->c in r1) and (all y : T : d->y not in r2) ... }"
     ; `P
         {|Cervino also expects that input models feature a fact called `_traces` that only says that, at any instant, there are suitable valuations of event parameters so that at least one event is fired. Said otherwise, the fact body looks like :|}
