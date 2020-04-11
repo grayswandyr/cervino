@@ -1,5 +1,5 @@
 
-type ident = string
+type ident = Symbol.t
 type t = Model of {
     module_ : module_ option;
     opens : open_ list;

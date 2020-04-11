@@ -6,20 +6,20 @@ let ( <+> ) = Option.Infix.(<+>)
   
 let find_pred_body (Model { preds; _ }) name =
   match 
-    List.find_opt (fun (Pred p) -> String.equal p.name name) preds 
+    List.find_opt (fun (Pred p) -> Symbol.equal p.name name) preds 
   with
   | None -> 
     Messages.fail 
-      (Printf.sprintf "Definition of predicate %s not found" name)
+      (Format.sprintf "Definition of predicate %a not found" Symbol.pp name)
   | Some (Pred { body; _ }) -> body
 
 let find_assert_body (Model { assertions; _ }) name =
   match 
-    List.find_opt (fun (Assert p) -> String.equal p.name name) assertions 
+    List.find_opt (fun (Assert p) -> Symbol.equal p.name name) assertions 
   with
   | None -> 
     Messages.fail 
-      (Printf.sprintf "Definition of assertion %s not found" name)
+      (Format.sprintf "Definition of assertion %a not found" Symbol.pp name)
   | Some (Assert { body; _ }) -> body
 
 (* Checks whether a [some] appears under an [always]. As formulas are not in NNF, we must take the polarity of subformulas into account (e.g. an [all] in negative position amounts to an [always]). The function goes top down.

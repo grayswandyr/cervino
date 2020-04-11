@@ -155,7 +155,7 @@ predicate:
   parameters = loption(brackets(comma_sep(separated_pair(ident, COLON, ident)))) 
   body = epr_block
   {
-    CEvent (Event { name; parameters; body })
+    CEvent (Event { name = Symbol.make name; parameters; body })
   }
 
 fact:
@@ -278,7 +278,7 @@ tuple:
 
 %inline ident:
   id = IDENT
-  { id }
+  { Symbol.make id }
   
 %inline block_or_bar:
  	BAR f = formula

@@ -2,7 +2,7 @@ open Containers
 
 module F = Format
 
-type ident = string
+type ident = Symbol.t
 type t = Model of {
     module_ : module_ option;
     opens : open_ list;
@@ -115,7 +115,7 @@ let domain_name (Field { profile; _ }) = match profile with
 
 (* regroups fields [f1; f2...] into an association list [ (s1, [f1;...]); ...] such that every `s_i` is the domain of all fields appearing in the associated sub-list. *)
 let fields_by_signatures (Model { fields; _}) =  
-  let eq f1 f2 = String.equal (domain_name f1) (domain_name f2) in
+  let eq f1 f2 = Symbol.equal (domain_name f1) (domain_name f2) in
   let partition = List.group_by ~eq fields in
   List.map 
     (function [] -> assert false | hd::_ as l -> (domain_name hd, l)) 
@@ -136,7 +136,7 @@ let rec print fmt model =
     } = model
   in
   (match module_ with
-   | Some (Module m) -> F.fprintf fmt "module %s@\n" m
+   | Some (Module m) -> F.fprintf fmt "module %a@\n" Symbol.pp m
    | None -> ());
   List.iter (print_open fmt) opens;
   print_sigs_and_fields fmt model;
@@ -147,13 +147,13 @@ let rec print fmt model =
   List.iter (print_command fmt) commands
 
 and print_open fmt (Open { name; parameters; alias; }) =
-  F.fprintf fmt "open %s" name;
+  F.fprintf fmt "open %a" Symbol.pp name;
   if not @@ List.is_empty parameters then begin
-    let ps = List.intersperse ", " parameters in
+    let ps = List.intersperse ", " @@ List.map Symbol.to_string parameters in
     F.fprintf fmt "[%a]" F.(list string) ps 
   end;
   match alias with
-  | Some a -> F.fprintf fmt " as %s@\n" a
+  | Some a -> F.fprintf fmt " as %a@\n" Symbol.pp a
   | None -> F.fprintf fmt "@\n"
 
 and print_sigs_and_fields fmt (Model { sigs; _} as model) = 
@@ -173,7 +173,7 @@ and print_sig fmt fields_by_sigs sig_ =
     | _ -> ""
   in 
   let name = sig_name sig_ in
-  let fields = List.assoc_opt ~eq:String.equal name fields_by_sigs in
+  let fields = List.assoc_opt ~eq:Symbol.equal name fields_by_sigs in
   F.fprintf fmt "%ssig %a %a{@[<hv2>"
     prefix
     print_ident name
@@ -202,7 +202,7 @@ and print_profile fmt = function
       F.(list ~sep:(const string "->") print_ident) cods
 
 and print_fact fmt (Fact { name; body }) = 
-  let n = Option.get_or ~default:"" name in
+  let n = Option.map_or ~default:"" Symbol.to_string name in
   F.fprintf fmt "fact %s%a@\n"
     n
     print_block body
@@ -311,7 +311,8 @@ and print_block fmt b =
     F.(hvbox @@ list ~sep:pp_print_cut print_foltl) b
 
 and print_tuple fmt ids =
-  F.fprintf fmt "%a" F.(list ~sep:(const string "->") string) ids
+  let ids' = List.map Symbol.to_string ids in
+  F.fprintf fmt "%a" F.(list ~sep:(const string "->") string) ids'
 
 and print_quant fmt q = 
   let s = match q with
@@ -330,7 +331,7 @@ and print_comparator fmt op =
   F.fprintf fmt "%s" s_op
 
 and print_ident fmt id =
-  F.fprintf fmt "%s" id
+  F.fprintf fmt "%a" Symbol.pp id
 
 and print_unop fmt op =
   let s_op = match op with
