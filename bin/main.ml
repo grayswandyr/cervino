@@ -25,6 +25,16 @@ let main file =
   M.show (Format.to_string Cst.print model);
   (match Wf.analyze_model model with
    | None -> M.info "Model is well-formed."
-   | Some f -> 
-     let faulty = Format.to_string Cst.print_foltl f in
-     M.fail ("Model is not well-formed, an existential quantifier appears under an `always` connective:\n" ^ faulty))
+   | Some (Quant (q, _, _) as f) -> 
+     let polarity = match q with
+     | All -> "in negative position "
+     | Some_ -> ""
+     in
+     let msg = 
+     Format.(sprintf "`%a` appears %sunder an `always` connective:@\n%a" 
+Cst.print_quant q
+polarity
+    Cst.print_foltl f)
+    in
+    M.fail msg
+  | Some _ -> assert false)
