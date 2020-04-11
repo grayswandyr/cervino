@@ -14,7 +14,7 @@ let main_info =
         {|Cervino expects models where events are modelled as predicates whose name begins with an underscore `_` and is at least 3 characters long (incl. `_`). The body of such events can only contain conjuctions or disjunctions of universally-quantified relation applications (primed or not). Said otherwise, the body of events should look like:|}
     ; `P "{ (all x : S | x->c in r1) and (all y : T : d->y not in r2) ... }"
     ; `P
-        {|Cervino also expects that input models feature a fact called `_traces` that only says that, at any instant, there are suitable valuations of event parameters so that at least one event is fired. Said otherwise, the fact body looks like :|}
+        {|Cervino also expects that input models feature a fact called `_events` that only says that, at any instant, there are suitable valuations of event parameters so that at least one event is fired. Said otherwise, the fact body looks like :|}
     ; `P "{ always (some p1: S, p2: T | _e1[p1, p2] or _e2[p1] or...) }"
     ; `P
         {|When Cervino applies its algorithm, this fact will be deleted, os it is important that it only contains the formula shown above (in particular, initial conditions should be stated elsewhere).|}

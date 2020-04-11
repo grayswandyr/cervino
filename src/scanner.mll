@@ -87,6 +87,7 @@ rule main = parse
 | "exactly" { EXACTLY } 
 | "set" { SET } 
 | "module" { MODULE }
+| "_events"  { TRACE }
 | event_ident as x { EVENT_IDENT x }
 | ident as x { IDENT x }
 | comment_line 

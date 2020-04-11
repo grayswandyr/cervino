@@ -1,6 +1,6 @@
 
 %token IMPLIES ELSE ALL SOME COLON EOF EQ ARROW PRIME AS OPEN
-%token BAR AND OR IFF EVENTUALLY ALWAYS AFTER NOT ONE IN SIG 
+%token BAR AND OR IFF EVENTUALLY ALWAYS AFTER NOT ONE IN SIG TRACE
 %token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET COMMA VAR
 %token PRED RUN CHECK ASSERT FACT BUT FOR EXACTLY SET MODULE LONE
 %token <string> IDENT 
@@ -23,6 +23,7 @@
 
   type constituent = 
     | CSig_and_fields of signature * field list
+    | CTrace_fact 
     | CFact of fact
     | CPred of pred
     | CEvent of event
@@ -34,6 +35,11 @@
       | [] -> model
       | c::cs ->
         let m' = match c with
+          | CTrace_fact -> 
+              begin
+                M.info "Found `_events` fact, ignoring it.";
+                model (* ignore this fact *)
+              end
           | CSig_and_fields (sig_, fs) ->
             Model { m with fields = fs @ m.fields; sigs = sig_ :: m.sigs }
           | CFact x -> Model { m with facts = x :: m.facts }
@@ -87,6 +93,7 @@ paragraph:
   | x = fact
   | x = assertion
   | x = command
+  | x = trace_fact
   { x }
 
 signature:
@@ -162,6 +169,10 @@ predicate:
 fact:
   FACT name = ident? body = block
   { CFact (Fact { name; body }) }
+
+trace_fact:
+  FACT TRACE block
+  { CTrace_fact }
 
 assertion:
   ASSERT name = ident body = block
