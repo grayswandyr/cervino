@@ -75,7 +75,7 @@ and foltl =
   | Binop of foltl * lbinary * foltl
   | If_then_else of foltl * foltl * foltl
   | Call of ident * ident list 
-  | Quant of quantifier * ident * ident * block 
+  | Quant of quantifier * (ident list * ident) list * block 
   | Block of block
 and block = foltl list
 and lunary = 
@@ -96,12 +96,6 @@ and comparator =
   | Not_in
   | Eq
   | Not_eq
-
-let multi_quant q vars range block =
-  let f var fml = 
-    [Quant (q, var, range, fml)]
-  in
-  Block (List.fold_right f vars block)
 
 let sig_name = function
   | Sort name
@@ -290,21 +284,24 @@ and print_foltl fmt =
     fprintf fmt "%a%a"
       print_ident p 
       (brackets @@ list ~sep:(const string ",") print_ident) args
-  | Quant (_, _, _, []) -> assert false
-  | Quant (q, var, range, [f]) -> 
-    fprintf fmt "%a %a : %a | %a"
+  | Quant (_,  _, []) -> assert false
+  | Quant (q, rangings, [f]) -> 
+    fprintf fmt "%a %a | %a"
       print_quant q 
-      print_ident var 
-      print_ident range 
+      (list ~sep:(const string ", ") print_ranging) rangings
       print_foltl f
-  | Quant (q, var, range, block) ->
-    fprintf fmt "%a %a : %a %a"
+  | Quant (q, rangings, block) ->
+    fprintf fmt "%a %a@ %a"
       print_quant q 
-      print_ident var 
-      print_ident range 
+      (list ~sep:(const string ", ") print_ranging) rangings
       print_block block
   | Block b -> 
     print_block fmt b
+
+    and print_ranging fmt (vars, sort) = 
+    F.fprintf fmt "%a: %a"
+    F.(list ~sep:(const string ", ") print_ident) vars
+    print_ident sort
 
 and print_block fmt b =
   F.fprintf fmt "{ %a }"

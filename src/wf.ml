@@ -33,10 +33,10 @@ let find_assert_body (Model { assertions; _ }) name =
 let rec analyze_foltl model saw_g polarity f = 
   let rec walk saw_g pol f =
     match saw_g, pol, f with
-    | true, true, Quant (Some_, _, _, _) 
-    | true, false, Quant (All, _, _, _) ->
+    | true, true, Quant (Some_, _, _) 
+    | true, false, Quant (All, _, _) ->
       Some f 
-    | _, _, Quant ((Some_ | All), _, _, b) -> 
+    | _, _, Quant ((Some_ | All), _, b) -> 
       walk saw_g pol (Block b)
     | false, true, Unop (Always, f') 
     | false, false, Unop (Eventually, f') 

@@ -205,8 +205,8 @@ formula:
   { r }
   | f1 = formula op = lbinop f2 = formula 
 	{ Binop (f1, op, f2) }
-	| q = quant vars = comma_sep1(ident) COLON range = ident b = block_or_bar
-  { multi_quant q vars range b }
+	| q = quant rangings = comma_sep1(quant_ranging) b = block_or_bar
+  { Quant (q, rangings, b) }
 	| f1 = formula IMPLIES f2 = formula ELSE f3 = formula 
   { If_then_else (f1, f2, f3) }
 	| f1 = formula IMPLIES f2 = formula 
@@ -220,13 +220,17 @@ formula:
 	| f = parens(formula)
   { f }
 
+quant_ranging:
+  vars = comma_sep1(ident) COLON range = ident
+  { (vars, range) }
+
 epr_block: 
   b = braces(epr_formula*)
   { b }
 
 epr_formula:
-  ALL vars = comma_sep1(ident) COLON range = ident b = epr_or_bar
-  { multi_quant All vars range b}
+	| ALL rangings = comma_sep1(quant_ranging) b = epr_or_bar
+  { Quant (All, rangings, b) }
   | f1 = epr_formula AND f2 = epr_formula
   { Binop(f1, And, f2) }
   | f1 = epr_formula OR f2 = epr_formula

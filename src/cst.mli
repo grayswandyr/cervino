@@ -72,7 +72,7 @@ and foltl =
   | Binop of foltl * lbinary * foltl
   | If_then_else of foltl * foltl * foltl
   | Call of ident * ident list 
-  | Quant of quantifier * ident * ident * block 
+  | Quant of quantifier * (ident list * ident) list * block 
   | Block of block
 and block = foltl list
 and lunary = 
@@ -93,8 +93,6 @@ and comparator =
   | Not_in
   | Eq
   | Not_eq
-
-val multi_quant : quantifier -> ident list -> ident -> block -> foltl
 
 val print_foltl : Format.formatter -> foltl -> unit 
 val print : Format.formatter -> t -> unit 
