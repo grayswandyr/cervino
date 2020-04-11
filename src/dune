@@ -1,11 +1,10 @@
 (library
- (name libcervino)  
+ (name libcervino)
  (libraries containers hashcons stdcompat stdlib-shims))
 
 (menhir
-  (modules parser)
-  (flags --explain --dump)
-  (infer true)
-)
+ (modules parser)
+ (flags --explain --dump)
+ (infer true))
 
 (ocamllex scanner)

@@ -61,6 +61,7 @@
       M.warning "`open` statement(s) present in the model: it/they will be preserved but ignored otherwise.";
     walk model cs
   
+  let loc x (l, c) = Location.(make_located x (Location.from_positions l c))
 %}
 
 %%
@@ -201,6 +202,10 @@ command:
   { fs }
   
 formula:
+  f = prim_formula
+  { loc f $loc(f) }    
+
+prim_formula:
   r = applied_relation
   { r }
   | f1 = formula op = lbinop f2 = formula 
@@ -217,7 +222,7 @@ formula:
   { Call (p, args) }
 	| b = block
   { Block b }
-	| f = parens(formula)
+	| f = parens(prim_formula)
   { f }
 
 quant_ranging:
@@ -229,13 +234,17 @@ epr_block:
   { b }
 
 epr_formula:
+  f = epr_prim_formula
+  { loc f $loc(f) }
+
+epr_prim_formula:
 	| ALL rangings = comma_sep1(quant_ranging) b = epr_or_bar
   { Quant (All, rangings, b) }
   | f1 = epr_formula AND f2 = epr_formula
   { Binop(f1, And, f2) }
   | f1 = epr_formula OR f2 = epr_formula
   { Binop(f1, Or, f2) }
-  | f = parens(epr_formula)
+  | f = parens(epr_prim_formula)
   { f }
   | f = epr_basic
   { f }

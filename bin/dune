@@ -1,4 +1,6 @@
 (executable
- (name cervino) 
- (promote (until-clean) (into ..))  
+ (name cervino)
+ (promote
+  (until-clean)
+  (into ..))
  (libraries cmdliner containers libcervino stdlib-shims))
