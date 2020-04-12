@@ -37,7 +37,7 @@
         let m' = match c with
           | CTrace_fact -> 
               begin
-                M.info "Found `_events` fact, ignoring it.";
+                M.info "Found `_events` fact as expected, ignoring it.";
                 model (* ignore this fact *)
               end
           | CSig_and_fields (sig_, fs) ->

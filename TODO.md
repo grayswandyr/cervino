@@ -1,6 +1,6 @@
 * To do:
-- recognize and ignore `_events` fact
-- implement abstraction
 - test, test, test
 
 * Possibly:
+- allow implication and if-then-else in events
+- allow multiple ranging in event parameters

@@ -133,17 +133,21 @@ and comparator =
   | Eq
   | Not_eq
 
+let and_ p q = L.make_located (Binop (p, And, q)) L.dummy
+let or_ p q = L.make_located (Binop (p, Or, q)) L.dummy
+let implies p q = L.make_located (Binop (p, Implies, q)) L.dummy
+
 let sig_name = function
   | Sort name | One_sig { name; _ } | Set { name; _ } ->
-      name
+    name
 
 
 let domain_name (Field { profile; _ }) =
   match profile with
   | Relation [] ->
-      assert false
+    assert false
   | Partial_function (dom, _) | Relation (dom :: _) ->
-      dom
+    dom
 
 
 (* regroups fields [f1; f2...] into an association list [ (s1, [f1;...]); ...] such that every `s_i` is the domain of all fields appearing in the associated sub-list. *)
@@ -159,13 +163,13 @@ let brackets x = F.within "[" "]" x
 
 let rec print fmt model =
   let (Model { module_; opens; facts; preds; events; assertions; commands; _ })
-      =
+    =
     model
   in
   ( match module_ with
-  | Some (Module m) ->
+    | Some (Module m) ->
       F.fprintf fmt "module %a@\n" Symbol.pp m
-  | None ->
+    | None ->
       () );
   List.iter (print_open fmt) opens;
   print_sigs_and_fields fmt model;
@@ -179,14 +183,14 @@ let rec print fmt model =
 and print_open fmt (Open { name; parameters; alias }) =
   F.fprintf fmt "open %a" Symbol.pp name;
   ( if not @@ List.is_empty parameters
-  then
-    let ps = List.intersperse ", " @@ List.map Symbol.to_string parameters in
-    F.fprintf fmt "[%a]" F.(list string) ps );
+    then
+      let ps = List.intersperse ", " @@ List.map Symbol.to_string parameters in
+      F.fprintf fmt "[%a]" F.(list string) ps );
   match alias with
   | Some a ->
-      F.fprintf fmt " as %a@\n" Symbol.pp a
+    F.fprintf fmt " as %a@\n" Symbol.pp a
   | None ->
-      F.fprintf fmt "@\n"
+    F.fprintf fmt "@\n"
 
 
 and print_sigs_and_fields fmt (Model { sigs; _ } as model) =
@@ -196,28 +200,28 @@ and print_sigs_and_fields fmt (Model { sigs; _ } as model) =
 
 and print_parent fmt = function
   | One_sig { parent; _ } | Set { parent; _ } ->
-      F.fprintf fmt "in %a " print_ident parent
+    F.fprintf fmt "in %a " print_ident parent
   | _ ->
-      ()
+    ()
 
 
 and print_sig fmt fields_by_sigs sig_ =
   let prefix =
     match sig_ with
     | One_sig _ ->
-        "one "
+      "one "
     | Set { is_var; _ } when is_var ->
-        "var "
+      "var "
     | _ ->
-        ""
+      ""
   in
   let name = sig_name sig_ in
   let fields = List.assoc_opt ~eq:Symbol.equal name fields_by_sigs in
   F.fprintf fmt "%ssig %a %a{@[<hv2>" prefix print_ident name print_parent sig_;
   ( match fields with
-  | None ->
+    | None ->
       ()
-  | Some fs ->
+    | Some fs ->
       F.fprintf fmt "@ %a " F.(list ~sep:(const string ",@\n") print_field) fs
   );
   F.fprintf fmt "@]}@\n"
@@ -230,13 +234,13 @@ and print_field fmt (Field { name; profile; is_var }) =
 
 and print_profile fmt = function
   | Partial_function (_, cod) ->
-      F.fprintf fmt "lone %a" print_ident cod
+    F.fprintf fmt "lone %a" print_ident cod
   | Relation ([] | [ _ ]) ->
-      assert false
+    assert false
   | Relation [ _; cod ] ->
-      F.fprintf fmt "set %a" print_ident cod
+    F.fprintf fmt "set %a" print_ident cod
   | Relation (_ :: cods) ->
-      F.fprintf fmt "%a" F.(list ~sep:(const string "->") print_ident) cods
+    F.fprintf fmt "%a" F.(list ~sep:(const string "->") print_ident) cods
 
 
 and print_fact fmt (Fact { name; body }) =
@@ -280,33 +284,33 @@ and print_event fmt (Event { name; parameters; body }) =
 
 and print_command fmt = function
   | Run { name; scope = None } ->
-      F.fprintf fmt "run %a" print_ident name
+    F.fprintf fmt "run %a" print_ident name
   | Run { name; scope = Some s } ->
-      F.fprintf fmt "run %a %a" print_ident name print_scope s
+    F.fprintf fmt "run %a %a" print_ident name print_scope s
   | Check { name; scope = None } ->
-      F.fprintf fmt "check %a" print_ident name
+    F.fprintf fmt "check %a" print_ident name
   | Check { name; scope = Some s } ->
-      F.fprintf fmt "check %a %a" print_ident name print_scope s
+    F.fprintf fmt "check %a %a" print_ident name print_scope s
 
 
 and print_scope fmt = function
   | With_default (num, []) ->
-      F.fprintf fmt "for %d@\n" num
+    F.fprintf fmt "for %d@\n" num
   | With_default (num, tss) ->
-      F.fprintf
-        fmt
-        "for %d but %a"
-        num
-        F.(list ~sep:(const string ", ") print_typescope)
-        tss
+    F.fprintf
+      fmt
+      "for %d but %a"
+      num
+      F.(list ~sep:(const string ", ") print_typescope)
+      tss
   | Without_default [] ->
-      assert false
+    assert false
   | Without_default tss ->
-      F.fprintf
-        fmt
-        "for %a"
-        F.(list ~sep:(const string ", ") print_typescope)
-        tss
+    F.fprintf
+      fmt
+      "for %a"
+      F.(list ~sep:(const string ", ") print_typescope)
+      tss
 
 
 and print_typescope fmt { exactly; number; sort } =
@@ -325,71 +329,71 @@ and print_prim_foltl fmt =
   let open F in
   function
   | Compare_now (tuple, op, id) ->
-      fprintf
-        fmt
-        "%a %a %a"
-        print_tuple
-        tuple
-        print_comparator
-        op
-        print_ident
-        id
+    fprintf
+      fmt
+      "%a %a %a"
+      print_tuple
+      tuple
+      print_comparator
+      op
+      print_ident
+      id
   | Compare_next (tuple, op, id) ->
-      fprintf
-        fmt
-        "%a %a %a'"
-        print_tuple
-        tuple
-        print_comparator
-        op
-        print_ident
-        id
+    fprintf
+      fmt
+      "%a %a %a'"
+      print_tuple
+      tuple
+      print_comparator
+      op
+      print_ident
+      id
   | Unop (op, f) ->
-      fprintf fmt "(%a %a)" print_unop op print_foltl f
+    fprintf fmt "(%a %a)" print_unop op print_foltl f
   | Binop (f1, op, f2) ->
-      fprintf
-        fmt
-        "(@[<hv2>%a %a@ %a@])"
-        print_foltl
-        f1
-        print_binop
-        op
-        print_foltl
-        f2
+    fprintf
+      fmt
+      "(@[<hv2>%a %a@ %a@])"
+      print_foltl
+      f1
+      print_binop
+      op
+      print_foltl
+      f2
   | If_then_else (c, t, e) ->
-      fprintf fmt "(%a@ %a@ %a)" print_foltl c print_foltl t print_foltl e
+    fprintf fmt "(%a@ %a@ %a)" print_foltl c print_foltl t print_foltl e
   | Call (p, args) ->
-      fprintf
-        fmt
-        "%a%a"
-        print_ident
-        p
-        (brackets @@ list ~sep:(const string ",") print_ident)
-        args
+    fprintf
+      fmt
+      "%a%a"
+      print_ident
+      p
+      (brackets @@ list ~sep:(const string ",") print_ident)
+      args
   | Quant (_, _, []) ->
-      assert false
+    assert false
   | Quant (q, rangings, [ f ]) ->
-      fprintf
-        fmt
-        "%a %a | %a"
-        print_quant
-        q
-        (list ~sep:(const string ", ") print_ranging)
-        rangings
-        print_foltl
-        f
+    fprintf
+      fmt
+      "%a %a | %a"
+      print_quant
+      q
+      (list ~sep:(const string ", ") print_ranging)
+      rangings
+      print_foltl
+      f
   | Quant (q, rangings, block) ->
-      fprintf
-        fmt
-        "%a %a@ %a"
-        print_quant
-        q
-        (list ~sep:(const string ", ") print_ranging)
-        rangings
-        print_block
-        block
+    fprintf
+      fmt
+      "%a %a@ %a"
+      print_quant
+      q
+      (list ~sep:(const string ", ") print_ranging)
+      rangings
+      print_block
+      block
   | Block b ->
-      print_block fmt b
+    print_block fmt b
 
 
 and print_ranging fmt (vars, sort) =
@@ -429,13 +433,13 @@ and print_unop fmt op =
   let s_op =
     match op with
     | Not ->
-        "not"
+      "not"
     | After ->
-        "after"
+      "after"
     | Eventually ->
-        "eventually"
+      "eventually"
     | Always ->
-        "always"
+      "always"
   in
   F.fprintf fmt "%s" s_op
 
@@ -444,12 +448,12 @@ and print_binop fmt op =
   let s_op =
     match op with
     | And ->
-        "and"
+      "and"
     | Or ->
-        "or"
+      "or"
     | Implies ->
-        "implies"
+      "implies"
     | Iff ->
-        "iff"
+      "iff"
   in
   F.fprintf fmt "%s" s_op

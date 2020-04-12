@@ -129,6 +129,10 @@ and comparator =
   | Eq
   | Not_eq
 
+val and_ : foltl -> foltl -> foltl
+val or_ : foltl -> foltl -> foltl
+val implies : foltl -> foltl -> foltl
+
 val print_quant : Format.formatter -> quantifier -> unit
 
 val print_foltl : Format.formatter -> foltl -> unit

@@ -11,24 +11,18 @@ let parse_file file =
   lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = file };
   try parse Scanner.main lexbuf with
   | Error ->
-      M.located_fail lexbuf "Syntax error"
+    M.located_fail lexbuf "Syntax error"
 
 
 let main file =
-  let msg =
-    "This program is a proof-of-concept: fed models are taken to be \n\
-    \    valid Electrum."
-  in
-  M.info msg;
+  M.info "This program expects valid Electrum files.";
   let model = parse_file file in
-  M.info "Showing recognized model (reformatted):";
-  M.show (Format.to_string Cst.print model);
-  match Wf.analyze_model model with
-  | None ->
+  ( match Wf.analyze_model model with
+    | None ->
       M.info "Model is well-formed."
-  | Some
-      ( ((L.{ loc = g_loc; _ } as g), g_pol)
-      , (pol, (L.{ data = Quant (q, _, _); loc } as f)) ) ->
+    | Some
+        ( ((L.{ loc = g_loc; _ } as g), g_pol)
+        , (pol, (L.{ data = Quant (q, _, _); loc } as f)) ) ->
       let g_polarity = if g_pol then "n" else " negated" in
       let f_polarity = if pol then "" else "negatively " in
       let msg =
@@ -50,7 +44,8 @@ let main file =
             Cst.print_foltl
             f)
       in
-
       M.fail msg
-  | Some _ ->
-      assert false
+    | Some _ ->
+      assert false );
+  let model' = Abstraction.abstract_model model in
+  M.info Format.(sprintf "Generated model:@\n%a" Cst.print model')
