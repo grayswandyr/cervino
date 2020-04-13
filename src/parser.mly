@@ -67,7 +67,20 @@
       M.warning "`open` statement(s) present in the model: it/they will be preserved but ignored otherwise.";
     walk model cs
   
-  let loc x (l, c) = Location.(make_located x (Location.from_positions l c))
+  let loc x (l, c) = Location.(make_located x (Location.from_positions (l,c)))
+
+  let pos loc = 
+    Location.(string_of_position (from_positions loc))
+
+  let negate_lit_or_test_pf = function 
+    | Test (prime, id, Eq, id2) -> Test (prime, id, Not_eq, id2)
+    | Test (prime, id, Not_eq, id2) -> Test (prime, id, Eq, id2)
+    | Lit { name; args; positive = p; prime} -> 
+        Lit { name; args; positive = not p; prime} 
+    | _ -> assert false
+
+  let negate_lit_or_test_f Location.{ data; _ } =
+    Location.make_located (negate_lit_or_test_pf data) Location.dummy
 %}
 
 %%
@@ -217,7 +230,7 @@ formula:
   { loc f $loc(f) }    
 
 prim_formula:
-  r = applied_relation
+  r = test_or_literal
   { r }
   | f1 = formula op = lbinop f2 = formula 
 	{ Binop (f1, op, f2) }
@@ -255,9 +268,23 @@ epr_prim_formula:
   { Binop(f1, And, f2) }
   | f1 = epr_formula OR f2 = epr_formula
   { Binop(f1, Or, f2) }
+  | f1 = epr_basic IFF f2 = epr_basic
+  { 
+    let left = and_ f1 f2 in 
+    let right = and_ (negate_lit_or_test_f f1) (negate_lit_or_test_f f2) in
+    Binop (left, And, right)
+  }
+	| c = epr_basic IMPLIES t = epr_formula ELSE e = epr_formula 
+  { 
+    let left = or_ (negate_lit_or_test_f c) t in
+    let right = or_ c e in
+    Binop (left, And, right)
+  }
+	| f1 = epr_basic IMPLIES f2 = epr_formula 
+  { Binop (negate_lit_or_test_f f1, Or, f2) }
   | f = parens(epr_prim_formula)
   { f }
-  | f = epr_basic
+  | f = epr_prim_basic
   { f }
 
 epr_or_bar: 
@@ -267,16 +294,49 @@ epr_or_bar:
   { [f] }
 
 epr_basic:
-  f = applied_relation 
-  { f }
+  f = epr_prim_basic
+  { loc f $loc(f)}
 
-applied_relation:
-  tuple = tuple comp = comparator rel = ident prime = boption(PRIME)
+epr_prim_basic:
+  | f = test_or_literal
+  { f }
+  | NOT f = epr_basic
+  {  
+    let Location.{ data; _ } = f in
+    match data with
+      | Lit ({ positive = p; _} as l) -> Lit { l with positive = not p }
+      | Test (prime, id1, c, id2) ->
+        let c' = match c with
+          | Eq -> Not_eq
+          | Not_eq -> Eq
+        in
+        Test (prime, id1, c', id2)
+      | _ -> assert false
+  }
+
+test_or_literal:
+  left = tuple lprime = boption(PRIME) 
+  c = comparator 
+  right = ident rprime = boption(PRIME)
   {
-    if prime then
-      Compare_now (tuple, comp, rel)
-    else
-      Compare_next (tuple, comp, rel)
+    if c = `In || c = `Not_in then
+      (* literal *)
+      if lprime then
+        M.fail 
+          Format.(sprintf "Cannot have `'` (prime) here: %s" 
+                  (pos $loc(lprime)))
+      else if c = `Eq || c = `Not_eq then
+        M.fail Format.(sprintf "Cannot have `=` or `!=` here: %s" (pos $loc(c)))
+      else 
+        Lit { name = right; args = left; positive = (c = `In); prime = rprime }
+    else 
+      match lprime, rprime, c with
+      | true, true, _ ->
+        M.fail "Cannot have `'` (prime) on both sides of an equality"
+      | false, true, `Test c -> Test (true, right, c, List.hd left)
+      | _, false, `Test c -> Test (lprime, List.hd left, c, right) 
+      | _, _, _ ->
+        M.fail Format.(sprintf "Cannot have `in` or `not in` here: %s" (pos $loc(c)))
   }
 
 tuple:
@@ -284,15 +344,16 @@ tuple:
   | t = parens(tuple)
   { t }
 
-%inline comparator:
-  IN
-  { In }
-  | NOT IN
-  { Not_in }
+
+%inline comparator: 
+  IN 
+  { `In }
+  | NOT IN 
+  { `Not_in }
   | EQ
-  { Eq }
+  { `Test Eq }
   | NOT EQ
-  { Not_eq }  
+  { `Test Not_eq }  
   
 %inline quant:
 	ALL

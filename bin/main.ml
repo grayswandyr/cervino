@@ -17,6 +17,8 @@ let parse_file file =
 let main file =
   M.info "This program expects valid Electrum files.";
   let model = parse_file file in
+  M.info "Recognized model:";
+  M.show Format.(sprintf "%a" Cst.print model);
   ( match Wf.analyze_model model with
     | None ->
       M.info "Model is well-formed."

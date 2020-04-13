@@ -6,7 +6,7 @@ type t =
   ; endp : Lexing.position
   }
 
-let from_positions begp endp =
+let from_positions (begp, endp) =
   assert (begp.pos_cnum <= endp.pos_cnum);
   { begp; endp }
 
@@ -28,8 +28,11 @@ let span (loc1, loc2) =
   let endp =
     if loc1.endp.pos_cnum > loc2.endp.pos_cnum then loc1.endp else loc2.endp
   in
-  from_positions begp endp
+  from_positions (begp, endp)
 
+let string_of_position p = 
+  let ((l, c), (l2, c2)) =  to_ints p in 
+  Printf.sprintf "%d.%d-%d.%d" l c l2 c2 
 
 let dummy = { begp = Lexing.dummy_pos; endp = Lexing.dummy_pos }
 

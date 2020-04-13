@@ -66,7 +66,7 @@ type env_seed = (ident * (ident * ident)) list
 (* for any sort and max number of variables, creates the said (fresh) variables and associated Ex predicate names, which is called a `env_seed` *)
 let make_pred_env_seed sort_bag : env_seed =
   let fresh_var_and_ex =
-    let c = ref ~-1 in
+    let c = ref 0 in
     fun (sort : Symbol.t) ->
       incr c;
       let s = string_of_int !c in
@@ -77,13 +77,57 @@ let make_pred_env_seed sort_bag : env_seed =
   in
   List.flat_map fresh_vars_and_exs sort_bag
 
+(* !!! supposes unicity of keys (= predicate names) *)
+module Env : sig
+  type ident_map = (ident, ident) AL.t
 
-(* 
-  Returns for any event:
-   - actual parameters to call it and their sort
-   - an assoc-list that maps every formal parameter of the predicate to the adequate "E" predicate name
-   - an assoc list that maps every sort to its "E" predicateS
-*)
+  (* ident: predicate name *)
+  type t = (ident, info) AL.t
+
+  and info = private {
+    (* actual parameter |-> sort *)
+    actuals_and_sorts: ident_map;
+    (* formal parameter |-> "E" relation *)
+    formals_and_exs: ident_map;
+    (* sort |-> "E" relation *)
+    sorts_and_exs: ident_map
+  }
+
+  val make_info : ident_map -> ident_map -> ident_map -> info
+  val empty : t
+  val add_info : ident -> info -> t -> t 
+
+  val get_exn : ident -> t -> info
+
+  val mem_ident_map : ident -> ident_map -> bool
+end = struct
+  type ident_map = (ident, ident) AL.t
+
+  type t = (ident, info) AL.t
+  and info = {
+    actuals_and_sorts: ident_map;
+    formals_and_exs: ident_map;
+    sorts_and_exs: ident_map
+  }
+
+  let make_info actuals_and_sorts formals_and_exs sorts_and_exs = {
+    actuals_and_sorts;
+    formals_and_exs;
+    sorts_and_exs
+  }
+
+  let empty = []
+
+  let add_info id info env = 
+    (id, info) :: env
+
+  let get_exn id env = AL.get_exn ~eq:Symbol.equal id env
+
+  let mem_ident_map id map = AL.mem ~eq:Symbol.equal id map
+end
+
+type env = Env.t 
+
 let env_for_event (env : env_seed) (Event { name; parameters; _ }) =
   let rec walk env acc_vars acc_par_ex acc_sort_ex = function
     | (v, s) :: ps ->
@@ -95,74 +139,94 @@ let env_for_event (env : env_seed) (Event { name; parameters; _ }) =
         ((s, ex) :: acc_sort_ex) 
         ps
     | [] ->
-      (name, (List.rev acc_vars, List.rev acc_par_ex, acc_sort_ex))
+      let acc_vars = List.rev acc_vars in
+      let acc_par_ex = List.rev acc_par_ex in 
+      let info = Env.make_info acc_vars acc_par_ex acc_sort_ex in
+      (name, info)
   in
   walk env [] [] [] parameters
-(* |> Fun.tap
-   Format.(
-    printf
-      "@[%a@]@\n"
-      ( pair 
-          ~sep:(const string " ~~> ") 
-          Symbol.pp
-          (within "{" "}"
-           @@ vbox
-           @@ pair
-             ( hbox 
-               @@ within "[" "]"
-               @@ list Symbol.pp )
-             ( hbox 
-               @@ within "[" "]"
-               @@ list
-               @@ within "(" ")"
-               @@ pair Symbol.pp Symbol.pp )))) *)
-
-(* Assoc list that maps to a pred name:
-   - its actual parameters when it is called (and their sort)
-   - an assoc list that maps its formal parameters to the adequate "E" predicate names
-   - an assoc list that maps sorts to "E" predicates of the same sort
-*)
-
-type env = 
-  (ident 
-   * ((ident * ident) list 
-      * (ident * ident) list
-      * (ident * ident) list)) 
-    list
 
 let make_env (Model { events; _ } as model) : env = 
   let bag = sort_bag_of_events model in
   let seed = make_pred_env_seed bag in
-  let env = List.map (env_for_event seed) events in 
-  env
+  let add env e = 
+    let (name, info) = env_for_event seed e in
+    Env.add_info name info env 
+  in
+  List.fold_left add Env.empty events
 
-let make_ex exs i arg =
-  let ex = List.assoc ~eq:Symbol.equal i exs in
-  L.make_located (Compare_now (arg, In, ex)) L.dummy
 
 let abstract_event (env : env) (Event ({ name; body; _} as e)) =
-  let _, exs, _ = List.assoc ~eq:Symbol.equal name env in
-  let _E = make_ex exs in 
+  let Env.{ formals_and_exs; _ } = Env.get_exn name env in
+  (* "E" predicate for variable "var" *)
+  let _E var arg =
+    let name = List.assoc ~eq:Symbol.equal var formals_and_exs in
+    Lit { positive = true; prime = false; name; args = [arg] }
+  in
+  let prim_implies p q = Binop (p, Implies, q) in 
+  let prim_and p q = Binop (p, And, q) in 
+  let prim_or p q = Binop (p, Or, q) in 
+  let loc x = L.(make_located x dummy) in
   let rec walk_f L.{ data; _ } =
-    walk_pf data
+    L.make_located (walk_pf data) L.dummy 
   and walk_pf f = match f with
-    | Compare_now ([yi], Eq, yj) ->
-      let left = implies (_E yi [yi]) (_E yj [yi]) in
-      let right = implies (_E yj [yj]) (_E yi [yj]) in 
-      and_ (left) (right)
-    | Binop (p, And, q) -> and_ (walk_f p) (walk_f q)
-    | If_then_else (_, _, _)
-    | Quant (Some_, _, _)
-    | Unop (_, _) -> M.fail "This connector should not appear in an event:"
-    | _ -> assert false
+    | Test (_prime, left, Eq, right) ->
+      (* TODO what to do with prime *)
+      (* TODO what to do with Not_eq *)
+      if Env.mem_ident_map left formals_and_exs 
+      && Env.mem_ident_map right formals_and_exs 
+      then
+        prim_and 
+          (implies (loc @@ _E left left) (loc @@ _E right left))
+          (implies (loc @@ _E right right) (loc @@ _E left right))
+      else if Env.mem_ident_map left formals_and_exs then
+        _E left right
+      else if Env.mem_ident_map left formals_and_exs then
+        _E right left
+      else
+        (* TODO: *)
+        failwith " x_i = x_j : what to do?"
+    | Lit { args; _ } -> 
+      (* TODO if positive = false? *)
+      let ys = List.fold_left 
+          (fun acc arg -> 
+             if Env.mem_ident_map arg formals_and_exs 
+             then arg :: acc else acc) [] args 
+      in
+      (match ys with
+       | [] -> failwith "no free vars in pred arguments: what to do?"
+       | hd::tl ->
+         List.fold_left
+           (fun acc y -> prim_or (implies (loc @@ _E y y) @@ loc f) @@ loc acc)
+           (prim_implies (loc @@ _E hd hd) @@ loc f)
+           tl)
+    | Binop (p, And, q) -> prim_and (walk_f p) (walk_f q)
+    | Binop (p, Or, q) -> prim_or (walk_f p) (walk_f q)
+    | Block b -> Block (List.map walk_f b)
+    | Quant (All, rangings, b) -> Quant (All, rangings, List.map walk_f b)
+    | Quant (Some_, _, _)-> 
+      M.fail "An existential quantifier should not appear in an event"
+    | Unop ((After | Eventually | Always), _)-> 
+      M.fail "A temporal connective should not appear in an event" 
+    | Call _ -> 
+      M.fail "Not implemented yet: abstracting an event with a predicate call"
+    | Test (_, _, Not_eq, _) -> 
+      M.fail "Not implemented yet: abstracting an event with a `!=`"
+    | Binop (_, (Implies|Iff), _) -> 
+      M.fail "Impossible case during abstraction: an event with a `implies` or `iff`"
+    | Unop (Not, _) -> 
+      M.fail "Impossible case during abstraction: an event with a `not` out of a literal"
+    | If_then_else (_, _, _) -> 
+      M.fail "Impossible case during abstraction: an event with an implies/else"
+
   in 
   let body' = List.map walk_f body in 
   Event { e with body = body' }
 
 let make_event_call (env : env) (Event { name; _}) : foltl =
-  let actuals, _, _ = List.assoc ~eq:Symbol.equal name env in
+  let Env.{ actuals_and_sorts; _ } = Env.get_exn name env in
   (* fst because actuals contains pairs (var, sort) *)
-  L.make_located (Call (name, List.map fst actuals)) L.dummy
+  L.make_located (Call (name, List.map fst actuals_and_sorts)) L.dummy
 
 let add_all_prefix (env : env) (f : foltl) : foltl= 
   (* take list of sorted vars (with the same sort)
@@ -177,7 +241,8 @@ let add_all_prefix (env : env) (f : foltl) : foltl=
   in
   (* compute rangings by sort for the quantifier *)
   let rangings = 
-    List.flat_map (fun (_, (sorted_vars, _, _)) -> sorted_vars) env 
+    List.flat_map 
+      (fun (_, Env.{ actuals_and_sorts; _ }) -> actuals_and_sorts) env 
     |> List.sort_uniq ~cmp:(Pair.compare Symbol.compare Symbol.compare)
     |> List.group_by 
       ~hash:Fun.(Symbol.hash % snd)
@@ -189,16 +254,16 @@ let add_all_prefix (env : env) (f : foltl) : foltl=
 
 let make_axiom (env : env) = 
   let sorted_exs = 
-    List.flat_map (fun (_, (_, _, sorted_exs)) -> sorted_exs) env 
+    List.flat_map (fun (_, Env.{ sorts_and_exs; _ }) -> sorts_and_exs) env 
     |> List.sort_uniq ~cmp:(Pair.compare Symbol.compare Symbol.compare)
   in
   let z1 = Symbol.make "__z1" in
   let z2 = Symbol.make "__z2" in 
   let make_all_fml (sort, ex) : foltl =
     let subf = 
-      let ex1 = L.make_located (Compare_now ([z1], In, ex)) L.dummy in 
-      let ex2 = L.make_located (Compare_now ([z2], In, ex)) L.dummy in
-      let eq = L.make_located (Compare_now ([z1], Eq, z2)) L.dummy in
+      let ex1 = lit ~positive:true ~prime:false ex [z1] in
+      let ex2 = lit ~positive:true ~prime:false ex [z2] in
+      let eq = test ~prime:false z1 Eq z2 in
       implies (and_ ex1 ex2) eq
     in
     L.make_located (Quant (All, [ ([z1; z2], sort)], [subf])) L.dummy

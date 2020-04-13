@@ -100,8 +100,8 @@ and typescope =
 and foltl = prim_foltl Location.located
 
 and prim_foltl =
-  | Compare_now of ident list * comparator * ident (* non empty term list *)
-  | Compare_next of ident list * comparator * ident (* non empty term list *)
+  | Lit of { name: ident; args: ident list; positive: bool; prime: bool }
+  | Test of bool * ident * comparator * ident (* false = now on LEFT arg *)
   | Unop of lunary * foltl
   | Binop of foltl * lbinary * foltl
   | If_then_else of foltl * foltl * foltl
@@ -128,14 +128,18 @@ and quantifier =
   | All
 
 and comparator =
-  | In
-  | Not_in
   | Eq
   | Not_eq
 
 let and_ p q = L.make_located (Binop (p, And, q)) L.dummy
 let or_ p q = L.make_located (Binop (p, Or, q)) L.dummy
 let implies p q = L.make_located (Binop (p, Implies, q)) L.dummy
+
+let lit ~positive ~prime name args = 
+  L.make_located (Lit { name; args; positive; prime }) L.dummy
+
+let test ~prime left op right = 
+  L.make_located (Test (prime, left, op, right)) L.dummy
 
 let sig_name = function
   | Sort name | One_sig { name; _ } | Set { name; _ } ->
@@ -328,26 +332,27 @@ and print_foltl fmt L.{ data; _ } = print_prim_foltl fmt data
 and print_prim_foltl fmt =
   let open F in
   function
-  | Compare_now (tuple, op, id) ->
+  | Lit { name; args; positive; prime } ->
     fprintf
       fmt
-      "%a %a %a"
+      "%a %s %a%s"
       print_tuple
-      tuple
+      args
+      (if positive then "in" else "not in")
+      print_ident
+      name
+      (if prime then "'" else "")
+  | Test (lprime, id1, op, id2) ->
+    fprintf
+      fmt
+      "%a%s %a %a"
+      print_ident
+      id1
+      (if lprime then "'" else "")
       print_comparator
       op
       print_ident
-      id
-  | Compare_next (tuple, op, id) ->
-    fprintf
-      fmt
-      "%a %a %a'"
-      print_tuple
-      tuple
-      print_comparator
-      op
-      print_ident
-      id
+      id2
   | Unop (op, f) ->
     fprintf fmt "(%a %a)" print_unop op print_foltl f
   | Binop (f1, op, f2) ->
@@ -422,7 +427,7 @@ and print_quant fmt q =
 
 and print_comparator fmt op =
   let s_op =
-    match op with Eq -> "=" | Not_eq -> "!=" | In -> "in" | Not_in -> "not in"
+    match op with Eq -> "=" | Not_eq -> "!="
   in
   F.fprintf fmt "%s" s_op
 
