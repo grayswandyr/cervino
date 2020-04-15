@@ -164,16 +164,26 @@ field:
 predicate:
   PRED 
   name = ident 
-  parameters = loption(brackets(comma_sep(separated_pair(ident, COLON, ident)))) 
+  rangings = loption(brackets(comma_sep(ranging))) 
   body = block
   {
+    let parameters = 
+      CCList.flat_map 
+        (fun (vs, s) -> List.map (fun v -> (v,s)) vs)
+      rangings
+    in
     CPred (Pred { name; parameters; body })
   }
   | PRED 
   name = EVENT_IDENT
-  parameters = loption(brackets(comma_sep(separated_pair(ident, COLON, ident)))) 
+  rangings = loption(brackets(comma_sep(ranging))) 
   body = epr_block
   {
+    let parameters = 
+      CCList.flat_map 
+        (fun (vs, s) -> List.map (fun v -> (v,s)) vs)
+      rangings
+    in
     CEvent (Event { name = Symbol.make name; parameters; body })
   }
 
@@ -232,7 +242,7 @@ prim_formula:
   { r }
   | f1 = formula op = lbinop f2 = formula 
 	{ Binop (f1, op, f2) }
-	| q = quant rangings = comma_sep1(quant_ranging) b = block_or_bar
+	| q = quant rangings = comma_sep1(ranging) b = block_or_bar
   { Quant (q, rangings, b) }
 	| f1 = formula IMPLIES f2 = formula ELSE f3 = formula 
   { If_then_else (f1, f2, f3) }
@@ -247,7 +257,7 @@ prim_formula:
 	| f = parens(prim_formula)
   { f }
 
-quant_ranging:
+ranging:
   vars = comma_sep1(ident) COLON range = ident
   { (vars, range) }
 
@@ -260,7 +270,7 @@ epr_formula:
   { loc f $loc(f) }
 
 epr_prim_formula:
-	| ALL rangings = comma_sep1(quant_ranging) b = epr_or_bar
+	| ALL rangings = comma_sep1(ranging) b = epr_or_bar
   { Quant (All, rangings, b) }
   | f1 = epr_formula AND f2 = epr_formula
   { Binop(f1, And, f2) }

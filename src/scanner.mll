@@ -61,7 +61,7 @@ rule main = parse
 | ("&&" | "and") { AND } 
 | ("||" | "or") { OR } 
 | ("<=>" | "iff") { IFF } 
-| ("no" | "expect" | "." 
+| ("disj" | "no" | "expect" | "." 
     | "<:" | ":>" | "++" | "+" | "-" | "#" | "^" | "*" | "~" as x) 
     { error lexbuf ("Forbidden keyword or operator: `" ^ x ^ "`")}
 | "as" { AS }
