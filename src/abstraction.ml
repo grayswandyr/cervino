@@ -4,6 +4,9 @@ module M = Messages
 module AL = List.Assoc
 module L = Location
 
+
+let loc x = L.(make_located x dummy)
+
 (* For an event, tells the number of formal parameters for every sort in parameters.
    E.g. for: pred _e1[a:s, b:s, c:t, d:s, d:u] { ... }
    should return: [(u|->1), (t|->1), (s|->3)]
@@ -166,13 +169,10 @@ let abstract_event (env : env) (Event ({ name; body; _} as e)) =
   let prim_implies p q = Binop (p, Implies, q) in 
   let prim_and p q = Binop (p, And, q) in 
   let prim_or p q = Binop (p, Or, q) in 
-  let loc x = L.(make_located x dummy) in
   let rec walk_f L.{ data; _ } =
-    L.make_located (walk_pf data) L.dummy 
+    loc (walk_pf data) 
   and walk_pf f = match f with
     | Test (_prime, left, Eq, right) ->
-      (* TODO what to do with prime *)
-      (* TODO what to do with Not_eq *)
       if Env.mem_ident_map left formals_and_exs 
       && Env.mem_ident_map right formals_and_exs 
       then
@@ -181,25 +181,23 @@ let abstract_event (env : env) (Event ({ name; body; _} as e)) =
           (implies (loc @@ _E right right) (loc @@ _E left right))
       else if Env.mem_ident_map left formals_and_exs then
         _E left right
-      else if Env.mem_ident_map left formals_and_exs then
+      else if Env.mem_ident_map right formals_and_exs then
         _E right left
-      else
-        (* TODO: *)
-        failwith " x_i = x_j : what to do?"
+      else f
+    | Test (_prime, left, Not_eq, right) ->
+      Unop (Not, loc (walk_pf (Test (_prime, left, Eq, right))))
     | Lit { args; _ } -> 
-      (* TODO if positive = false? *)
+      (* get the ys that appear as free variables in args *)
       let ys = List.fold_left 
           (fun acc arg -> 
              if Env.mem_ident_map arg formals_and_exs 
              then arg :: acc else acc) [] args 
       in
       (match ys with
-       | [] -> failwith "no free vars in pred arguments: what to do?"
-       | hd::tl ->
-         List.fold_left
-           (fun acc y -> prim_or (implies (loc @@ _E y y) @@ loc f) @@ loc acc)
-           (prim_implies (loc @@ _E hd hd) @@ loc f)
-           tl)
+       | [] -> f
+       | _ -> 
+         let conj = loc @@ Block (List.map (fun y -> loc @@ _E y y) ys) in
+         prim_implies conj (loc f))
     | Binop (p, And, q) -> prim_and (walk_f p) (walk_f q)
     | Binop (p, Or, q) -> prim_or (walk_f p) (walk_f q)
     | Block b -> Block (List.map walk_f b)
@@ -210,8 +208,6 @@ let abstract_event (env : env) (Event ({ name; body; _} as e)) =
       M.fail "A temporal connective should not appear in an event" 
     | Call _ -> 
       M.fail "Not implemented yet: abstracting an event with a predicate call"
-    | Test (_, _, Not_eq, _) -> 
-      M.fail "Not implemented yet: abstracting an event with a `!=`"
     | Binop (_, (Implies|Iff), _) -> 
       M.fail "Impossible case during abstraction: an event with a `implies` or `iff`"
     | Unop (Not, _) -> 
@@ -226,7 +222,7 @@ let abstract_event (env : env) (Event ({ name; body; _} as e)) =
 let make_event_call (env : env) (Event { name; _}) : foltl =
   let Env.{ actuals_and_sorts; _ } = Env.get_exn name env in
   (* fst because actuals contains pairs (var, sort) *)
-  L.make_located (Call (name, List.map fst actuals_and_sorts)) L.dummy
+  loc (Call (name, List.map fst actuals_and_sorts)) 
 
 let add_all_prefix (env : env) (f : foltl) : foltl= 
   (* take list of sorted vars (with the same sort)
@@ -249,7 +245,7 @@ let add_all_prefix (env : env) (f : foltl) : foltl=
       ~eq:(fun (_,s1) (_,s2) -> Symbol.equal s1 s2)
     |> List.map fuse_sorted_vars
   in
-  L.make_located (Quant (All, rangings, [f])) L.dummy
+  loc (Quant (All, rangings, [f])) 
 
 
 let make_axiom (env : env) = 
@@ -266,12 +262,12 @@ let make_axiom (env : env) =
       let eq = test ~prime:false z1 Eq z2 in
       implies (and_ ex1 ex2) eq
     in
-    L.make_located (Quant (All, [ ([z1; z2], sort)], [subf])) L.dummy
+    loc (Quant (All, [ ([z1; z2], sort)], [subf])) 
   in
   let block = 
-    L.make_located (Block (List.map make_all_fml sorted_exs)) L.dummy
+    loc (Block (List.map make_all_fml sorted_exs)) 
   in 
-  let g_block = L.make_located (Unop (Always, block)) L.dummy in
+  let g_block = loc (Unop (Always, block)) in
   Fact { name = None; body = [g_block] }
 
 
