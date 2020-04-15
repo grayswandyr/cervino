@@ -172,7 +172,7 @@ let abstract_event (env : env) (Event ({ name; body; _} as e)) =
   let rec walk_f L.{ data; _ } =
     loc (walk_pf data) 
   and walk_pf f = match f with
-    | Test (_prime, left, Eq, right) ->
+    | Test (left, Eq, right) ->
       if Env.mem_ident_map left formals_and_exs 
       && Env.mem_ident_map right formals_and_exs 
       then
@@ -184,8 +184,8 @@ let abstract_event (env : env) (Event ({ name; body; _} as e)) =
       else if Env.mem_ident_map right formals_and_exs then
         _E right left
       else f
-    | Test (_prime, left, Not_eq, right) ->
-      Unop (Not, loc (walk_pf (Test (_prime, left, Eq, right))))
+    | Test (left, Not_eq, right) ->
+      Unop (Not, loc (walk_pf (Test (left, Eq, right))))
     | Lit { args; _ } -> 
       (* get the ys that appear as free variables in args *)
       let ys = List.fold_left 
@@ -259,7 +259,7 @@ let make_axiom (env : env) =
     let subf = 
       let ex1 = lit ~positive:true ~prime:false ex [z1] in
       let ex2 = lit ~positive:true ~prime:false ex [z2] in
-      let eq = test ~prime:false z1 Eq z2 in
+      let eq = test z1 Eq z2 in
       implies (and_ ex1 ex2) eq
     in
     loc (Quant (All, [ ([z1; z2], sort)], [subf])) 

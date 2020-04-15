@@ -101,7 +101,7 @@ and foltl = prim_foltl Location.located
 
 and prim_foltl =
   | Lit of { name: ident; args: ident list; positive: bool; prime: bool }
-  | Test of bool * ident * comparator * ident (* false = now on LEFT arg *)
+  | Test of ident * comparator * ident 
   | Unop of lunary * foltl
   | Binop of foltl * lbinary * foltl
   | If_then_else of foltl * foltl * foltl
@@ -138,8 +138,8 @@ let implies p q = L.make_located (Binop (p, Implies, q)) L.dummy
 let lit ~positive ~prime name args = 
   L.make_located (Lit { name; args; positive; prime }) L.dummy
 
-let test ~prime left op right = 
-  L.make_located (Test (prime, left, op, right)) L.dummy
+let test left op right = 
+  L.make_located (Test (left, op, right)) L.dummy
 
 let sig_name = function
   | Sort name | One_sig { name; _ } | Set { name; _ } ->
@@ -342,13 +342,12 @@ and print_prim_foltl fmt =
       print_ident
       name
       (if prime then "'" else "")
-  | Test (lprime, id1, op, id2) ->
+  | Test (id1, op, id2) ->
     fprintf
       fmt
-      "%a%s %a %a"
+      "%a %a %a"
       print_ident
-      id1
-      (if lprime then "'" else "")
+      id1 
       print_comparator
       op
       print_ident

@@ -69,12 +69,10 @@
   
   let loc x (l, c) = Location.(make_located x (Location.from_positions (l,c)))
 
-  let pos loc = 
-    Location.(string_of_position (from_positions loc))
 
   let negate_lit_or_test_pf = function 
-    | Test (prime, id, Eq, id2) -> Test (prime, id, Not_eq, id2)
-    | Test (prime, id, Not_eq, id2) -> Test (prime, id, Eq, id2)
+    | Test (id, Eq, id2) -> Test (id, Not_eq, id2)
+    | Test (id, Not_eq, id2) -> Test (id, Eq, id2)
     | Lit { name; args; positive = p; prime} -> 
         Lit { name; args; positive = not p; prime} 
     | _ -> assert false
@@ -305,42 +303,34 @@ epr_prim_basic:
     let Location.{ data; _ } = f in
     match data with
       | Lit ({ positive = p; _} as l) -> Lit { l with positive = not p }
-      | Test (prime, id1, c, id2) ->
+      | Test (id1, c, id2) ->
         let c' = match c with
           | Eq -> Not_eq
           | Not_eq -> Eq
         in
-        Test (prime, id1, c', id2)
+        Test (id1, c', id2)
       | _ -> assert false
   }
 
 test_or_literal:
-  left = tuple lprime = boption(PRIME) 
-  c = comparator 
-  right = ident rprime = boption(PRIME)
+  left = tuple 
+  neg = boption(NOT) c = comparator 
+  right = ident 
+  prime = boption(PRIME)
   {
-    if c = `In || c = `Not_in then
-      (* literal *)
-      if lprime then
-        M.fail 
-          Format.(sprintf "Cannot have `'` (prime) here: %s" 
-                  (pos $loc(lprime)))
-      else if c = `Eq || c = `Not_eq then
-        M.fail Format.(sprintf "Cannot have `=` or `!=` here: %s" (pos $loc(c)))
-      else 
-        Lit { name = right; args = left; positive = (c = `In); prime = rprime }
-    else 
-      match lprime, rprime, c with
-      | true, true, _ ->
-        M.fail "Cannot have `'` (prime) on both sides of an equality"
-      | false, true, `Test c -> Test (true, right, c, List.hd left)
-      | _, false, `Test c -> Test (lprime, List.hd left, c, right) 
-      | _, _, _ ->
-        M.fail Format.(sprintf "Cannot have `in` or `not in` here: %s" (pos $loc(c)))
+    match c with
+      | `Eq when List.length left > 1 -> 
+        M.fail Format.(sprintf "%s: tuples are forbidden in an `=` or `!=` test." Location.(string_of_position (from_positions $loc(left))))
+      | `Eq when prime -> 
+        M.fail Format.(sprintf "%s: prime (`'`) is forbidden in an `=` or `!=` test." Location.(string_of_position (from_positions $loc(prime))))
+      | `Eq ->
+        Test (List.hd left, (if neg then Not_eq else Eq), right)
+      | `In ->
+        Lit { name = right; args = left; positive = not neg; prime }
   }
 
 tuple:
-  t = separated_nonempty_list(ARROW, ident)
+  t = separated_nonempty_list(ARROW, ident) 
   | t = parens(tuple)
   { t }
 
@@ -348,12 +338,8 @@ tuple:
 %inline comparator: 
   IN 
   { `In }
-  | NOT IN 
-  { `Not_in }
   | EQ
-  { `Test Eq }
-  | NOT EQ
-  { `Test Not_eq }  
+  { `Eq }
   
 %inline quant:
 	ALL

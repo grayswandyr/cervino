@@ -97,7 +97,7 @@ and foltl = prim_foltl Location.located
 
 and prim_foltl =
   | Lit of { name: ident; args: ident list; positive: bool; prime: bool }
-  | Test of bool * ident * comparator * ident (* false = now on LEFT arg *)
+  | Test of ident * comparator * ident 
   | Unop of lunary * foltl
   | Binop of foltl * lbinary * foltl
   | If_then_else of foltl * foltl * foltl
@@ -131,7 +131,7 @@ val and_ : foltl -> foltl -> foltl
 val or_ : foltl -> foltl -> foltl
 val implies : foltl -> foltl -> foltl
 val lit : positive:bool -> prime:bool -> ident -> ident list -> foltl
-val test: prime:bool -> ident -> comparator -> ident -> foltl
+val test: ident -> comparator -> ident -> foltl
 
 val print_quant : Format.formatter -> quantifier -> unit
 
