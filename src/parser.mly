@@ -69,16 +69,6 @@
   
   let loc x (l, c) = Location.(make_located x (Location.from_positions (l,c)))
 
-
-  let negate_lit_or_test_pf = function 
-    | Test (id, Eq, id2) -> Test (id, Not_eq, id2)
-    | Test (id, Not_eq, id2) -> Test (id, Eq, id2)
-    | Lit { name; args; positive = p; prime} -> 
-        Lit { name; args; positive = not p; prime} 
-    | _ -> assert false
-
-  let negate_lit_or_test_f Location.{ data; _ } =
-    Location.make_located (negate_lit_or_test_pf data) Location.dummy
 %}
 
 %%
@@ -177,7 +167,7 @@ predicate:
   | PRED 
   name = EVENT_IDENT
   rangings = loption(brackets(comma_sep(ranging))) 
-  body = epr_block
+  body = block
   {
     let parameters = 
       CCList.flat_map 
@@ -260,67 +250,6 @@ prim_formula:
 ranging:
   vars = comma_sep1(ident) COLON range = ident
   { (vars, range) }
-
-epr_block: 
-  b = braces(epr_formula*)
-  { b }
-
-epr_formula:
-  f = epr_prim_formula
-  { loc f $loc(f) }
-
-epr_prim_formula:
-	| ALL rangings = comma_sep1(ranging) b = epr_or_bar
-  { Quant (All, rangings, b) }
-  | f1 = epr_formula AND f2 = epr_formula
-  { Binop(f1, And, f2) }
-  | f1 = epr_formula OR f2 = epr_formula
-  { Binop(f1, Or, f2) }
-  | f1 = epr_basic IFF f2 = epr_basic
-  { 
-    let left = and_ f1 f2 in 
-    let right = and_ (negate_lit_or_test_f f1) (negate_lit_or_test_f f2) in
-    Binop (left, And, right)
-  }
-	| c = epr_basic IMPLIES t = epr_formula ELSE e = epr_formula 
-  { 
-    let left = or_ (negate_lit_or_test_f c) t in
-    let right = or_ c e in
-    Binop (left, And, right)
-  }
-	| f1 = epr_basic IMPLIES f2 = epr_formula 
-  { Binop (negate_lit_or_test_f f1, Or, f2) }
-  | f = parens(epr_prim_formula)
-  { f }
-  | f = epr_prim_basic
-  { f }
-
-epr_or_bar: 
-  b = epr_block 
-  { b }
-  | BAR f = epr_formula  
-  { [f] }
-
-epr_basic:
-  f = epr_prim_basic
-  { loc f $loc(f)}
-
-epr_prim_basic:
-  | f = test_or_literal
-  { f }
-  | NOT f = epr_basic
-  {  
-    let Location.{ data; _ } = f in
-    match data with
-      | Lit ({ positive = p; _} as l) -> Lit { l with positive = not p }
-      | Test (id1, c, id2) ->
-        let c' = match c with
-          | Eq -> Not_eq
-          | Not_eq -> Eq
-        in
-        Test (id1, c', id2)
-      | _ -> assert false
-  }
 
 test_or_literal:
   left = tuple 

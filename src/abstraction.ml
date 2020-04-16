@@ -159,7 +159,9 @@ let make_env (Model { events; _ } as model) : env =
   List.fold_left add Env.empty events
 
 
-let abstract_event (env : env) (Event ({ name; body; _} as e)) =
+
+(* replaced: list (used as a set) of predicates called (possibly recusively by the event and therefore abstracted too) (= poor man' writer monad) *)
+let abstract_event (Model m) (env : env) (replaced : pred list ref) (Event ({ name; body; _} as e)) =
   let Env.{ formals_and_exs; _ } = Env.get_exn name env in
   (* "E" predicate for variable "var" *)
   let _E var arg =
@@ -172,6 +174,10 @@ let abstract_event (env : env) (Event ({ name; body; _} as e)) =
   let rec walk_f L.{ data; _ } =
     loc (walk_pf data) 
   and walk_pf f = match f with
+    | Quant (Some_, _, _)-> 
+      M.fail "An existential quantifier should not appear in an event"
+    | Unop ((After | Eventually | Always), _)-> 
+      M.fail "A temporal connective should not appear in an event" 
     | Test (left, Eq, right) ->
       if Env.mem_ident_map left formals_and_exs 
       && Env.mem_ident_map right formals_and_exs 
@@ -202,19 +208,35 @@ let abstract_event (env : env) (Event ({ name; body; _} as e)) =
     | Binop (p, Or, q) -> prim_or (walk_f p) (walk_f q)
     | Block b -> Block (List.map walk_f b)
     | Quant (All, rangings, b) -> Quant (All, rangings, List.map walk_f b)
-    | Quant (Some_, _, _)-> 
-      M.fail "An existential quantifier should not appear in an event"
-    | Unop ((After | Eventually | Always), _)-> 
-      M.fail "A temporal connective should not appear in an event" 
-    | Call _ -> 
-      M.fail "Not implemented yet: abstracting an event with a predicate call"
-    | Binop (_, (Implies|Iff), _) -> 
-      M.fail "Impossible case during abstraction: an event with a `implies` or `iff`"
-    | Unop (Not, _) -> 
-      M.fail "Impossible case during abstraction: an event with a `not` out of a literal"
-    | If_then_else (_, _, _) -> 
-      M.fail "Impossible case during abstraction: an event with an implies/else"
-
+    | Binop (p, Implies, q) -> prim_implies (walk_f p) (walk_f q)
+    | Binop (p, Iff, q) -> Binop (walk_f p, Iff, walk_f q)
+    | Unop (Not, p) -> Unop (Not, walk_f p)
+    | If_then_else (p ,q, r) -> 
+      If_then_else (walk_f p, walk_f q, walk_f r)
+    | Call (p, _) -> 
+      (if 
+        not 
+        @@ List.exists (fun (Pred { name; _ }) -> Symbol.equal name p) !replaced 
+       then
+         match
+           List.find_opt 
+             (fun (Pred { name; _ }) -> Symbol.equal name p) 
+             m.preds
+         with
+         | None -> 
+           M.fail 
+             Format.(sprintf "Cannot find definition of predicate `%a`" 
+                       Symbol.pp p)
+         | Some (Pred { name; parameters; body }) ->
+           (* as we expect valid Electrum, we suppose no recursion between preds *)
+           let body = List.map walk_f body in
+           replaced := List.add_nodup 
+               ~eq:(fun (Pred { name = n1; _ }) (Pred { name = n2; _ }) 
+                     -> Symbol.equal n1 n2) 
+               (Pred { name; parameters; body })
+               !replaced
+      );
+      f
   in 
   let body' = List.map walk_f body in 
   Event { e with body = body' }
@@ -283,9 +305,23 @@ let abstract_model (Model ({ events; facts; _ } as m) as model) : Cst.t =
         tl
   in
   let trace_formula = add_all_prefix env event_calls in 
+  (* keeps track of updated predicates (recursively called by event abstraction ) *)
+  let replaced = ref [] in
+  let events = List.map (abstract_event model env replaced) events in
+  (* update preds with the changed ones (during event abstraction) *)
+  let update ((Pred { name; _ }) as p) = 
+    match 
+      List.find_opt 
+        (fun (Pred { name = n; _}) -> Symbol.equal name n)
+        !replaced 
+    with 
+    | None -> p
+    | Some p' -> p' 
+  in
   Model { 
     m with 
-    events = List.map (abstract_event env) events;
+    events;
+    preds = List.map update m.preds;
     facts = 
       make_axiom env ::
       (Fact { name = None; body = [trace_formula] }) :: facts 
