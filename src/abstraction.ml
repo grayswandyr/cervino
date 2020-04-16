@@ -171,13 +171,16 @@ let abstract_event (Model m) (env : env) (replaced : pred list ref) (Event ({ na
   let prim_implies p q = Binop (p, Implies, q) in 
   let prim_and p q = Binop (p, And, q) in 
   let prim_or p q = Binop (p, Or, q) in 
-  let rec walk_f L.{ data; _ } =
-    loc (walk_pf data) 
-  and walk_pf f = match f with
-    | Quant (Some_, _, _)-> 
+  let rec walk_f pol L.{ data; _ } =
+    loc (walk_pf pol data) 
+  and walk_pf pol f = match f with
+    | Unop (Not, { data = p; _ }) -> walk_pf (not pol) p
+    | Quant (Some_, _, _) -> 
       M.fail "An existential quantifier should not appear in an event"
     | Unop ((After | Eventually | Always), _)-> 
       M.fail "A temporal connective should not appear in an event" 
+    | Test (left, Eq, right) when not pol ->
+      walk_pf true (Test (left, Not_eq, right))
     | Test (left, Eq, right) ->
       if Env.mem_ident_map left formals_and_exs 
       && Env.mem_ident_map right formals_and_exs 
@@ -190,9 +193,13 @@ let abstract_event (Model m) (env : env) (replaced : pred list ref) (Event ({ na
       else if Env.mem_ident_map right formals_and_exs then
         _E right left
       else f
+    | Test (left, Not_eq, right) when not pol ->
+      walk_pf true (Test (left, Eq, right))
     | Test (left, Not_eq, right) ->
-      Unop (Not, loc (walk_pf (Test (left, Eq, right))))
-    | Lit { args; _ } -> 
+      Unop (Not, walk_f true (loc @@ Test (left, Eq, right)))
+    | Lit ({ positive; _ } as l) when not pol -> 
+      walk_pf true (Lit { l with positive = not positive })
+    | Lit { args; positive; _ } -> 
       (* get the ys that appear as free variables in args *)
       let ys = List.fold_left 
           (fun acc arg -> 
@@ -203,16 +210,33 @@ let abstract_event (Model m) (env : env) (replaced : pred list ref) (Event ({ na
        | [] -> f
        | _ -> 
          let conj = loc @@ Block (List.map (fun y -> loc @@ _E y y) ys) in
-         prim_implies conj (loc f))
-    | Binop (p, And, q) -> prim_and (walk_f p) (walk_f q)
-    | Binop (p, Or, q) -> prim_or (walk_f p) (walk_f q)
-    | Block b -> Block (List.map walk_f b)
-    | Quant (All, rangings, b) -> Quant (All, rangings, List.map walk_f b)
-    | Binop (p, Implies, q) -> prim_implies (walk_f p) (walk_f q)
-    | Binop (p, Iff, q) -> Binop (walk_f p, Iff, walk_f q)
-    | Unop (Not, p) -> Unop (Not, walk_f p)
+         if positive then
+           prim_implies conj (loc f)
+         else 
+           prim_and conj (loc @@ Unop (Not, loc f)))
+    | Binop (p, And, q) -> 
+      if pol then prim_and (walk_f pol p) (walk_f pol q)
+      else prim_or (walk_f false p) (walk_f false q)
+    | Binop (p, Or, q) ->
+      if pol then prim_or (walk_f pol p) (walk_f pol q)
+      else prim_and (walk_f false p) (walk_f false q)
+    | Block b -> 
+      if pol then Block (List.map (walk_f pol) b)
+      else 
+        (match b with
+         | [] -> Unop (Not, loc @@ Block []) (* encoding false *)
+         | hd::tl -> 
+           (List.fold_left (fun acc fml -> or_ acc fml) hd tl).data )
+    | Quant (All, _, _) when not pol -> 
+      M.fail "A universal quantifier should not appear in negative position in an event"
+    | Quant (All, rangings, b) -> 
+      Quant (All, rangings, List.map (walk_f pol) b)
+    | Binop (p, Implies, q) -> 
+      walk_pf pol @@ prim_or (not_ p) q
+    | Binop (p, Iff, q) -> 
+      walk_pf pol @@ prim_and (implies p q) (implies q p)
     | If_then_else (p ,q, r) -> 
-      If_then_else (walk_f p, walk_f q, walk_f r)
+      walk_pf pol @@ prim_and (implies p q) (implies (not_ p) r)
     | Call (p, _) -> 
       (if 
         not 
@@ -229,7 +253,7 @@ let abstract_event (Model m) (env : env) (replaced : pred list ref) (Event ({ na
                        Symbol.pp p)
          | Some (Pred { name; parameters; body }) ->
            (* as we expect valid Electrum, we suppose no recursion between preds *)
-           let body = List.map walk_f body in
+           let body = List.map (walk_f pol) body in
            replaced := List.add_nodup 
                ~eq:(fun (Pred { name = n1; _ }) (Pred { name = n2; _ }) 
                      -> Symbol.equal n1 n2) 
@@ -238,7 +262,7 @@ let abstract_event (Model m) (env : env) (replaced : pred list ref) (Event ({ na
       );
       f
   in 
-  let body' = List.map walk_f body in 
+  let body' = List.map (walk_f true) body in 
   Event { e with body = body' }
 
 let make_event_call (env : env) (Event { name; _}) : foltl =

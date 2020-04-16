@@ -127,6 +127,7 @@ and comparator =
   | Eq
   | Not_eq
 
+val not_ : foltl -> foltl
 val and_ : foltl -> foltl -> foltl 
 val or_ : foltl -> foltl -> foltl
 val implies : foltl -> foltl -> foltl

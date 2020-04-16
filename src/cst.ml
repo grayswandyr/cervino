@@ -134,6 +134,7 @@ and comparator =
 let and_ p q = L.make_located (Binop (p, And, q)) L.dummy
 let or_ p q = L.make_located (Binop (p, Or, q)) L.dummy
 let implies p q = L.make_located (Binop (p, Implies, q)) L.dummy
+let not_ p =  L.make_located (Unop (Not, p)) L.dummy
 
 let lit ~positive ~prime name args = 
   L.make_located (Lit { name; args; positive; prime }) L.dummy
