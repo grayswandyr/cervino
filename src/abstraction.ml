@@ -164,9 +164,9 @@ let make_env (Model { events; _ } as model) : env =
 let abstract_event (Model m) (env : env) (replaced : pred list ref) (Event ({ name; body; _} as e)) =
   let Env.{ formals_and_exs; _ } = Env.get_exn name env in
   (* "E" predicate for variable "var" *)
-  let _E var arg =
+  let _E positive var arg =
     let name = List.assoc ~eq:Symbol.equal var formals_and_exs in
-    Lit { positive = true; prime = false; name; args = [arg] }
+    Lit { positive; prime = false; name; args = [arg] }
   in
   let prim_implies p q = Binop (p, Implies, q) in 
   let prim_and p q = Binop (p, And, q) in 
@@ -186,20 +186,30 @@ let abstract_event (Model m) (env : env) (replaced : pred list ref) (Event ({ na
       && Env.mem_ident_map right formals_and_exs 
       then
         prim_and 
-          (implies (loc @@ _E left left) (loc @@ _E right left))
-          (implies (loc @@ _E right right) (loc @@ _E left right))
+          (implies (loc @@ _E true left left) (loc @@ _E true right left))
+          (implies (loc @@ _E true right right) (loc @@ _E true left right))
       else if Env.mem_ident_map left formals_and_exs then
-        _E left right
+        _E true left right
       else if Env.mem_ident_map right formals_and_exs then
-        _E right left
+        _E true right left
       else f
     | Test (left, Not_eq, right) when not pol ->
       walk_pf true (Test (left, Eq, right))
     | Test (left, Not_eq, right) ->
-      Unop (Not, walk_f true (loc @@ Test (left, Eq, right)))
+      if Env.mem_ident_map left formals_and_exs 
+      && Env.mem_ident_map right formals_and_exs 
+      then
+        prim_or
+          (and_ (loc @@ _E true left left) (loc @@ _E false right left))
+          (and_ (loc @@ _E true right right) (loc @@ _E false left right))
+      else if Env.mem_ident_map left formals_and_exs then
+        _E false left right
+      else if Env.mem_ident_map right formals_and_exs then
+        _E false right left
+      else f
     | Lit ({ positive; _ } as l) when not pol -> 
       walk_pf true (Lit { l with positive = not positive })
-    | Lit { args; positive; _ } -> 
+    | Lit { args; positive; _ }-> 
       (* get the ys that appear as free variables in args *)
       let ys = List.fold_left 
           (fun acc arg -> 
@@ -209,11 +219,11 @@ let abstract_event (Model m) (env : env) (replaced : pred list ref) (Event ({ na
       (match ys with
        | [] -> f
        | _ -> 
-         let conj = loc @@ Block (List.map (fun y -> loc @@ _E y y) ys) in
+         let conj = loc @@ Block (List.map (fun y -> loc @@ _E true y y) ys) in
          if positive then
            prim_implies conj (loc f)
          else 
-           prim_and conj (loc @@ Unop (Not, loc f)))
+           prim_and conj (loc f))
     | Binop (p, And, q) -> 
       if pol then prim_and (walk_f pol p) (walk_f pol q)
       else prim_or (walk_f false p) (walk_f false q)
