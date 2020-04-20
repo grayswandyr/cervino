@@ -1,8 +1,12 @@
 module C = Containers
 
+let debug_is_on = ref false
+
 let print msg = C.Format.(printf "%a@." (hovbox ~i:2 string) msg)
 
 let eprint msg = C.Format.(eprintf "%a@." (hovbox ~i:2 string) msg)
+
+let debug s = if !debug_is_on then print ("[DEBUG] " ^ s) else ()
 
 let show s = print s
 

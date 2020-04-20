@@ -14,11 +14,12 @@ let parse_file file =
     M.located_fail lexbuf "Syntax error"
 
 
-let main file =
+let main file debug =
+  if debug then M.debug_is_on := true;
   M.info "This program expects valid Electrum files.";
   let model = parse_file file in
-  M.info "Recognized model:";
-  M.show Format.(sprintf "%a" Cst.print model);
+  M.debug "Recognized model:";
+  M.debug Format.(sprintf "@\n%a" Cst.print model);
   Wf.check_and_report model;
   let model' = Abstraction.abstract_model model in
   M.info Format.(sprintf "Generated model:@\n%a" Cst.print model')
