@@ -301,7 +301,10 @@ let add_all_prefix (env : env) (f : foltl) : foltl=
       ~eq:(fun (_,s1) (_,s2) -> Symbol.equal s1 s2)
     |> List.map fuse_sorted_vars
   in
-  loc (Quant (All, rangings, [f])) 
+  let block = 
+    loc (Quant (All, rangings, [f])) 
+  in 
+  loc (Unop (Always, block)) 
 
 
 let make_axiom sorted_exs = 
@@ -349,6 +352,9 @@ let abstract_model (Model ({ events; facts; _ } as m) as model) : Cst.t =
   (* keeps track of updated predicates (recursively called by event abstraction ) *)
   let replaced = ref [] in
   let events = List.map (abstract_event model env replaced) events in
+  let events_fact = 
+    (Fact { name = Some (Symbol.make "_events"); body = [trace_formula] }) 
+  in
   (* update preds with the changed ones (during event abstraction) *)
   let update ((Pred { name; _ }) as p) = 
     match 
@@ -366,6 +372,5 @@ let abstract_model (Model ({ events; facts; _ } as m) as model) : Cst.t =
     preds = List.map update m.preds;
     sigs = ex_sigs @ m.sigs;
     facts = 
-      ex_axiom ::
-      (Fact { name = None; body = [trace_formula] }) :: facts 
+      ex_axiom :: events_fact :: facts 
   }
