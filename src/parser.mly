@@ -65,7 +65,7 @@
     in 
     if not @@ CCList.is_empty opens then
       M.warning "`open` statement(s) present in the model: it/they will be preserved but ignored otherwise.";
-    walk model cs
+    walk model cs 
   
   let loc x (l, c) = Location.(make_located x (Location.from_positions (l,c)))
 
@@ -242,6 +242,8 @@ prim_formula:
   { Unop (op, f) }
   | p = ident args = brackets(comma_sep(ident)) 
   { Call (p, args) }
+  | p = EVENT_IDENT args = brackets(comma_sep(ident)) 
+  { Call (Symbol.make p, args) }
 	| b = block
   { Block b }
 	| f = parens(prim_formula)

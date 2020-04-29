@@ -304,11 +304,7 @@ let add_all_prefix (env : env) (f : foltl) : foltl=
   loc (Quant (All, rangings, [f])) 
 
 
-let make_axiom (env : env) = 
-  let sorted_exs = 
-    List.flat_map (fun (_, Env.{ sorts_and_exs; _ }) -> sorts_and_exs) env 
-    |> List.sort_uniq ~cmp:(Pair.compare Symbol.compare Symbol.compare)
-  in
+let make_axiom sorted_exs = 
   let z1 = Symbol.make "__z1" in
   let z2 = Symbol.make "__z2" in 
   let make_all_fml (sort, ex) : foltl =
@@ -326,6 +322,17 @@ let make_axiom (env : env) =
   let g_block = loc (Unop (Always, block)) in
   Fact { name = None; body = [g_block] }
 
+let make_ex_sigs sorted_exs = 
+  List.map 
+    (fun (s, ex) -> Set { name = ex; parent = s; is_var = true }) 
+    sorted_exs
+
+let make_axiom_and_ex_sigs (env : env) = 
+  let sorted_exs = 
+    List.flat_map (fun (_, Env.{ sorts_and_exs; _ }) -> sorts_and_exs) env 
+    |> List.sort_uniq ~cmp:(Pair.compare Symbol.compare Symbol.compare)
+  in
+  (make_axiom sorted_exs, make_ex_sigs sorted_exs)
 
 let abstract_model (Model ({ events; facts; _ } as m) as model) : Cst.t = 
   let env = make_env model in 
@@ -352,11 +359,13 @@ let abstract_model (Model ({ events; facts; _ } as m) as model) : Cst.t =
     | None -> p
     | Some p' -> p' 
   in
+  let ex_axiom, ex_sigs = make_axiom_and_ex_sigs env in
   Model { 
     m with 
     events;
     preds = List.map update m.preds;
+    sigs = ex_sigs @ m.sigs;
     facts = 
-      make_axiom env ::
+      ex_axiom ::
       (Fact { name = None; body = [trace_formula] }) :: facts 
   }

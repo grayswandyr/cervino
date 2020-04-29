@@ -154,17 +154,16 @@ let domain_name (Field { profile; _ }) =
   | Partial_function (dom, _) | Relation (dom :: _) ->
     dom
 
+let brackets x = F.within "[" "]" x
 
 (* regroups fields [f1; f2...] into an association list [ (s1, [f1;...]); ...] such that every `s_i` is the domain of all fields appearing in the associated sub-list. *)
 let fields_by_signatures (Model { fields; _ }) =
   let eq f1 f2 = Symbol.equal (domain_name f1) (domain_name f2) in
-  let partition = List.group_by ~eq fields in
+  let partition = List.group_by ~hash:(fun f -> Symbol.hash @@ domain_name f) ~eq fields in
   List.map
     (function [] -> assert false | hd :: _ as l -> (domain_name hd, l))
     partition
 
-
-let brackets x = F.within "[" "]" x
 
 let rec print fmt model =
   let (Model { module_; opens; facts; preds; events; assertions; commands; _ })
@@ -227,7 +226,7 @@ and print_sig fmt fields_by_sigs sig_ =
     | None ->
       ()
     | Some fs ->
-      F.fprintf fmt "@ %a " F.(list ~sep:(const string ",@\n") print_field) fs
+      F.fprintf fmt "@ %a " F.(list ~sep:(return ",@ ") print_field) fs
   );
   F.fprintf fmt "@]}@\n"
 
@@ -266,7 +265,7 @@ and print_pred fmt (Pred { name; parameters; body }) =
     F.(
       brackets
       @@ list ~sep:(const string ", ")
-      @@ pair ~sep:(const string ":") print_ident print_ident)
+      @@ pair ~sep:(const string ": ") print_ident print_ident)
     parameters
     print_block
     body
@@ -281,7 +280,7 @@ and print_event fmt (Event { name; parameters; body }) =
     F.(
       brackets
       @@ list ~sep:(const string ", ")
-      @@ pair ~sep:(const string ":") print_ident print_ident)
+      @@ pair ~sep:(const string ": ") print_ident print_ident)
     parameters
     print_block
     body
@@ -306,7 +305,7 @@ and print_scope fmt = function
       fmt
       "for %d but %a"
       num
-      F.(list ~sep:(const string ", ") print_typescope)
+      F.(list ~sep:(return ",@ ") print_typescope)
       tss
   | Without_default [] ->
     assert false
@@ -314,7 +313,7 @@ and print_scope fmt = function
     F.fprintf
       fmt
       "for %a"
-      F.(list ~sep:(const string ", ") print_typescope)
+      F.(list ~sep:(return ",@ ") print_typescope)
       tss
 
 
@@ -339,7 +338,7 @@ and print_prim_foltl fmt =
       "%a %s %a%s"
       print_tuple
       args
-      (if positive then "in" else "not in")
+      (if positive then "in" else "!in")
       print_ident
       name
       (if prime then "'" else "")
@@ -373,7 +372,7 @@ and print_prim_foltl fmt =
       "%a%a"
       print_ident
       p
-      (brackets @@ list ~sep:(const string ",") print_ident)
+      (brackets @@ list ~sep:(const string ", ") print_ident)
       args
   | Quant (_, _, []) ->
     assert false
@@ -412,7 +411,7 @@ and print_ranging fmt (vars, sort) =
 
 
 and print_block fmt b =
-  F.fprintf fmt "{ %a }" F.(hvbox @@ list ~sep:pp_print_cut print_foltl) b
+  F.fprintf fmt "@[<hov2>{@ %a@ }@]" F.(list ~sep:(return "@ ") print_foltl) b
 
 
 and print_tuple fmt ids =
@@ -438,7 +437,7 @@ and print_unop fmt op =
   let s_op =
     match op with
     | Not ->
-      "not"
+      "!"
     | After ->
       "after"
     | Eventually ->
@@ -453,12 +452,12 @@ and print_binop fmt op =
   let s_op =
     match op with
     | And ->
-      "and"
+      "&&"
     | Or ->
-      "or"
+      "||"
     | Implies ->
-      "implies"
+      "=>"
     | Iff ->
-      "iff"
+      "<=>"
   in
   F.fprintf fmt "%s" s_op
