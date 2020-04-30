@@ -181,35 +181,31 @@ let abstract_event (Model m) (env : env) (replaced : pred list ref) (Event ({ na
       M.fail "A temporal connective should not appear in an event" 
     | Test (left, Eq, right) when not pol ->
       walk_pf true (Test (left, Not_eq, right))
-    | Test (left, Eq, right) ->
-      if Env.mem_ident_map left formals_and_exs 
-      && Env.mem_ident_map right formals_and_exs 
-      then
-        prim_and 
-          (implies (loc @@ _E true left left) (loc @@ _E true right left))
-          (implies (loc @@ _E true right right) (loc @@ _E true left right))
-      else if Env.mem_ident_map left formals_and_exs then
-        _E true left right
-      else if Env.mem_ident_map right formals_and_exs then
-        _E true right left
-      else f
     | Test (left, Not_eq, right) when not pol ->
       walk_pf true (Test (left, Eq, right))
-    | Test (left, Not_eq, right) ->
+    | Test (left, comp, right) ->
       if Env.mem_ident_map left formals_and_exs 
       && Env.mem_ident_map right formals_and_exs 
       then
-        prim_or
-          (and_ (loc @@ _E true left left) (loc @@ _E false right left))
-          (and_ (loc @@ _E true right right) (loc @@ _E false left right))
+        (match comp with
+         | Eq ->
+           prim_and 
+             (implies (loc @@ _E true left left) (loc @@ _E true right left))
+             (implies (loc @@ _E true right right) (loc @@ _E true left right))
+         | Not_eq -> 
+           prim_or
+             (and_ (loc @@ _E true left left) (loc @@ _E false right left))
+             (and_ (loc @@ _E true right right) (loc @@ _E false left right))
+
+        )
       else if Env.mem_ident_map left formals_and_exs then
-        _E false left right
+        _E (match comp with Eq -> true | Not_eq -> false) left right
       else if Env.mem_ident_map right formals_and_exs then
-        _E false right left
+        _E (match comp with Eq -> true | Not_eq -> false) right left
       else f
-    | Lit ({ positive; _ } as l) when not pol -> 
-      walk_pf true (Lit { l with positive = not positive })
-    | Lit { args; positive; _ }-> 
+    | Lit ({ positive; _ } as lit) when not pol -> 
+      walk_pf true (Lit { lit with positive = not positive })
+    | Lit { args; _ } -> 
       (* get the ys that appear as free variables in args *)
       let ys = List.fold_left 
           (fun acc arg -> 
@@ -220,10 +216,7 @@ let abstract_event (Model m) (env : env) (replaced : pred list ref) (Event ({ na
        | [] -> f
        | _ -> 
          let conj = loc @@ Block (List.map (fun y -> loc @@ _E true y y) ys) in
-         if positive then
-           prim_implies conj (loc f)
-         else 
-           prim_and conj (loc f))
+         prim_implies conj (loc f))
     | Binop (p, And, q) -> 
       if pol then prim_and (walk_f pol p) (walk_f pol q)
       else prim_or (walk_f false p) (walk_f false q)
