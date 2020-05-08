@@ -30,9 +30,11 @@ let span (loc1, loc2) =
   in
   from_positions (begp, endp)
 
-let string_of_position p = 
-  let ((l, c), (l2, c2)) =  to_ints p in 
-  Printf.sprintf "%d.%d-%d.%d" l c l2 c2 
+
+let string_of_position p =
+  let (l, c), (l2, c2) = to_ints p in
+  Printf.sprintf "%d.%d-%d.%d" l c l2 c2
+
 
 let dummy = { begp = Lexing.dummy_pos; endp = Lexing.dummy_pos }
 

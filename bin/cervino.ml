@@ -51,10 +51,9 @@ let infile =
     & pos 0 (some ~none:"missing FILE" non_dir_file) None
     & info [] ~docv:"ELECTRUM_FILE" ~doc)
 
+
 let debug =
-  let doc =
-    {|If present, print debugging information. |}
-  in
+  let doc = {|If present, print debugging information. |} in
   Arg.(value & flag & info [ "d" ] ~doc)
 
 
@@ -65,6 +64,6 @@ let main_term = Term.(const Main.main $ infile $ debug)
 let () =
   match Term.eval ~catch:true (main_term, main_info) with
   | `Error _ ->
-    exit 1
+      exit 1
   | _ ->
-    exit 0
+      exit 0

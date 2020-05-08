@@ -11,7 +11,7 @@ let parse_file file =
   lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = file };
   try parse Scanner.main lexbuf with
   | Error ->
-    M.located_fail lexbuf "Syntax error"
+      M.located_fail lexbuf "Syntax error"
 
 
 let main file debug =
