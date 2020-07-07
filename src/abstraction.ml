@@ -272,11 +272,11 @@ let abstract_event
                    (loc @@ _E bindings true right right)
                    (loc @@ _E bindings true left right))
           | Not_eq ->
-              prim_or
-                (and_
+              prim_and
+                (implies
                    (loc @@ _E bindings true left left)
                    (loc @@ _E bindings false right left))
-                (and_
+                (implies
                    (loc @@ _E bindings true right right)
                    (loc @@ _E bindings false left right))
         else if ex_left
