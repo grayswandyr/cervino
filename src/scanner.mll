@@ -46,6 +46,7 @@ rule main = parse
 | "|" { BAR }
 | ":" { COLON } 
 | "=" { EQ } 
+| "/" { SLASH } 
 | "->" { ARROW } 
 | "'" { PRIME }
 | "|" { BAR }  

@@ -1,7 +1,7 @@
 
 %token IMPLIES ELSE ALL SOME COLON EOF EQ ARROW PRIME AS OPEN
 %token BAR AND OR IFF EVENTUALLY ALWAYS AFTER NOT ONE IN SIG TRACE
-%token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET COMMA VAR
+%token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET COMMA VAR SLASH
 %token PRED RUN CHECK ASSERT FACT BUT FOR EXACTLY SET MODULE LONE
 %token <string> IDENT 
 %token <string> EVENT_IDENT
@@ -83,10 +83,17 @@ moduleDecl:
 
 open_:
   OPEN 
-  name = ident 
+  names = separated_nonempty_list(SLASH, ident)
   parameters = loption(brackets(comma_sep1(ident)))
   alias = preceded(AS, ident)?
-  { Open { name; parameters; alias } }
+  { 
+    let name = 
+      CCList.map Symbol.to_string names 
+      |> CCString.concat "/" 
+      |> Symbol.make
+    in 
+    Open { name; parameters; alias } 
+  }
 
 paragraph:
   x = signature
