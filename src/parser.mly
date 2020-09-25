@@ -1,11 +1,11 @@
 
-%token IMPLIES ELSE ALL SOME COLON EOF EQ ARROW PRIME AS OPEN
-%token BAR AND OR IFF EVENTUALLY ALWAYS AFTER NOT ONE IN SIG TRACE
-%token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET COMMA VAR SLASH
-%token PRED RUN CHECK ASSERT FACT BUT FOR EXACTLY SET MODULE LONE
+%token ASSUMING PATHS AT SORT RELATION USING AXIOM CONSTANT EVENT
+%token MODIFIES MACRO NEQ ELSE IMPLIES
+%token ALL SOME COLON EOF EQ PRIME CART
+%token BAR AND OR IFF EVENTUALLY ALWAYS AFTER NOT IN 
+%token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET COMMA 
+%token CHECK 
 %token <string> IDENT 
-%token <string> EVENT_IDENT
-%token <int> NUMBER
 
 %nonassoc BAR
 %left OR
@@ -18,286 +18,176 @@
 %start <Cst.t>parse
 
 %{
+ 
   open Cst
-  module M = Messages
 
-  type constituent = 
-    | CSig_and_fields of signature * field list
-    | CTrace_fact 
-    | CFact of fact
-    | CPred of pred
-    | CEvent of event
-    | CAssert of assertion
-    | CCommand of command
-
-  let make_model module_ opens (cs : constituent list) : t = 
-    let rec walk (Model m as model) = function
-      | [] -> model
-      | c::cs ->
-        let m' = match c with
-          | CTrace_fact -> 
-              begin
-                M.info "Found `_events` fact as expected, ignoring it.";
-                model (* ignore this fact *)
-              end
-          | CSig_and_fields (sig_, fs) ->
-            Model { m with fields = fs @ m.fields; sigs = sig_ :: m.sigs }
-          | CFact x -> Model { m with facts = x :: m.facts }
-          | CPred x -> Model { m with preds = x :: m.preds }
-          | CEvent x -> Model { m with events = x :: m.events }
-          | CAssert x -> Model { m with assertions = x :: m.assertions }
-          | CCommand x -> Model { m with commands = x :: m.commands }
-        in 
-        walk m' cs
+let rec dispatch p = function
+| [] -> p
+| hd::tl ->  
+    let p' = match hd with 
+      | `Sort x -> { p with sorts = x :: p.sorts }
+      | `Relation x -> { p with relations = x :: p.relations }
+      | `Constant x -> { p with constants = x :: p.constants }
+      | `Transclos x -> { p with closures = x :: p.closures }
+      | `Macro x -> { p with macros = x :: p.macros }
+      | `Event x -> { p with events = x :: p.events }
+      | `Axiom x -> { p with axioms = x :: p.axioms }
     in 
-    let model = 
-      Model { 
-        module_; 
-        opens; 
-        fields = [];
-        sigs = [];
-        facts = [];
-        preds = [];
-        events = [];
-        assertions = [];
-        commands = []
-      }
-    in 
-    if not @@ CCList.is_empty opens then
-      M.warning "`open` statement(s) present in the model: it/they will be preserved but ignored otherwise.";
-    walk model cs 
-  
-  let loc x (l, c) = Location.(make_located x (Location.from_positions (l,c)))
+    dispatch p' tl
 
 %}
 
 %%
 
 %public parse: 
-  m = moduleDecl? os = open_* ps = paragraph+ EOF 
-  { make_model m os ps }
-
-moduleDecl:
-  MODULE m = ident
-  { Module m }  
-
-open_:
-  OPEN 
-  names = separated_nonempty_list(SLASH, ident)
-  parameters = loption(brackets(comma_sep1(ident)))
-  alias = preceded(AS, ident)?
+  ps = paragraph+ cs = check+ EOF 
   { 
-    let name = 
-      CCList.map Symbol.to_string names 
-      |> CCString.concat "/" 
-      |> Symbol.make
+    let checks = 
+      { sorts = []
+      ; relations = []
+      ; constants = []
+      ; closures = []
+      ; macros = []
+      ; axioms = []
+      ; events = []
+      ; checks = cs
+      }
     in 
-    Open { name; parameters; alias } 
+    dispatch checks ps
   }
+
+%inline ident:
+  id = IDENT 
+  { Symbol.make id }
+
+%inline ranging: 
+  ids = comma_sep1(ident) COLON sort = ident 
+  { (ids, sort) }
 
 paragraph:
-  x = signature
-  | x = predicate
-  | x = fact
-  | x = assertion
-  | x = command
-  | x = trace_fact
-  { x }
+  x = sort
+  { `Sort x }
+  | x = relation
+  { `Relation x }
+  | x = constant 
+  { `Constant x }
+  | x = paths
+  { `Transclos x }
+  | x = macro
+  { `Macro x }
+  | x = axiom
+  { `Axiom x }
+  | x = event
+  { `Event x }
 
-signature:
-  is_var = boption(VAR) 
-  one = boption(ONE) 
-  SIG 
-  name = ident 
-  in_ = preceded(IN, ident)? 
-  fs = braces(comma_sep(field)) 
-  {
-    let sig_ = match is_var, one, in_ with
-      | false, false, None -> 
-          Sort name
-      | _, _, None -> 
-          M.fail "Variable and/or `one` toplevel signatures are unhandled."
-      | false, true, Some parent -> 
-          One_sig { name; parent }
-      | _, _, Some parent ->
-          Set { name; parent; is_var }
-    in
-    let make_field = function
-    | `Partial_function_missing_domain (is_var, fname, cod) ->
-      Field { name = fname; is_var; profile = Partial_function (name, cod)}
-    | `Relation_missing_domain (is_var, fname, cod) ->
-      Field { name = fname; is_var; profile = Relation (name :: cod)}
-    in 
-    let fs' = List.map make_field fs in 
-    CSig_and_fields (sig_, fs')
-  }
+sort: 
+  SORT name = ident 
+  { name }
 
-field: 
-  var = boption(VAR) 
-  name = ident 
-  COLON 
-  mult = set_or_lone
-  cod = ident
-  {
-    match mult with
-    | `Lone -> `Partial_function_missing_domain (var, name, cod)
-    | `Set -> `Relation_missing_domain (var, name, [cod])
-  }
-  | 
-  var = boption(VAR) 
-  name = ident COLON 
-  first_cod = ident ARROW
-  other_cods = separated_nonempty_list(ARROW, ident)
-  {
-    `Relation_missing_domain (var, name, first_cod::other_cods)
-  }
+relation: 
+  RELATION r_name = ident IN r_profile = separated_nonempty_list(CART, ident) 
+  { make_relation ~r_name ~r_profile () }
 
-%inline set_or_lone :
-  SET
-  { `Set }
-  | LONE
-  { `Lone }
+constant: 
+  CONSTANT c_name = ident IN c_domain = ident 
+  { make_constant ~c_name ~c_domain }
 
-predicate:
-  PRED 
-  name = ident 
-  rangings = loption(brackets(comma_sep(ranging))) 
-  body = block
-  {
-    let parameters = 
-      CCList.flat_map 
-        (fun (vs, s) -> List.map (fun v -> (v,s)) vs)
-      rangings
-    in
-    CPred (Pred { name; parameters; body })
-  }
-  | PRED 
-  name = EVENT_IDENT
-  rangings = loption(brackets(comma_sep(ranging))) 
-  body = block
-  {
-    let parameters = 
-      CCList.flat_map 
-        (fun (vs, s) -> List.map (fun v -> (v,s)) vs)
-      rangings
-    in
-    CEvent (Event { name = Symbol.make name; parameters; body })
-  }
+paths: 
+  PATHS pair = brackets(pair_or_triple) 
+  { let (t_base, t_tc, t_between) = pair in 
+    make_paths ~t_base ~t_tc ?t_between () }
 
-fact:
-  FACT name = ident? body = block
-  { CFact (Fact { name; body }) }
+%inline pair_or_triple: 
+  t_base = ident COMMA t_tc = ident btw_name = preceded(COMMA, ident)?
+  { (t_base, t_tc, btw_name) }
 
-trace_fact:
-  FACT TRACE block
-  { CTrace_fact }
+macro: 
+  MACRO m_name = ident m_args = loption(brackets(comma_sep(ranging))) 
+  m_body = block 
+  { make_macro ~m_name ~m_args ~m_body () }
 
-assertion:
-  ASSERT name = ident body = block
-  { CAssert (Assert { name; body }) }
+axiom: 
+  AXIOM a_name = ident? a_body = block 
+  { make_axiom ?a_name ~a_body () } 
 
-command:
-  c_o_r = check_or_run 
-  name = ident 
-  scope = scope? 
-  {
-    match c_o_r with
-    | `Check -> CCommand (Check { name; scope })
-    | `Run -> CCommand (Run { name; scope })
-  }
+event: 
+  EVENT e_name = ident e_args = loption(brackets(comma_sep(ranging)))
+  e_modifies = loption(modifies) e_body = block 
+  { make_event ~e_name ~e_args ~e_modifies ~e_body () }
 
-%inline check_or_run:
-  CHECK 
-  { `Check } 
-  | RUN
-  { `Run }  
+%inline modifies: 
+  MODIFIES fs = comma_sep1(modified_field) 
+  { fs }
 
+modified_field: 
+  mod_field = ident mod_modifications = loption(field_at)
+  { make_modified_field ~mod_field ~mod_modifications () }
 
-%inline scope:
-  FOR num = NUMBER typescopes = loption(preceded(BUT, comma_sep1(typescope)))
-  { With_default (num, typescopes) }
-  | FOR typescopes = comma_sep1(typescope)
-  { Without_default typescopes }
+field_at:   
+  AT ms = braces(comma_sep1(modification)) 
+  { ms }
 
-%inline typescope:
-  exactly = iboption(EXACTLY) number = NUMBER sort = ident
-  {
-    { exactly; number; sort }
-  }
+%inline modification: 
+  id = ident 
+  { [id] } 
+  | ids = parens(comma_sep1(ident)) 
+  { ids }
 
+check: 
+  CHECK check_name = ident check_body = block 
+  check_assuming = loption(assuming) check_using = using 
+  { make_check ~check_name ~check_body ~check_assuming ~check_using }
+
+using:
+  USING u_name = ident u_args = loption(brackets(comma_sep1(separated_pair(ident, COMMA, block))))
+  { { u_name; u_args } }
+
+%inline assuming: ASSUMING b = block 
+  { b }
 
 %inline block:
   fs = braces(formula*)
   { fs }
   
-formula:
+%inline formula:
   f = prim_formula
-  { loc f $loc(f) }    
+  { Location.make f $loc(f) }    
 
 prim_formula:
-  r = test_or_literal
+  r = call
+  { Call r }
+  | r = test
   { r }
   | f1 = formula op = lbinop f2 = formula 
-	{ Binop (f1, op, f2) }
+  { Binary (op, f1, f2) }
 	| q = quant rangings = comma_sep1(ranging) b = block_or_bar
   { Quant (q, rangings, b) }
 	| f1 = formula IMPLIES f2 = formula ELSE f3 = formula 
-  { If_then_else (f1, f2, f3) }
+  { Ite (f1, f2, f3) }
 	| f1 = formula IMPLIES f2 = formula 
-  { Binop (f1, Implies, f2) }
+  { Binary (Implies, f1, f2) }
   | op = lunop f = formula 
-  { Unop (op, f) }
-  | p = ident args = brackets(comma_sep(ident)) 
-  { Call (p, args) }
-  | p = EVENT_IDENT args = brackets(comma_sep(ident)) 
-  { Call (Symbol.make p, args) }
+  { Unary (op, f) }
 	| b = block
   { Block b }
 	| f = parens(prim_formula)
   { f }
 
-ranging:
-  vars = comma_sep1(ident) COLON range = ident
-  { (vars, range) }
+%inline call: 
+  pred = ident primed = iboption(PRIME) args = parens(comma_sep1(ident)) 
+  { make_call ~pred ~args ~primed () }
 
-test_or_literal:
-  left = tuple 
-  neg = boption(NOT) c = comparator 
-  right = ident 
-  prime = boption(PRIME)
-  {
-    match c with
-      | `Eq when List.length left > 1 -> 
-        M.fail Format.(sprintf "%s: tuples are forbidden in an `=` or `!=` test." Location.(string_of_position (from_positions $loc(left))))
-      | `Eq when prime -> 
-        M.fail Format.(sprintf "%s: prime (`'`) is forbidden in an `=` or `!=` test." Location.(string_of_position (from_positions $loc(prime))))
-      | `Eq ->
-        Test (List.hd left, (if neg then Not_eq else Eq), right)
-      | `In ->
-        Lit { name = right; args = left; positive = not neg; prime }
-  }
+%inline test:
+  l = ident EQ r = ident 
+  { Test (Eq, l, r) }
+  | l = ident NEQ r = ident 
+  { Test (Neq, l, r) }
 
-tuple:
-  t = separated_nonempty_list(ARROW, ident) 
-  | t = parens(tuple)
-  { t }
-
-
-%inline comparator: 
-  IN 
-  { `In }
-  | EQ
-  { `Eq }
-  
 %inline quant:
 	ALL
   { All }
 	| SOME
-  { Some_ }
-
-%inline ident:
-  id = IDENT
-  { Symbol.make id }
+  { Exists }
   
 %inline block_or_bar:
  	BAR f = formula
@@ -311,10 +201,10 @@ tuple:
 	| IFF { Iff }
 
 %inline lunop:
-	EVENTUALLY { Eventually }
-	| ALWAYS { Always }
+	EVENTUALLY { F }
+	| ALWAYS { G }
 	| NOT { Not }
-	| AFTER { After }
+	| AFTER { X }
 
 
 
@@ -326,12 +216,9 @@ tuple:
   xs = separated_list(COMMA, X)
     { xs }
 
-      
-%public %inline comma_sep1(X) :
+      %public %inline comma_sep1(X) :
   xs = separated_nonempty_list(COMMA, X)
     { xs }
-
-
     
 %public %inline braces(X):
   x = delimited(LBRACE, X, RBRACE)
@@ -352,4 +239,3 @@ tuple:
  { false }
  | X
  { true }
-

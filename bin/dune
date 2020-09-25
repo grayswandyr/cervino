@@ -3,4 +3,4 @@
  (promote
   (until-clean)
   (into ..))
- (libraries cmdliner containers libcervino stdlib-shims))
+ (libraries cmdliner containers dune-build-info fmt.tty libcervino logs.cli))

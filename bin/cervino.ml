@@ -3,13 +3,9 @@ open Cmdliner
 (* DOC *)
 
 let main_info =
-  let doc = "complete verification of (some) Electrum models" in
+  let doc = "complete verification of (some) Cervino models" in
   let man =
-    [ `S "RECOGNIZED LANGUAGE"
-    ; `P
-        {|Cervino makes almost no analysis of fed models, so these must already be valid Electrum. Furthermore, only a small fragment of the language is recognized, which essentially corresponds to MS-FOLTL in Electrum syntax. The following is NOT accepted: opening modules; relation qualifiers; `one`, `lone`  and `no` quantifiers; relation composition operators (except `->` to form tuples, of constants and bound variables only); unnamed commands;  `extends` keyword. Also, zero-argument predicates must be called with `[]`. 
-    |}
-    ; `S "EVENTS and TRACES"
+    [ `S "EVENTS and TRACES"
     ; `P
         {|Cervino expects models where events are modelled as predicates whose name begins with an underscore `_` and is at least 3 characters long (incl. `_`). The body of such events can only contain conjuctions or disjunctions of universally-quantified relation applications (primed or not). Said otherwise, the body of events should look like:|}
     ; `P "{ (all x : S | x->c in r1) and (all y : T : d->y not in r2) ... }"
@@ -39,31 +35,26 @@ let main_info =
          OPAM repository for the full text of their licenses.|}
     ]
   in
-  Term.info "cervino" ~doc ~man
+  Term.info "cervino" ~doc ~man ~exits:Term.default_exits
 
 
 (* OPTIONS *)
 
 let infile =
-  let doc = "File to process (must already be valid Electrum)." in
+  let doc = "File to process." in
   Arg.(
     required
     & pos 0 (some ~none:"missing FILE" non_dir_file) None
-    & info [] ~docv:"ELECTRUM_FILE" ~doc)
+    & info [] ~docv:"CERVINO_FILE" ~doc)
 
 
-let debug =
-  let doc = {|If present, print debugging information. |} in
-  Arg.(value & flag & info [ "d" ] ~doc)
+(* verbosity options (already def'd in Logs_cli, thx!) *)
+let verb_term = Logs_cli.level ()
 
-
-let main_term = Term.(const Main.main $ infile $ debug)
+let main_term = Term.(const Main.main $ verb_term $ infile)
 
 (* MAIN *)
 
-let () =
-  match Term.eval ~catch:true (main_term, main_info) with
-  | `Error _ ->
-      exit 1
-  | _ ->
-      exit 0
+let main = (main_term, main_info)
+
+let () = Term.(exit @@ eval ~catch:false main)

@@ -1,4 +1,4 @@
-(lang dune 2.0)
+(lang dune 2.7)
 (using menhir 2.0)
 
 (name cervino)
@@ -16,11 +16,9 @@
  (name cervino)
  (depends
   (ocaml (>= 4.05.0))
-  (dune (>= 2.0))
+  (dune (>= 2.7))
   dune-build-info
-  (containers (>= 2.8)) 
+  (containers (>= 3.0)) 
   menhir
-  stdcompat
-  stdlib-shims
   )
  (synopsis "Proof of concept for complete verification of models expressed in a fragment of Electrum."))

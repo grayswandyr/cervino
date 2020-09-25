@@ -1,48 +1,42 @@
-open Containers
-open Lexing
-
-type t =
-  { begp : Lexing.position
-  ; endp : Lexing.position
+type 'a t =
+  { content : 'a
+  ; startpos : Lexing.position [@printer fun fmt _ -> Format.pp_print_string fmt "_"]
+  ; endpos : Lexing.position [@printer fun fmt _ -> Format.pp_print_string fmt "_"]
   }
+[@@deriving show { with_path = false }]
 
-let from_positions (begp, endp) =
-  assert (begp.pos_cnum <= endp.pos_cnum);
-  { begp; endp }
+let make content (startpos, endpos) = { content; startpos; endpos }
 
-
-let begl { begp; _ } = begp.pos_lnum
-
-let begc { begp; _ } = begp.pos_cnum - begp.pos_bol
-
-let endl { endp; _ } = endp.pos_lnum
-
-let endc { endp; _ } = endp.pos_cnum - endp.pos_bol
-
-let to_ints loc = ((begl loc, begc loc), (endl loc, endc loc))
-
-let span (loc1, loc2) =
-  let begp =
-    if loc1.begp.pos_cnum < loc2.begp.pos_cnum then loc1.begp else loc2.begp
-  in
-  let endp =
-    if loc1.endp.pos_cnum > loc2.endp.pos_cnum then loc1.endp else loc2.endp
-  in
-  from_positions (begp, endp)
+(* inspired by http://gallium.inria.fr/~fpottier/X/INF564/html/error.ml.html *)
+(* first column is at index 1, last column is the pointer in lexbuf *)
+let get_file_line_chars lexbuf =
+  let open Lexing in
+  let pos1 = lexeme_start_p lexbuf in
+  let pos2 = lexeme_end_p lexbuf in
+  let file = pos1.pos_fname in
+  let line = pos1.pos_lnum in
+  let char1 = pos1.pos_cnum - pos1.pos_bol + 1 in
+  let char2 = pos2.pos_cnum - pos1.pos_bol + 1 in
+  (* intentionally [pos1.pos_bol] *)
+  (file, line, char1, char2)
 
 
-let string_of_position p =
-  let (l, c), (l2, c2) = to_ints p in
-  Printf.sprintf "%d.%d-%d.%d" l c l2 c2
+let pp_positions fmt lexbuf =
+  let _, line, char1, char2 = get_file_line_chars lexbuf in
+  Fmt.pf fmt "Line %d, characters %d-%d:" line char1 char2
 
 
-let dummy = { begp = Lexing.dummy_pos; endp = Lexing.dummy_pos }
-
-type 'a located =
-  { data : 'a
-  ; loc : t
-  }
-
-let make_located data loc = { data; loc }
-
-let pp pp out { data; _ } = pp out data
+let pp_excerpt fmt lexbuf =
+  let file, line, idx1, idx2 = get_file_line_chars lexbuf in
+  assert (idx2 >= idx1);
+  IO.with_in file
+  @@ fun ic ->
+  let lines = IO.read_lines_l ic in
+  match List.get_at_idx (line - 1) lines with
+  | None ->
+      assert false
+  | Some l ->
+      let blanks, carets =
+        (String.repeat " " (idx1 - 1), String.repeat "^" (idx2 - idx1 + 1))
+      in
+      Fmt.pf fmt "| %s@\n| %s%s" l blanks carets

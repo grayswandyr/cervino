@@ -1,10 +1,10 @@
 (library
  (name libcervino)
- (libraries containers hashcons stdcompat stdlib-shims))
+ (libraries containers fmt hashcons logs logs.fmt)
+  (preprocess (pps ppx_deriving.make ppx_deriving.show)) )
 
 (menhir
  (modules parser)
- (flags --explain --dump)
  (infer true))
 
 (ocamllex scanner)
