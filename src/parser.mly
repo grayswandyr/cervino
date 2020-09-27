@@ -21,44 +21,59 @@
  
   open Cst
 
-let rec dispatch p = function
+  module L = Location
+
+(* Dispatches the paragraphs (read in arbitrary order) into a CST. *)
+(* Also checks that the name (of a paragraph to dispatch) has not already
+   been used in another declaration or definition. *)
+(* - p: accumulator containing the currently dispatched paragraphs *)
+(* - paragraphs: remaining paragraphs to diasptch in p's fields *)
+let rec dispatch_aux p (names: ident list) paragraphs = match paragraphs with
 | [] -> p
 | hd::tl ->  
-    let p' = match hd with 
-      | `Sort x -> { p with sorts = x :: p.sorts }
-      | `Relation x -> { p with relations = x :: p.relations }
-      | `Constant x -> { p with constants = x :: p.constants }
-      | `Transclos x -> { p with closures = x :: p.closures }
-      | `Macro x -> { p with macros = x :: p.macros }
-      | `Event x -> { p with events = x :: p.events }
-      | `Axiom x -> { p with axioms = x :: p.axioms }
+    let p', new_names = match hd with 
+      | `Sort x -> 
+        ({ p with sorts = x :: p.sorts }, [x])
+      | `Relation x -> 
+        ({ p with relations = x :: p.relations }, [x.r_name])
+      | `Constant x -> 
+        ({ p with constants = x :: p.constants }, [x.c_name])
+      | `Transclos x -> 
+        ({ p with closures = x :: p.closures }, x.t_tc :: Option.to_list x.t_between)
+      | `Macro x -> 
+        ({ p with macros = x :: p.macros }, [x.m_name])
+      | `Event x -> 
+        ({ p with events = x :: p.events }, [x.e_name])
+      | `Axiom x -> 
+        ({ p with axioms = x :: p.axioms }, Option.to_list x.a_name)
+      | `Check x -> 
+        ({ p with checks = x :: p.checks }, [x.check_name])
     in 
-    dispatch p' tl
+    (* check if there are common idents in new_names and names *)
+    let eq = L.equal_content String.equal in
+    let inter = List.inter ~eq new_names names in
+    if List.is_empty inter then
+      dispatch_aux p' (new_names @ names) tl
+    else
+      (* true => get commonalities to print them *)
+      let others = 
+        (List.flat_map (fun c -> List.filter (eq c) names) inter @ inter)
+        |> List.map L.positions
+      in
+      Msg.err (fun m -> m "Syntax error: same name(s) used in multiple paragraphs:@\n%a" (List.pp L.pp_location) others)
 
+let dispatch ps = dispatch_aux Cst.empty [] ps
 %}
 
 %%
 
 %public parse: 
-  ps = paragraph+ cs = check+ EOF 
-  { 
-    let checks = 
-      { sorts = []
-      ; relations = []
-      ; constants = []
-      ; closures = []
-      ; macros = []
-      ; axioms = []
-      ; events = []
-      ; checks = cs
-      }
-    in 
-    dispatch checks ps
-  }
+  ps = paragraph+ EOF 
+  { dispatch ps }
 
 %inline ident:
   id = IDENT 
-  { Symbol.make id }
+  { L.make id $loc(id) } 
 
 %inline ranging: 
   ids = comma_sep1(ident) COLON sort = ident 
@@ -79,6 +94,8 @@ paragraph:
   { `Axiom x }
   | x = event
   { `Event x }
+  | x = check
+  { `Check x }
 
 sort: 
   SORT name = ident 
@@ -151,7 +168,7 @@ using:
   
 %inline formula:
   f = prim_formula
-  { Location.make f $loc(f) }    
+  { L.make f $loc(f) }    
 
 prim_formula:
   r = call
@@ -174,8 +191,8 @@ prim_formula:
   { f }
 
 %inline call: 
-  pred = ident primed = iboption(PRIME) args = parens(comma_sep1(ident)) 
-  { make_call ~pred ~args ~primed () }
+  callee = ident primed = iboption(PRIME) args = parens(comma_sep1(ident)) 
+  { make_call ~callee ~args ~primed () }
 
 %inline test:
   l = ident EQ r = ident 

@@ -1,11 +1,11 @@
-type ident = Symbol.t [@@deriving show { with_path = false }]
+type ident = string Location.t [@@deriving eq, ord, show { with_path = false }]
 
 type call =
-  { pred : ident
+  { callee : ident
   ; args : ident list (* list may be empty *)
   ; primed : bool
   }
-[@@deriving make, show { with_path = false }]
+[@@deriving make, eq, ord, show { with_path = false }]
 
 type formula = prim_formula Location.t
 
@@ -42,11 +42,11 @@ and quantifier =
 and ranging = ident list * ident
 
 (* list may be empty*)
-and block = formula list [@@deriving show { with_path = false }]
+and block = formula list [@@deriving eq, ord, show { with_path = false }]
 
-type sort = ident [@@deriving show { with_path = false }]
+type sort = ident [@@deriving eq, ord, show { with_path = false }]
 
-type modification = ident list [@@deriving show { with_path = false }]
+type modification = ident list [@@deriving eq, ord, show { with_path = false }]
 
 type t =
   { sorts : sort list
@@ -110,4 +110,15 @@ and using =
   { u_name : ident
   ; u_args : (ident * block) list (* may be empty *)
   }
-[@@deriving make, show { with_path = false }]
+[@@deriving eq, ord, make, show { with_path = false }]
+
+let empty =
+  { sorts = []
+  ; relations = []
+  ; constants = []
+  ; closures = []
+  ; macros = []
+  ; axioms = []
+  ; events = []
+  ; checks = []
+  }

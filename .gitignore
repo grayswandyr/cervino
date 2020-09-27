@@ -1,3 +1,8 @@
+
+# Created by https://www.toptal.com/developers/gitignore/api/ocaml
+# Edit at https://www.toptal.com/developers/gitignore?templates=ocaml
+
+### OCaml ###
 *.annot
 *.cmo
 *.cma
@@ -24,7 +29,9 @@ setup.log
 
 # Dune generated files
 *.install
-*.exe
 
 # Local OPAM switch
 _opam/
+
+# End of https://www.toptal.com/developers/gitignore/api/ocaml
+

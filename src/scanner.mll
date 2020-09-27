@@ -2,6 +2,8 @@
 {  (* BEGIN HEADER *)
 open Parser
 
+module L = Location
+
 let keywords =
     Hashtbl.of_list
     [ ("F", EVENTUALLY)
@@ -27,7 +29,7 @@ let keywords =
 
 let error lexbuf msg  =
     Msg.err @@ fun m -> 
-    m "%a@ %s" Location.pp_positions lexbuf msg
+    m "%a@ %s" L.pp_positions (L.positions_of_lexbuf lexbuf) msg
 
 
 } (* END HEADER *)
