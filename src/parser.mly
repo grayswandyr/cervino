@@ -190,7 +190,7 @@ prim_formula:
   { f }
 
 %inline call: 
-  callee = ident primed = iboption(PRIME) args = parens(comma_sep1(ident)) 
+  callee = ident primed = iboption(PRIME) args = parens(comma_sep(ident)) 
   { make_call ~callee ~args ~primed () }
 
 %inline test:

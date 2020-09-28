@@ -37,7 +37,7 @@ let parse_file file =
   lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = file };
   try parse Scanner.main lexbuf with
   | Error ->
-    let pos = Location.positions_of_lexbuf lexbuf in
+      let pos = Location.positions_of_lexbuf lexbuf in
       Msg.err
       @@ fun m ->
       m
@@ -70,7 +70,8 @@ let process file =
   let model = parse_file file in
   Msg.info (fun m -> m "Parsing done.");
   Msg.debug (fun m -> m "Recognized model:@.%a" Cst.pp model)
-  (* Wf.unique_names model *)
 
+
+(* Wf.unique_names model *)
 
 let main = machinery process

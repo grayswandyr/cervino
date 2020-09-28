@@ -1,15 +1,15 @@
 type position = Lexing.position =
-  { pos_fname : string
-  ; pos_lnum : int
-  ; pos_bol : int
-  ; pos_cnum : int
+  { pos_fname : string;
+    pos_lnum : int;
+    pos_bol : int;
+    pos_cnum : int
   }
 [@@deriving eq, ord]
 
 type 'a t =
-  { content : 'a
-  ; startpos : position [@printer fun fmt _ -> Format.pp_print_string fmt "_"]
-  ; endpos : position [@printer fun fmt _ -> Format.pp_print_string fmt "_"]
+  { content : 'a;
+    startpos : position; [@printer fun fmt _ -> Format.pp_print_string fmt "_"]
+    endpos : position [@printer fun fmt _ -> Format.pp_print_string fmt "_"]
   }
 [@@deriving eq, ord]
 

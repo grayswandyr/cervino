@@ -22,7 +22,7 @@ let style =
   function
   | App ->
       app_style
-  | Error -> 
+  | Error ->
       err_style
   | Warning ->
       warn_style
