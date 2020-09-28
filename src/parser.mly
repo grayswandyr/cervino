@@ -139,20 +139,12 @@ axiom:
 
 event: 
   EVENT e_name = ident e_args = loption(brackets(comma_sep(ranging)))
-  e_modifies = loption(modifies) e_body = block 
+  e_modifies = loption(preceded(MODIFIES, comma_sep1(modified_field))) e_body = block 
   { make_event ~e_name ~e_args ~e_modifies ~e_body () }
 
-%inline modifies: 
-  MODIFIES fs = comma_sep1(modified_field) 
-  { fs }
-
 modified_field: 
-  mod_field = ident mod_modifications = loption(field_at)
+  mod_field = ident mod_modifications = loption(preceded(AT, braces(comma_sep1(modification)) ))
   { make_modified_field ~mod_field ~mod_modifications () }
-
-field_at:   
-  AT ms = braces(comma_sep1(modification)) 
-  { ms }
 
 %inline modification: 
   id = ident 
@@ -162,16 +154,13 @@ field_at:
 
 check: 
   CHECK check_name = ident check_body = block 
-  check_assuming = loption(assuming) check_using = using 
+  check_assuming = loption(preceded(ASSUMING, block)) check_using = using 
   { make_check ~check_name ~check_body ~check_assuming ~check_using }
 
 using:
   USING u_name = ident u_args = loption(brackets(comma_sep1(separated_pair(ident, COMMA, block))))
   { { u_name; u_args } }
-
-%inline assuming: ASSUMING b = block 
-  { b }
-
+  
 %inline block:
   fs = braces(formula*)
   { fs }
@@ -243,7 +232,7 @@ prim_formula:
   xs = separated_list(COMMA, X)
     { xs }
 
-      %public %inline comma_sep1(X) :
+%public %inline comma_sep1(X) :
   xs = separated_nonempty_list(COMMA, X)
     { xs }
     
