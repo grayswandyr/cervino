@@ -50,17 +50,27 @@ let rec dispatch_aux p (names: ident list) paragraphs = match paragraphs with
         ({ p with checks = x :: p.checks }, [x.check_name])
     in 
     (* check if there are common idents in new_names and names *)
-    let eq = L.equal_content String.equal in
-    let inter = List.inter ~eq new_names names in
-    if List.is_empty inter then
+    let common = 
+      let open List.Infix in
+      (* we define a list by comprehension: *)
+      (* for any nn in new_names... *)
+      let* nn = new_names in (* start by new_names as it's the shortest list *)
+      (* for any n in names... *)
+      let* n = names in
+      (* such that name(nn) = name(n) *)
+      if L.equal_content String.equal nn n then 
+        (* return their respective positions *)
+        [ L.positions n; L.positions nn ] 
+      else 
+        (* or ignore these ones and loop to the next ones *)
+        []
+    in
+    if List.is_empty common then
       dispatch_aux p' (new_names @ names) tl
     else
-      (* true => get commonalities to print them *)
-      let others = 
-        (List.flat_map (fun c -> List.filter (eq c) names) inter @ inter)
-        |> List.map L.positions
-      in
-      Msg.err (fun m -> m "Syntax error: same name(s) used in multiple paragraphs:@\n%a" (List.pp L.pp_location) others)
+      Msg.err (fun m -> 
+        m "Same name(s) used in multiple paragraphs:@\n%a" 
+          (List.pp L.pp_location) common)
 
 let dispatch ps = dispatch_aux Cst.empty [] ps
 %}
