@@ -9,16 +9,22 @@
 
 (license MPL-2.0)
 (maintainers "David Chemouil <david.chemouil+git@onera.fr>")
-(authors "David Chemouil" "Julien Brunel")
+(authors "David Chemouil" "Julien Brunel" "Quentin Peyras" "Jean-Paul Bodeveix" )
 (source (github grayswandyr/cervino))
 
 (package
  (name cervino)
  (depends
   (ocaml (>= 4.05.0))
-  (dune (>= 2.7))
-  dune-build-info
+  dune
+  cmdliner
   (containers (>= 3.0)) 
+  dune-build-info
+  fmt
+  hashcons
+  logs
   menhir
+  ppx_deriving
+  ppx_sexp_conv
   )
- (synopsis "Proof of concept for complete verification of models expressed in a fragment of Electrum."))
+ (synopsis "Proof of concept for complete verification of models expressed in a fragment of MSFOLTL"))
