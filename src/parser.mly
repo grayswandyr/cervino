@@ -28,7 +28,7 @@
    been used in another declaration or definition. *)
 (* - p: accumulator containing the currently dispatched paragraphs *)
 (* - paragraphs: remaining paragraphs to diasptch in p's fields *)
-let rec dispatch_aux p (names: ident list) paragraphs = match paragraphs with
+let rec dispatch_aux p (names: Ident.t list) paragraphs = match paragraphs with
 | [] -> p
 | hd::tl ->  
     let p', new_names = match hd with 
@@ -83,7 +83,7 @@ let dispatch ps = dispatch_aux Cst.empty [] ps
 
 %inline ident:
   id = IDENT 
-  { L.make id $loc(id) } 
+  { Ident.make id $loc(id) } 
 
 %inline ranging: 
   ids = comma_sep1(ident) COLON sort = ident 

@@ -1,11 +1,9 @@
 open Sexplib.Std
 
-type ident = string Location.t [@@deriving eq, ord, sexp_of]
-
 type call =
-  { callee : ident;
+  { callee : Ident.t;
     primed : bool; [@sexp.bool]
-    args : ident list [@sexp.omit_nil] (* list may be empty *)
+    args : Ident.t list [@sexp.omit_nil] (* list may be empty *)
   }
 [@@deriving make, eq, ord, sexp_of]
 
@@ -13,7 +11,7 @@ type formula = prim_formula Location.t
 
 and prim_formula =
   | Call of call
-  | Test of compop * ident * ident
+  | Test of compop * Ident.t * Ident.t
   | Binary of binop * formula * formula
   | Unary of unop * formula
   | Ite of formula * formula * formula
@@ -45,16 +43,16 @@ and telescope = ranging list
 (* non empty list *)
 
 (* non empty list *)
-and ranging = ident list * ident
+and ranging = Ident.t list * Ident.t
 
 (* non empty list *)
 
 (* list may be empty*)
 and block = formula list [@@deriving eq, ord, sexp_of]
 
-type sort = ident [@@deriving eq, ord, sexp_of]
+type sort = Ident.t [@@deriving eq, ord, sexp_of]
 
-type modification = ident list [@@deriving eq, ord, sexp_of]
+type modification = Ident.t list [@@deriving eq, ord, sexp_of]
 
 type t =
   { sorts : sort list;
@@ -68,57 +66,57 @@ type t =
   }
 
 and relation =
-  { r_name : ident;
-    r_profile : ident list (* non empty list *)
+  { r_name : Ident.t;
+    r_profile : Ident.t list (* non empty list *)
   }
 
 and constant =
-  { c_name : ident;
-    c_domain : ident
+  { c_name : Ident.t;
+    c_domain : Ident.t
   }
 
 and paths =
-  { t_base : ident;
+  { t_base : Ident.t;
     (* name of the base relation *)
-    t_tc : ident;
+    t_tc : Ident.t;
     (* name of the closure relation *)
-    t_between : ident option [@sexp.omit_nil]
+    t_between : Ident.t option [@sexp.omit_nil]
   }
 
 and macro =
-  { m_name : ident;
+  { m_name : Ident.t;
     m_args : ranging list; [@sexp.omit_nil] (*  may be empty *)
     m_body : block
   }
 
 and axiom =
-  { a_name : ident option; [@sexp.omit_nil]
+  { a_name : Ident.t option; [@sexp.omit_nil]
     a_body : block
   }
 
 and event =
-  { e_name : ident;
+  { e_name : Ident.t;
     e_args : ranging list; [@sexp.omit_nil] (* may be emtpy *)
     e_modifies : modified_field list; [@sexp.omit_nil] (* may be empty *)
     e_body : block
   }
 
 and modified_field =
-  { mod_field : ident;
+  { mod_field : Ident.t;
     mod_modifications : modification list (* may be empty *)
   }
 
 (* non empty *)
 and check =
-  { check_name : ident;
+  { check_name : Ident.t;
     check_body : block;
     check_assuming : block; [@sexp.omit_nil]
     check_using : using
   }
 
 and using =
-  { u_name : ident;
-    u_args : (ident * block) list (* may be empty *)
+  { u_name : Ident.t;
+    u_args : (Ident.t * block) list (* may be empty *)
   }
 [@@deriving eq, ord, make, sexp_of]
 
