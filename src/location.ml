@@ -4,7 +4,7 @@ type position = Lexing.position =
   ; pos_bol : int
   ; pos_cnum : int
   }
-[@@deriving eq, show, ord]
+[@@deriving eq, ord]
 
 type 'a t =
   { content : 'a
@@ -12,6 +12,8 @@ type 'a t =
   ; endpos : position [@printer fun fmt _ -> Format.pp_print_string fmt "_"]
   }
 [@@deriving eq, ord]
+
+let sexp_of_t sexp_of_a { content; _ } = sexp_of_a content
 
 let pp pp_content fmt { content; _ } = pp_content fmt content
 

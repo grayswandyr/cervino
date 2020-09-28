@@ -6,7 +6,7 @@ relation succ in Node * Node
 relation toSend in Node * Id
 relation id in Node * Id
 relation inf in Id * Id
-relation btw in Node * Node * Node
+//relation btw in Node * Node * Node
 
 constant imax in Id
 constant lmax in Id
