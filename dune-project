@@ -26,5 +26,6 @@
   menhir
   ppx_deriving
   ppx_sexp_conv
+  sexplib
   )
  (synopsis "Proof of concept for complete verification of models expressed in a fragment of MSFOLTL"))
