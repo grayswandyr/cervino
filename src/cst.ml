@@ -59,7 +59,6 @@ type t =
     relations : relation list;
     constants : constant list; [@sexp.omit_nil]
     closures : paths list; [@sexp.omit_nil]
-    macros : macro list; [@sexp.omit_nil]
     axioms : axiom list; [@sexp.omit_nil]
     events : event list;
     checks : check list
@@ -81,12 +80,6 @@ and paths =
     t_tc : Ident.t;
     (* name of the closure relation *)
     t_between : Ident.t option [@sexp.omit_nil]
-  }
-
-and macro =
-  { m_name : Ident.t;
-    m_args : ranging list; [@sexp.omit_nil] (*  may be empty *)
-    m_body : block
   }
 
 and axiom =
@@ -125,7 +118,6 @@ let empty =
     relations = [];
     constants = [];
     closures = [];
-    macros = [];
     axioms = [];
     events = [];
     checks = []

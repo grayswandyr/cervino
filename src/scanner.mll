@@ -18,7 +18,6 @@ let keywords =
     ; ("else", ELSE)
     ; ("event", EVENT)
     ; ("in", IN)
-    ; ("macro", MACRO)
     ; ("modifies", MODIFIES)
     ; ("relation", RELATION)
     ; ("some", SOME)

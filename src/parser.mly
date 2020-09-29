@@ -1,6 +1,6 @@
 
 %token ASSUMING PATHS AT SORT RELATION USING AXIOM CONSTANT EVENT
-%token MODIFIES MACRO NEQ ELSE IMPLIES
+%token MODIFIES NEQ ELSE IMPLIES
 %token ALL SOME COLON EOF EQ PRIME CART
 %token BAR AND OR IFF EVENTUALLY ALWAYS AFTER NOT IN 
 %token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET COMMA 
@@ -39,10 +39,7 @@ let rec dispatch_aux p (names: Ident.t list) paragraphs = match paragraphs with
       | `Constant x -> 
         ({ p with constants = x :: p.constants }, [x.c_name])
       | `Transclos x -> 
-        ({ p with closures = x :: p.closures }, x.t_tc :: Option.to_list x.t_between)
-      | `Macro x -> 
-        ({ p with macros = x :: p.macros }, [x.m_name])
-      | `Event x -> 
+        ({ p with closures = x :: p.closures }, x.t_tc :: Option.to_list x.t_between)      | `Event x -> 
         ({ p with events = x :: p.events }, [x.e_name])
       | `Axiom x -> 
         ({ p with axioms = x :: p.axioms }, Option.to_list x.a_name)
@@ -98,8 +95,6 @@ paragraph:
   { `Constant x }
   | x = paths
   { `Transclos x }
-  | x = macro
-  { `Macro x }
   | x = axiom
   { `Axiom x }
   | x = event
@@ -127,11 +122,6 @@ paths:
 %inline pair_or_triple: 
   t_base = ident COMMA t_tc = ident btw_name = preceded(COMMA, ident)?
   { (t_base, t_tc, btw_name) }
-
-macro: 
-  MACRO m_name = ident m_args = loption(brackets(comma_sep(ranging))) 
-  m_body = block 
-  { make_macro ~m_name ~m_args ~m_body () }
 
 axiom: 
   AXIOM a_name = ident? a_body = block 
