@@ -15,7 +15,7 @@
 (package
  (name cervino)
  (depends
-  (ocaml (>= 4.05.0))
+  (ocaml (>= 4.10.0))
   dune
   cmdliner
   (containers (>= 3.0)) 
@@ -26,5 +26,6 @@
   menhir
   ppx_deriving
   ppx_sexp_conv
+  sexplib
   )
  (synopsis "Proof of concept for complete verification of models expressed in a fragment of MSFOLTL"))
