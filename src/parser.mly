@@ -10,7 +10,7 @@
 %nonassoc BAR
 %left OR
 %left IFF
-%right IMPLIES ELSE
+%right IMPLIES ELSE 
 %left AND
 %nonassoc NOT AFTER ALWAYS EVENTUALLY 
 
@@ -30,7 +30,7 @@
 (* - paragraphs: remaining paragraphs to diasptch in p's fields *)
 let rec dispatch_aux p (names: Ident.t list) paragraphs = match paragraphs with
 | [] -> p
-| hd::tl ->  
+| hd::tl ->
     let p', new_names = match hd with 
       | `Sort x -> 
         ({ p with sorts = x :: p.sorts }, [x])
@@ -39,7 +39,8 @@ let rec dispatch_aux p (names: Ident.t list) paragraphs = match paragraphs with
       | `Constant x -> 
         ({ p with constants = x :: p.constants }, [x.c_name])
       | `Transclos x -> 
-        ({ p with closures = x :: p.closures }, x.t_tc :: Option.to_list x.t_between)      | `Event x -> 
+        ({ p with closures = x :: p.closures }, x.t_tc :: Option.to_list x.t_between)      
+      | `Event x -> 
         ({ p with events = x :: p.events }, [x.e_name])
       | `Axiom x -> 
         ({ p with axioms = x :: p.axioms }, Option.to_list x.a_name)
@@ -160,8 +161,8 @@ using:
   { L.make f $loc(f) }    
 
 prim_formula:
-  r = call
-  { Call r }
+  r = atom
+  { Atom r }
   | r = test
   { r }
   | f1 = formula op = lbinop f2 = formula 
@@ -179,9 +180,9 @@ prim_formula:
 	| f = parens(prim_formula)
   { f }
 
-%inline call: 
-  callee = ident primed = iboption(PRIME) args = parens(comma_sep(ident)) 
-  { make_call ~callee ~args ~primed () }
+%inline atom: 
+  pred = ident primed = iboption(PRIME) args = parens(comma_sep1(ident)) 
+  { make_atom ~pred ~args ~primed () }
 
 %inline test:
   l = ident EQ r = ident 

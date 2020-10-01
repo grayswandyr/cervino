@@ -1,5 +1,5 @@
 sort Node
-sort Id
+sort Node
 
 relation elected in Node
 relation succ in Node * Node

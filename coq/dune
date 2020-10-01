@@ -1,0 +1,7 @@
+(library
+ (name libcoq)
+ (libraries containers))
+
+(coq.extraction
+ (prelude api)
+ (extracted_modules api))

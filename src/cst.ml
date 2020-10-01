@@ -1,16 +1,16 @@
 open Sexplib.Std
 
-type call =
-  { callee : Ident.t;
+type atom =
+  { pred : Ident.t;
     primed : bool; [@sexp.bool]
-    args : Ident.t list [@sexp.omit_nil] (* list may be empty *)
+    args : Ident.t list (* non empty *)
   }
 [@@deriving make, eq, ord, sexp_of]
 
 type formula = prim_formula Location.t
 
 and prim_formula =
-  | Call of call
+  | Atom of atom
   | Test of compop * Ident.t * Ident.t
   | Binary of binop * formula * formula
   | Unary of unop * formula

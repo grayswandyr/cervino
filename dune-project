@@ -29,3 +29,4 @@
   sexplib
   )
  (synopsis "Proof of concept for complete verification of models expressed in a fragment of MSFOLTL"))
+(using coq 0.2)
