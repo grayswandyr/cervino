@@ -1,10 +1,10 @@
 
 %token ASSUMING PATHS AT SORT RELATION USING AXIOM CONSTANT EVENT
-%token MODIFIES NEQ ELSE IMPLIES
+%token MODIFIES NEQ ELSE IMPLIES FALSE TRUE
 %token ALL SOME COLON EOF EQ PRIME CART
 %token BAR AND OR IFF EVENTUALLY ALWAYS AFTER NOT IN 
 %token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET COMMA 
-%token CHECK 
+%token CHECK TFC TEA TTC
 %token <string> IDENT 
 
 %nonassoc BAR
@@ -149,8 +149,13 @@ check:
   { make_check ~check_name ~check_body ~check_assuming ~check_using }
 
 using:
-  USING u_name = ident u_args = loption(brackets(comma_sep1(separated_pair(ident, COMMA, block))))
+  USING u_name = transfo u_args = loption(brackets(comma_sep1(separated_pair(ident, COMMA, block))))
   { { u_name; u_args } }
+
+%inline transfo:
+  TEA { TEA }
+  | TFC { TFC }
+  | TTC { TTC }
   
 %inline block:
   fs = braces(formula*)
@@ -161,10 +166,12 @@ using:
   { L.make f $loc(f) }    
 
 prim_formula:
-  r = atom
+  FALSE 
+  { False }
+  | TRUE
+  { True }
+  | r = atom
   { Atom r }
-  | r = test
-  { r }
   | f1 = formula op = lbinop f2 = formula 
   { Binary (op, f1, f2) }
 	| q = quant rangings = comma_sep1(ranging) b = block_or_bar
@@ -182,10 +189,8 @@ prim_formula:
 
 %inline atom: 
   pred = ident primed = iboption(PRIME) args = parens(comma_sep1(ident)) 
-  { make_atom ~pred ~args ~primed () }
-
-%inline test:
-  l = ident EQ r = ident 
+  { Pred (make_pred ~pred ~args ~primed ()) }
+  | l = ident EQ r = ident 
   { Test (Eq, l, r) }
   | l = ident NEQ r = ident 
   { Test (Neq, l, r) }

@@ -17,12 +17,17 @@ let keywords =
     ; ("constant", CONSTANT)
     ; ("else", ELSE)
     ; ("event", EVENT)
+    ; ("false", FALSE)
     ; ("in", IN)
     ; ("modifies", MODIFIES)
     ; ("relation", RELATION)
     ; ("some", SOME)
     ; ("sort", SORT)
     ; ("paths", PATHS)
+    ; ("TEA", TEA)
+    ; ("TFC", TFC)
+    ; ("TTC", TTC)
+    ; ("true", TRUE)
     ; ("using", USING)
     ]
 

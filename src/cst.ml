@@ -1,6 +1,6 @@
 open Sexplib.Std
 
-type atom =
+type pred =
   { pred : Ident.t;
     primed : bool; [@sexp.bool]
     args : Ident.t list (* non empty *)
@@ -10,13 +10,18 @@ type atom =
 type formula = prim_formula Location.t
 
 and prim_formula =
+  | False
+  | True
   | Atom of atom
-  | Test of compop * Ident.t * Ident.t
   | Binary of binop * formula * formula
   | Unary of unop * formula
   | Ite of formula * formula * formula
   | Quant of quantifier * telescope * block (* non empty list *)
   | Block of block
+
+and atom =
+  | Pred of pred
+  | Test of compop * Ident.t * Ident.t
 
 and compop =
   | Eq
@@ -53,6 +58,12 @@ and block = formula list [@@deriving eq, ord, sexp_of]
 type sort = Ident.t [@@deriving eq, ord, sexp_of]
 
 type modification = Ident.t list [@@deriving eq, ord, sexp_of]
+
+type transfo =
+  | TEA
+  | TFC
+  | TTC
+[@@deriving eq, ord, sexp_of]
 
 type t =
   { sorts : sort list;
@@ -108,7 +119,7 @@ and check =
   }
 
 and using =
-  { u_name : Ident.t;
+  { u_name : transfo;
     u_args : (Ident.t * block) list (* may be empty *)
   }
 [@@deriving eq, ord, make, sexp_of]

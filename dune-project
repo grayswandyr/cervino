@@ -1,5 +1,6 @@
 (lang dune 2.7)
 (using menhir 2.0)
+(using coq 0.2)
 
 (name cervino)
 
@@ -29,4 +30,3 @@
   sexplib
   )
  (synopsis "Proof of concept for complete verification of models expressed in a fragment of MSFOLTL"))
-(using coq 0.2)
