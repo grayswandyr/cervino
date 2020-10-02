@@ -8,8 +8,8 @@ type position = Lexing.position =
 
 type 'a t =
   { content : 'a;
-    startpos : position; [@printer fun fmt _ -> Format.pp_print_string fmt "_"]
-    endpos : position [@printer fun fmt _ -> Format.pp_print_string fmt "_"]
+    startpos : position; 
+    endpos : position
   }
 [@@deriving eq, ord]
 

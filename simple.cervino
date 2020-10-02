@@ -30,7 +30,7 @@ modifies toSend at {(x,i), (xs,i)}, elected at {xs} {
 }
 
 check prop { G(all x:Node | elected(x) => G (all y : Node | elected(y) => x=y)) } 
-using frame [
+using TFC [
 	send, 
 		{{all x:Node | x != receiver => ! elected(x)} 
 			&& {all x,y:Node,i:Id | ! id(y,i) || (x=receiver && i=transferred) 
@@ -41,6 +41,6 @@ using frame [
 
 check prop2 { F (some y: Node | elected(y)) } 
 assuming {all x,x2 : Node, i:Id | G F (succ(x,xs) && (id(x,i) || toSend(x,i))) => G F send(x,xs,i)} 
-using trans[prop, {toSend(imax, x)}]
+using TTC[prop, {toSend(imax, x)}]
 
 

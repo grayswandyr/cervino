@@ -52,7 +52,7 @@ let rec dispatch_aux p (names: Ident.t list) paragraphs = match paragraphs with
       let open List.Infix in
       (* we define a list by comprehension: *)
       (* for any nn in new_names... *)
-      let* nn = new_names in (* start by new_names as it's the shortest list *)
+      let* nn = new_names in 
       (* for any n in names... *)
       let* n = names in
       (* such that name(nn) = name(n) *)

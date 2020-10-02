@@ -7,6 +7,8 @@ type pred =
   }
 [@@deriving make, eq, ord, sexp_of]
 
+type sort = Ident.t [@@deriving eq, ord, sexp_of]
+
 type formula = prim_formula Location.t
 
 and prim_formula =
@@ -48,14 +50,12 @@ and telescope = ranging list
 (* non empty list *)
 
 (* non empty list *)
-and ranging = Ident.t list * Ident.t
+and ranging = Ident.t list * sort
 
 (* non empty list *)
 
 (* list may be empty*)
 and block = formula list [@@deriving eq, ord, sexp_of]
-
-type sort = Ident.t [@@deriving eq, ord, sexp_of]
 
 type modification = Ident.t list [@@deriving eq, ord, sexp_of]
 

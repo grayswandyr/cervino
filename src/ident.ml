@@ -9,4 +9,4 @@ let make s loc = L.make s loc
 
 let pp fmt L.{ content; _ } = String.pp fmt content
 
-let equal L.{ content = c1; _ } L.{ content = c2; _ } = String.equal c1 c2
+let equal c1 c2 = L.equal_content String.equal c1 c2
