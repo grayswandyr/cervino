@@ -1,15 +1,19 @@
 Add LoadPath "$HOME/COQ/FO-LTL" as Top.
 
 Require Import Eqdep_dec.
+Require Import Fin.
 
 Require Import Top.foltl.
 Require Import Top.dec.
 Require Import Top.finite.
 Require Import Top.set.
+Require Import Top.varset.
+Require Import Top.vars.
+Require Import Top.fosem.
 
 Section Closure.
-  Context {Ts: Type} {Tv: Ts->Type} {Tc: Ts->Type} {Tp: Type} {Ta: Tp -> Type}.
-  Variable Sg: @Sig Ts Tv Tc Tp Ta.
+  Context {Ts: Type} {Tv: Ts->Type} {Tc: Ts->Type} {Tp: Type}.
+  Variable Sg: @Sig Ts Tv Tc Tp.
   Variable D: Dom Sg.
   Variable s: Sort.
   Variable itp: Interp D.
@@ -44,10 +48,10 @@ Section Closure.
   Qed.
   
   Definition epredicate := (SumDec BinPredsDec predicate).
-  Definition epr_arityT (p': epredicate): Type := match p' with inl p => bool | inr p => pr_arity p end.
-  Definition epr_arity (p': epredicate) := match p' return @Finite (epr_arityT p') with inl p => TwoFin | inr p => pr_arity p end.
-  Definition epr_args p': epr_arity p' -> _ :=
-    match p' return epr_arity p' -> _ with 
+
+  Definition epr_arity (p': epredicate) := match p' with inl p => 2 | inr p => pr_arity p end.
+  Definition epr_args p': Fin.t (epr_arity p') -> _ :=
+    match p' return Fin.t (epr_arity p') -> _ with 
       inl p => fun i => s
     | inr p => fun i => pr_args p i 
     end.
@@ -79,11 +83,11 @@ Section Closure.
   Program Definition srcItp : Interp srcD := {|
     csem s c := csem (Interp:=itp) c;
     psem p t := match (p: predicate (Sig:=srcSg)) as p0 return 
-      (forall i : epr_arity p0, ssem (epr_args p0 i)) -> Prop with 
+      (forall i : Fin.t (epr_arity p0), ssem (epr_args p0 i)) -> Prop with 
       inl np =>
-        match np return (forall i : bool, ssem s) -> _ with 
-          Succ => fun a => BinItp (a true) (a false)
-        | Succ' => fun a => Closure (a true) (a false)
+        match np return (Fin.t 2 -> ssem s) -> _ with 
+          Succ => fun a => BinItp (a F1) (a (FS F1))
+        | Succ' => fun a => Closure (a F1) (a (FS F1))
         end
     | inr p => psem p t
     end
@@ -92,11 +96,11 @@ Section Closure.
   Program Definition dstItp : Interp dstD := {|
     csem s c := csem (Interp:=itp) c;
     psem p t := match (p: predicate (Sig:=dstSg)) as p0 return 
-      (forall i : epr_arity p0, ssem (epr_args p0 i)) -> Prop with 
+      (forall i : Fin.t (epr_arity p0), ssem (epr_args p0 i)) -> Prop with 
       inl np =>
-        match np return (forall i : bool, ssem s) -> _ with 
-          Succ => fun a => BinItp (a true) (a false)
-        | Succ' => fun a => Closure (a true) (a false)
+        match np return (Fin.t 2 -> ssem s) -> _ with 
+          Succ => fun a => BinItp (a F1) (a (FS F1))
+        | Succ' => fun a => Closure (a F1) (a (FS F1))
         end
     | inr p => psem p t
     end
@@ -105,12 +109,12 @@ Section Closure.
   Definition at_Succ (x1 x2: term dstSg s): formula dstSg :=
     Atom dstSg (Literal dstSg
      (PApp dstSg 0 (inl Succ)
-        (fun i : bool => if i then x1 else x2))).
+        (fun i : Fin.t 2 => match i with F1 => x1 | _ => x2 end))).
 
   Definition at_Succ' (x1 x2: term dstSg s): formula dstSg :=
     Atom dstSg (Literal dstSg
      (PApp dstSg 0 (inl Succ')
-        (fun i : bool => if i then x1 else x2))).
+        (fun i : Fin.t 2 => match i with F1 => x1 | _ => x2 end))).
 
   Definition var (v: AuxVars): variable (Sig:=dstSg) s.
   Proof.

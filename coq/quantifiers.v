@@ -9,6 +9,10 @@ Require Import Top.dec.
 Require Import Top.finite.
 Require Import Top.set.
 Require Import Top.env.
+Require Import Top.varset.
+Require Import Top.fosem.
+Require Import Top.vars.
+
 
   Fixpoint getEx `{Sg: Sig} (f: formula Sg): VarSet Sg :=
   match f with

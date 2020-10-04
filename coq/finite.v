@@ -2,6 +2,8 @@ Add LoadPath "$HOME/COQ/FO-LTL" as Top.
 
 Require Import Classical.
 Require Import Eqdep_dec.
+Require Import Fin.
+Require Import List.
 
 Require Import Top.dec.
 Require Import Top.set.
@@ -16,6 +18,32 @@ Class Finite {T} := {
 }.
 Coercion fin_dec: Finite >-> EqDec.
 Arguments fin_set _ _ : assert.
+
+Fixpoint fin2list n : list (Fin.t n) :=
+  match n with
+    0 => nil
+  | S m => cons F1 (List.map FS (fin2list m))
+  end.
+
+Lemma fin2list_all: forall n, forall x, SV.set_In x (fin2list n).
+Proof.
+  intros.
+  destruct n.
+  inversion x.
+  revert n x.
+  apply rectS; intros; try (simpl; now auto).
+  right.
+  induction (fin2list (S n)); simpl; auto.
+  destruct H.
+  subst p; left; now auto.
+  right; apply IHl; auto.
+Qed.
+
+Instance uptoFinite n: @Finite (Fin.t n) := {|
+  fin_dec := uptoDec n;
+  fin_set := fin2list n;
+  fin_all := fin2list_all n
+|}.
 
 Lemma FiniteIsFinite: forall `(F: Finite), isFinite F.
 Proof.

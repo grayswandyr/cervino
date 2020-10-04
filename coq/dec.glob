@@ -1,0 +1,265 @@
+DIGEST c3d81ccfb101d6fd9bc5960cd295145f
+FTop.dec
+R56:64 Coq.Logic.Eqdep_dec <> <> lib
+R82:95 Coq.Logic.JMeq <> <> lib
+R113:127 Coq.Program.Tactics <> <> lib
+R145:160 Coq.Logic.ProofIrrelevance <> <> lib
+R178:190 Coq.Bool.Bool <> <> lib
+R208:210 Coq.Vectors.Fin <> <> lib
+def 225:233 <> EqDecType
+R252:252 Top.dec <> T var
+R255:255 Coq.Init.Specif <> ::type_scope:'{'_x_'}'_'+'_'{'_x_'}' not
+R259:261 Coq.Init.Specif <> ::type_scope:'{'_x_'}'_'+'_'{'_x_'}' not
+R266:266 Coq.Init.Specif <> ::type_scope:'{'_x_'}'_'+'_'{'_x_'}' not
+R257:257 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R256:256 Top.dec <> x var
+R258:258 Top.dec <> y var
+R263:264 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R262:262 Top.dec <> x var
+R265:265 Top.dec <> y var
+rec 276:280 <> EqDec
+proj 319:324 <> eq_dec
+R314:314 Top.dec <> T var
+R327:335 Top.dec <> EqDecType def
+R337:341 Top.dec <> eqDom meth
+R346:380 Top.dec <> eqDom meth
+rec 390:398 <> Decidable
+proj 407:412 <> dcPred
+proj 423:428 <> dc_dec
+R431:431 Coq.Init.Specif <> ::type_scope:'{'_x_'}'_'+'_'{'_x_'}' not
+R438:441 Coq.Init.Specif <> ::type_scope:'{'_x_'}'_'+'_'{'_x_'}' not
+R452:452 Coq.Init.Specif <> ::type_scope:'{'_x_'}'_'+'_'{'_x_'}' not
+R432:437 Top.dec <> dcPred meth
+R442:444 Coq.Init.Logic <> not def
+R446:451 Top.dec <> dcPred meth
+R457:496 Top.dec <> dcPred meth
+def 511:517 <> TrueDec
+R520:528 Top.dec <> Decidable class
+R538:571 Top.dec <> Build_Decidable constr
+R566:569 Coq.Init.Specif <> left constr
+R571:571 Coq.Init.Logic <> I constr
+R548:551 Coq.Init.Logic <> True ind
+def 589:596 <> FalseDec
+R599:607 Top.dec <> Decidable class
+R617:684 Top.dec <> Build_Decidable constr
+R646:650 Coq.Init.Specif <> right constr
+R659:663 Coq.Init.Logic <> False ind
+R674:674 Top.dec <> h var
+R627:631 Coq.Init.Logic <> False ind
+def 710:715 <> NotDec
+R721:729 Top.dec <> Decidable class
+R733:741 Top.dec <> Decidable class
+R751:765 Top.dec <> Build_Decidable constr
+R761:763 Coq.Init.Logic <> not def
+R765:765 Top.dec <> P var
+R801:806 Top.dec <> dc_dec meth
+R801:806 Top.dec <> dc_dec meth
+def 900:905 <> AndDec
+R913:921 Top.dec <> Decidable class
+R926:934 Top.dec <> Decidable class
+R944:960 Top.dec <> Build_Decidable constr
+R955:958 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R954:954 Top.dec <> P var
+R959:959 Top.dec <> Q var
+R996:1001 Top.dec <> dc_dec meth
+R996:1001 Top.dec <> dc_dec meth
+R1020:1025 Top.dec <> dc_dec meth
+R1020:1025 Top.dec <> dc_dec meth
+def 1119:1123 <> OrDec
+R1131:1139 Top.dec <> Decidable class
+R1144:1152 Top.dec <> Decidable class
+R1162:1178 Top.dec <> Build_Decidable constr
+R1173:1176 Coq.Init.Logic <> ::type_scope:x_'\/'_x not
+R1172:1172 Top.dec <> P var
+R1177:1177 Top.dec <> Q var
+R1214:1219 Top.dec <> dc_dec meth
+R1214:1219 Top.dec <> dc_dec meth
+R1259:1264 Top.dec <> dc_dec meth
+R1259:1264 Top.dec <> dc_dec meth
+def 1342:1347 <> ImpDec
+R1355:1363 Top.dec <> Decidable class
+R1368:1376 Top.dec <> Decidable class
+R1386:1402 Top.dec <> Build_Decidable constr
+R1397:1400 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1401:1401 Top.dec <> Q var
+R1396:1396 Top.dec <> P var
+R1438:1443 Top.dec <> dc_dec meth
+R1438:1443 Top.dec <> dc_dec meth
+R1462:1467 Top.dec <> dc_dec meth
+R1462:1467 Top.dec <> dc_dec meth
+def 1569:1574 <> IffDec
+R1582:1590 Top.dec <> Decidable class
+R1595:1603 Top.dec <> Decidable class
+R1613:1630 Top.dec <> Build_Decidable constr
+R1624:1628 Coq.Init.Logic <> ::type_scope:x_'<->'_x not
+R1623:1623 Top.dec <> P var
+R1629:1629 Top.dec <> Q var
+R1666:1671 Top.dec <> dc_dec meth
+R1666:1671 Top.dec <> dc_dec meth
+R1690:1695 Top.dec <> dc_dec meth
+R1690:1695 Top.dec <> dc_dec meth
+R1761:1766 Top.dec <> dc_dec meth
+R1761:1766 Top.dec <> dc_dec meth
+def 1848:1857 <> AndThenDec
+R1863:1871 Top.dec <> Decidable class
+R1879:1882 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1883:1891 Top.dec <> Decidable class
+R1878:1878 Top.dec <> P var
+R1895:1903 Top.dec <> Decidable class
+R1913:1939 Top.dec <> Build_Decidable constr
+R1923:1929 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R1934:1935 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R1933:1933 Top.dec <> P var
+R1936:1936 Top.dec <> Q var
+R1938:1938 Top.dec <> p var
+R1975:1980 Top.dec <> dc_dec meth
+R1975:1980 Top.dec <> dc_dec meth
+R1999:2004 Top.dec <> dc_dec meth
+R1999:2004 Top.dec <> dc_dec meth
+R2091:2107 Coq.Logic.ProofIrrelevance <> proof_irrelevance prfax
+R2091:2107 Coq.Logic.ProofIrrelevance <> proof_irrelevance prfax
+R2091:2107 Coq.Logic.ProofIrrelevance <> proof_irrelevance prfax
+inst 2210:2213 <> isEq
+R2220:2224 Top.dec <> EqDec class
+R2232:2232 Top.dec <> T var
+R2237:2245 Top.dec <> Decidable class
+R2271:2276 Top.dec <> dc_dec meth
+R2254:2259 Top.dec <> dcPred meth
+R2265:2265 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2281:2286 Top.dec <> eq_dec meth
+inst 2305:2309 <> isEqF
+R2328:2332 Top.dec <> EqDec class
+R2341:2342 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2343:2344 Top.dec <> T2 var
+R2339:2340 Top.dec <> T1 var
+R2351:2352 Top.dec <> T2 var
+R2358:2359 Top.dec <> T1 var
+R2364:2372 Top.dec <> Decidable class
+R2400:2405 Top.dec <> dc_dec meth
+R2381:2386 Top.dec <> dcPred meth
+R2392:2392 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2410:2415 Top.dec <> eq_dec meth
+prf 2435:2444 <> inj_pairT1
+R2477:2480 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2476:2476 Top.dec <> U var
+R2532:2535 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2537:2539 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2536:2536 Top.dec <> p var
+R2540:2540 Top.dec <> q var
+R2517:2519 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2505:2510 Coq.Init.Specif <> existT constr
+R2516:2516 Top.dec <> x var
+R2514:2514 Top.dec <> p var
+R2512:2512 Top.dec <> P var
+R2520:2525 Coq.Init.Specif <> existT constr
+R2531:2531 Top.dec <> y var
+R2529:2529 Top.dec <> q var
+R2527:2527 Top.dec <> P var
+inst 2612:2616 <> isEq2
+R2624:2628 Top.dec <> EqDec class
+R2638:2639 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2636:2637 Top.dec <> T1 var
+R2661:2665 Top.dec <> EqDec class
+R2668:2669 Top.dec <> T2 var
+R2671:2671 Top.dec <> t var
+R2679:2680 Top.dec <> T1 var
+R2688:2688 Top.dec <> U var
+R2690:2691 Top.dec <> x1 var
+R2698:2699 Top.dec <> T1 var
+R2707:2707 Top.dec <> U var
+R2709:2710 Top.dec <> x2 var
+R2715:2723 Top.dec <> Decidable class
+R2778:2783 Top.dec <> dc_dec meth
+R2732:2737 Top.dec <> dcPred meth
+R2756:2758 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2742:2747 Coq.Init.Specif <> existT constr
+R2759:2764 Coq.Init.Specif <> existT constr
+R2832:2837 Top.dec <> eq_dec meth
+R2832:2837 Top.dec <> eq_dec meth
+R2871:2876 Top.dec <> eq_dec meth
+R2871:2876 Top.dec <> eq_dec meth
+R2956:2971 Coq.Logic.Eqdep_dec <> inj_pair2_eq_dec thm
+R2956:2971 Coq.Logic.Eqdep_dec <> inj_pair2_eq_dec thm
+R3001:3006 Top.dec <> eq_dec meth
+R3001:3006 Top.dec <> eq_dec meth
+inst 3080:3086 <> uptoDec
+R3092:3096 Top.dec <> EqDec class
+R3099:3103 Coq.Vectors.Fin <> t ind
+R3105:3105 Top.dec <> n var
+R3114:3133 Top.dec <> Build_EqDec constr
+R3124:3133 Coq.Vectors.Fin <> eq_dec thm
+inst 3158:3164 <> PairDec
+R3172:3176 Top.dec <> EqDec class
+R3186:3187 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3184:3185 Top.dec <> T1 var
+R3209:3213 Top.dec <> EqDec class
+R3216:3217 Top.dec <> T2 var
+R3219:3219 Top.dec <> t var
+R3225:3229 Top.dec <> EqDec class
+R3231:3231 Coq.Init.Specif <> ::type_scope:'{'_x_':'_x_'&'_x_'}' not
+R3233:3233 Coq.Init.Specif <> ::type_scope:'{'_x_':'_x_'&'_x_'}' not
+R3236:3238 Coq.Init.Specif <> ::type_scope:'{'_x_':'_x_'&'_x_'}' not
+R3242:3242 Coq.Init.Specif <> ::type_scope:'{'_x_':'_x_'&'_x_'}' not
+R3234:3235 Top.dec <> T1 var
+R3239:3239 Top.dec <> U var
+R3241:3241 Top.dec <> x var
+R3250:3260 Top.dec <> Build_EqDec constr
+R3333:3337 Top.dec <> isEq2 inst
+R3333:3337 Top.dec <> isEq2 inst
+def 3369:3374 <> SumDec
+R3382:3386 Top.dec <> EqDec class
+R3395:3399 Top.dec <> EqDec class
+R3405:3409 Top.dec <> EqDec class
+R3414:3414 Coq.Init.Datatypes <> ::type_scope:x_'+'_x not
+R3412:3413 Top.dec <> T1 var
+R3415:3416 Top.dec <> T2 var
+R3427:3438 Top.dec <> Build_EqDec constr
+R3500:3505 Top.dec <> eq_dec meth
+R3500:3505 Top.dec <> eq_dec meth
+R3500:3505 Top.dec <> eq_dec meth
+ind 3524:3530 <> IncType
+constr 3539:3541 <> New
+constr 3556:3558 <> Old
+R3544:3550 Top.dec <> IncType ind
+R3552:3552 Top.dec <> T var
+R3562:3565 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3566:3572 Top.dec <> IncType ind
+R3574:3574 Top.dec <> T var
+R3561:3561 Top.dec <> T var
+def 3597:3602 <> IncDec
+R3609:3613 Top.dec <> EqDec class
+R3619:3623 Top.dec <> EqDec class
+R3626:3632 Top.dec <> IncType ind
+R3634:3634 Top.dec <> T var
+R3643:3653 Top.dec <> Build_EqDec constr
+R3715:3720 Top.dec <> eq_dec meth
+R3715:3720 Top.dec <> eq_dec meth
+def 3740:3747 <> eProduct
+R3755:3759 Top.dec <> EqDec class
+R3768:3772 Top.dec <> EqDec class
+R3777:3781 Top.dec <> EqDec class
+R3786:3786 Coq.Init.Datatypes <> ::type_scope:x_'*'_x not
+R3784:3785 Top.dec <> T1 var
+R3787:3788 Top.dec <> T2 var
+R3894:3899 Top.dec <> eq_dec meth
+R3894:3899 Top.dec <> eq_dec meth
+R3923:3928 Top.dec <> eq_dec meth
+R3923:3928 Top.dec <> eq_dec meth
+ind 4142:4144 <> One
+constr 4155:4157 <> one
+R4160:4162 Top.dec <> One ind
+def 4181:4186 <> OneDec
+R4190:4194 Top.dec <> EqDec class
+R4196:4198 Top.dec <> One ind
+R4211:4268 Top.dec <> Build_EqDec constr
+R4225:4228 Coq.Init.Specif <> left constr
+R4239:4239 Top.dec <> y var
+R4237:4237 Top.dec <> x var
+R4246:4248 Top.dec <> one constr
+R4250:4252 Top.dec <> one constr
+R4257:4263 Coq.Init.Logic <> eq_refl constr
+def 4290:4295 <> TwoDec
+R4299:4303 Top.dec <> EqDec class
+R4305:4308 Coq.Init.Datatypes <> bool ind
+R4316:4338 Top.dec <> Build_EqDec constr
+R4326:4338 Coq.Bool.Bool <> bool_dec thm

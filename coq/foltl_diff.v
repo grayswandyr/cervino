@@ -10,6 +10,9 @@ Require Import Top.foltl.
 Require Import Top.dec.
 Require Import Top.finite.
 Require Import Top.set.
+Require Import Top.vars.
+Require Import Top.varset.
+Require Import Top.fosem.
 
 Ltac fm_semTac :=
     match goal with

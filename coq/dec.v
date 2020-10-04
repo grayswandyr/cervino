@@ -4,6 +4,8 @@ Require Import Eqdep_dec.
 Require Import Coq.Logic.JMeq.
 Require Import Program.Tactics.
 Require Import ProofIrrelevance.
+Require Import Coq.Bool.Bool.
+Require Import Fin.
 
 Definition EqDecType T := forall x y: T, {x=y}+{x<>y}.
 
@@ -138,12 +140,15 @@ Next Obligation.
   apply (n H1).
 Qed.
 
+Program Instance uptoDec n: @EqDec (Fin.t n) := {| eq_dec := Fin.eq_dec |}.
+
+
 Program Instance PairDec `(T1: EqDec) {T2: T1->Type} (U: forall t, @EqDec (T2 t)): @EqDec {x:T1 & U x} := {| eq_dec := _ |}.
 Next Obligation.
   repeat intro.
   destruct x; destruct y.
   apply isEq2.
-Qed.
+Defined.
 
 Program Definition SumDec `(T1: EqDec) `(T2: EqDec) : @EqDec (T1+T2) := {|
   eq_dec := _;
@@ -180,15 +185,9 @@ Definition eProduct `(T1: EqDec) `(T2: EqDec): @EqDec (T1*T2).
 
   Inductive One: Type := one: One.
   
-  Program Definition OneDec: @EqDec One := {| eq_dec := _ |}.
-  Next Obligation.
-    repeat intro.
-    destruct x; destruct y; left; reflexivity.
-  Defined.
+  Definition OneDec: @EqDec One := {| 
+    eq_dec x y := left (match x,y with one,one => eq_refl end)
+  |}.
 
-  Program Definition TwoDec: @EqDec bool := {| eq_dec := _ |}.
-  Next Obligation.
-    repeat intro.
-    decide equality.
-  Defined.
+  Definition TwoDec: @EqDec bool := {| eq_dec := Bool.bool_dec |}.
   

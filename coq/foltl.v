@@ -6,6 +6,7 @@ Import EqNotations.
 Require Import Coq.Logic.JMeq.
 Require Import ProofIrrelevance.
 Require Import Classical.
+Require Import Fin.
 
 Require Import Top.dec.
 Require Import Top.finite.
@@ -23,18 +24,18 @@ SubClass SortT {Ts} := @Finite Ts.
 SubClass VariableT {Tv} := @Finite Tv.
 SubClass ConstantT {Tc} := @Finite Tc.
 SubClass PredicateT {Tp} := @EqDec Tp.
-SubClass ArityT {Ta} := @Finite Ta.
 
-Class Sig {Ts: Type} {Tv: Ts->Type} {Tc: Ts->Type} {Tp} {Ta: Tp -> Type} := {
+
+Class Sig {Ts: Type} {Tv: Ts->Type} {Tc: Ts->Type} {Tp} := {
   Sort: @SortT Ts;
   variable: forall (s:Sort), @VariableT (Tv s);
   constant: forall (s:Sort), @ConstantT (Tc s);
   predicate: @PredicateT Tp;
-  pr_arity: forall (p: predicate), @ArityT (Ta p);
-  pr_args: forall p, pr_arity p -> Sort;
+  pr_arity: predicate -> nat;
+  pr_args: forall p, Fin.t (pr_arity p) -> Sort;
 }.
 
-Class Dom {Ts Tv Tc Tp Ta} (Sg: @Sig Ts Tv Tc Tp Ta) := {
+Class Dom {Ts Tv Tc Tp} (Sg: @Sig Ts Tv Tc Tp) := {
   ssemT : Sort -> Type;
   ssem : forall s, @EqDec (ssemT s);
   domType: EqDec := PairDec Sort ssem;
@@ -67,7 +68,7 @@ Class Interp `{Sg: Sig} (D: Dom Sg) := {
 
 Section FO.
   Context {Ts: Type} {Tv: Ts->Type} {Tc: Ts->Type} {Tp: Type} {Ta: Tp -> Type}.
-  Variable mySig: @Sig Ts Tv Tc Tp Ta.
+  Variable mySig: @Sig Ts Tv Tc Tp.
   Existing Instance mySig.
 
 Definition Env (D: Dom mySig) := forall s, variable s -> ssem s.
@@ -80,6 +81,37 @@ Definition add {D: Dom mySig} {s} (v: variable s) (d: ssem s) (env: Env D): Env 
           eq_refl => fun w => if eq_dec v w then d else env s w
         end
     | right _ => fun w => env s' w
+    end.
+
+(*
+env |- ex x1,..,xn. f <-> ex di. add xn dn ... (add x1 d1 env) |- f 
+*)
+
+(*
+Definition addl {K:Finite} {D: Dom mySig} (sk: K-> Sort) (vk: forall k, variable (sk k)) (dk: forall k, ssem (sk k)) (env: Env D): Env D :=
+  List.fold_left (fun e (k:K) => add (vk k) (dk k) e) fin_set env.
+*)
+
+Definition addl {D: Dom mySig} `(K: Finite) 
+  (sk: K->Sort) (vk: forall k:K, variable (sk k)) (dk: forall k:K, ssem (sk k)) (env: Env D): Env D :=
+  fun (s: Sort) (v: variable s) =>
+    match last_dec (fun k => isEq2 (U:=variable) (sk k) (vk k) s v) with
+      inleft (exist _ k h) =>
+        match h in _=sv return ssem (projT1 sv) with
+          eq_refl => dk k
+        end
+    | inright h => env s v
+    end.
+
+Definition addr {D: Dom mySig} `(K: Finite) 
+  (sk: K->Sort) (vk: forall k:K, variable (sk k)) (dk: forall k:K, ssem (sk k)) (env: Env D): Env D :=
+  fun (s: Sort) (v: variable s) =>
+    match first_dec (fun k => isEq2 (U:=variable) (sk k) (vk k) s v) with
+      inleft (exist _ k h) =>
+        match h in _=sv return ssem (projT1 sv) with
+          eq_refl => dk k
+        end
+    | inright h => env s v
     end.
 
 Definition iadd {D: Dom mySig} `(K: Finite) 
@@ -228,7 +260,7 @@ Qed.
 
 Definition tmDec s := {| eq_dec := tm_dec s |}.
 
-Fixpoint tm_sem {D: Dom mySig} {Itp: Interp D} {s} (env: Env D) (tm: term s): ssem s :=
+Definition tm_sem {D: Dom mySig} {Itp: Interp D} {s} (env: Env D) (tm: term s): ssem s :=
   match tm with
     Var _ v => env _ v
   | Cst _ c => csem c
@@ -245,7 +277,7 @@ Proof.
   subst p0.
   destruct (PeanoNat.Nat.eq_dec n n0).
   subst n0.
-  destruct (all_dec (F:=pr_arity p) (fun i => isEq (T:=tmDec (pr_args p i)) (t i) (t0 i))).
+  destruct (all_dec (F:=uptoFinite (pr_arity p)) (fun i => isEq (T:=tmDec (pr_args p i)) (t i) (t0 i))).
   left.
   f_equal.
   apply functional_extensionality_dep; intro i.
@@ -263,7 +295,7 @@ Qed.
 
 Definition ltDec := {| eq_dec := lt_dec |}.
 
-Fixpoint lt_sem {D: Dom mySig} {Itp: Interp D} (env: Env D) (lt: literal) (t:nat): Prop :=
+Definition lt_sem {D: Dom mySig} {Itp: Interp D} (env: Env D) (lt: literal) (t:nat): Prop :=
   match lt with
   | PApp n p args => psem p (n+t) (fun i => tm_sem env (args i))
   end.
@@ -957,826 +989,6 @@ Fixpoint isExAll f :=
   | f => isAll f
   end.
 
-Definition VarSet := forall s, SV.set (variable s).
-
-Definition vsIn {s} (v: variable s) (F: VarSet) := SV.set_In v (F s).
-
-Definition vsSubset e1 e2 := forall s, SV.subset (T:=variable s) (e1 s) (e2 s).
-
-Lemma vsSubset_refl : forall e, vsSubset e e.
-Proof.
-  repeat intro; auto.
-Qed.
-
-Lemma vsSubset_trans : forall {e1 e2 e3}, vsSubset e1 e2 -> vsSubset e2 e3 -> vsSubset e1 e3.
-Proof.
-  repeat intro; auto.
-  apply H0.
-  apply H.
-  auto.
-Qed.
-
-Definition vsAdd {s} (v: variable s) (e: VarSet): VarSet :=
-  fun s' =>
-    match eq_dec s s' with
-      left h => match h in _=s' return SV.set (variable s') with 
-                  eq_refl => SV.add v (e s)
-                end
-    | right _ => e s'
-    end.
-
-Lemma vsAdd_l: forall {s} (v: variable s) (e: VarSet),
-  SV.set_In v (vsAdd v e s).
-Proof.
-  unfold vsAdd; simpl; intros.
-  destruct (eq_dec s s); try tauto.
-  rewrite (proof_irrelevance _ e0 eq_refl).
-  apply SV.InAdd_l.
-Qed.
-
-Lemma vsAdd_r: forall {s s'} (v: variable s) (e: VarSet) {w: variable s'},
-  SV.set_In w (e s') -> SV.set_In w (vsAdd v e s').
-Proof.
-  intros.
-  unfold vsAdd.
-  destruct (eq_dec s s'); auto.
-  subst s'.
-  apply SV.InAdd_r; auto.
-Qed.
-
-Lemma vsAdd_elim: forall {s s'} (v: variable s) (e: VarSet) {w: variable s'},
-  SV.set_In w (vsAdd v e s') -> isEq2 (U:=variable) s' w s v \/ SV.set_In w (e s').
-Proof.
-  intros.
-  unfold vsAdd in H.
-  unfold isEq2; simpl.
-  destruct (eq_dec s s').
-  subst s'.
-  apply SV.InAdd in H; destruct H.
-  subst v.
-  left; auto.
-  right; auto.
-  right; auto.
-Qed.
-
-Lemma vsAdd_ne: forall {s s'} {v: variable s} {e: VarSet} {w: variable s'},
-  SV.set_In w (vsAdd v e s') -> not (isEq2 (U:=variable) s' w s v) -> SV.set_In w (e s').
-Proof.
-  intros.
-  apply vsAdd_elim in H.
-  destruct H; tauto.
-Qed.
-
-Lemma vsAdd_ne2: forall {s s'} {v: variable s} {e: VarSet} {w: variable s'},
-  SV.set_In w (vsAdd v e s') -> not (SV.set_In w (e s')) -> (isEq2 (U:=variable) s' w s v).
-Proof.
-  intros.
-  apply vsAdd_elim in H.
-  destruct H; tauto.
-Qed.
-
-Definition vsEmpty: VarSet := fun s => SV.empty _.
-
-Definition vsSing {s} (v: variable s): VarSet :=
-  fun s' =>
-    match eq_dec s s' with
-      left h => match h in _=s' return SV.set (variable s') with 
-                  eq_refl => SV.sing _  v
-                end
-    | right _ => SV.empty _
-    end.
-
-Definition vsUnion (e1 e2: VarSet): VarSet :=
-  fun s => SV.union (e1 s) (e2 s).
-
-Lemma vsUnion_l: forall {s v} {e1 e2: VarSet},
-  SV.set_In v (e1 s) -> SV.set_In v (vsUnion e1 e2 s).
-Proof.
-  intros.
-  apply SV.InUnion_l; auto.
-Qed.
-
-Lemma vsUnion_r: forall {s v} {e1 e2: VarSet},
-  SV.set_In v (e2 s) -> SV.set_In v (vsUnion e1 e2 s).
-Proof.
-  intros.
-  apply SV.InUnion_r; auto.
-Qed.
-
-Lemma vsUnion_elim: forall {s v} {e1 e2: VarSet},
-  SV.set_In v (vsUnion e1 e2 s) -> SV.set_In v (e1 s) \/ SV.set_In v (e2 s).
-Proof.
-  intros.
-  apply SV.InUnion in H.
-  destruct H; tauto.
-Qed.
-
-Definition vsInter (e1 e2: VarSet): VarSet :=
-  fun s => SV.inter (e1 s) (e2 s).
-
-Lemma vsInter_intro: forall {s v} {e1 e2: VarSet},
-  SV.set_In v (e1 s) -> SV.set_In v (e2 s) -> SV.set_In v (vsInter e1 e2 s).
-Proof.
-  intros.
-  apply SV.InInter; auto.
-Qed.
-
-Lemma vsInter_elim: forall {s v} {e1 e2: VarSet},
-  SV.set_In v (vsInter e1 e2 s) -> SV.set_In v (e1 s) /\ SV.set_In v (e2 s).
-Proof.
-  intros; split.
-  apply SV.InInter_l in H; auto.
-  apply SV.InInter_r in H; auto.
-Qed.
-
-Definition vsGUnion `{K: Finite} (ek: K->VarSet): VarSet :=
-  fun s => SV.GUnion (T1:=K) (T2:=variable s) fin_set fin_set (fun k _ => ek k s).
-
-Lemma vsGUnion_intro `{K:Finite} {ek: K->VarSet}:
-  forall s k, SV.subset (ek k s) (vsGUnion ek s).
-Proof.
-  repeat intro.
-  unfold vsGUnion.
-  apply SV.InCUnion_intro with (u:=k); simpl; auto.
-  apply fin_all.
-  apply fin_all.
-Qed.
-
-Lemma vsGUnion_elim `{K:Finite} {ek: K->VarSet} s (v: variable s):
-  vsIn v (vsGUnion ek) -> exists k, vsIn v (ek k).
-Proof.
-  repeat intro.
-  unfold vsGUnion in H.
-  apply SV.InCUnion_elim in H; simpl; auto.
-  destruct H as [k [h1 [h2 h3]]].
-  exists k.
-  apply h3.
-  apply h2.
-Qed.
-
-Lemma vsSubsetUnion_elim_l: forall e1 e2 e,
-  vsSubset (vsUnion e1 e2) e -> vsSubset e1 e.
-Proof.
-  repeat intro.
-  apply (H s v); clear H; intros.
-  apply vsUnion_l; auto.
-Qed.
-
-Lemma vsSubsetUnion_elim_r: forall e1 e2 e,
-  vsSubset (vsUnion e1 e2) e -> vsSubset e2 e.
-Proof.
-  repeat intro.
-  apply (H s v); clear H; intros.
-  apply vsUnion_r; auto.
-Qed.
-
-Lemma vsSubsetGUnion_elim `{K:Finite} {ek: K->VarSet} e:
-  vsSubset (vsGUnion ek) e -> forall k, vsSubset (ek k) e.
-Proof.
-  repeat intro.
-  unfold vsGUnion.
-  apply (H s v); clear H.
-  apply SV.InCUnion_intro with (u:=k); simpl; auto.
-  apply fin_all.
-  apply fin_all.
-Qed.
-
-Definition vsRemove {s} (v: variable s) (e: VarSet): VarSet :=
-  fun s' => match eq_dec s s' with
-    left h =>
-      match h in _=s' return SV.set (variable s') with
-        eq_refl => SV.remove v (e s)
-      end
-  | right _ => e s'
-  end.
-
-Lemma vsInRemove_intro: forall s (v: variable s) (e: VarSet) s' (w: variable s'),
-  vsIn w e -> not (isEq2 (U:=variable) s v s' w) -> vsIn w (vsRemove v e).
-Proof.
-  intros.
-  unfold vsRemove, vsIn; simpl.
-  destruct (eq_dec s s'); auto.
-  subst s'.
-  apply SV.InRemove.
-  intro.
-  subst w.
-  apply H0; reflexivity.
-  apply H.
-Qed.
-
-Lemma vsInRemove_elim: forall s (v: variable s) (e: VarSet) s' (w: variable s'),
-  vsIn w (vsRemove v e) -> vsIn w e /\ not (isEq2 (U:=variable) s v s' w).
-Proof.
-  intros.
-  unfold vsRemove, vsIn in H.
-  destruct (eq_dec s s'); auto.
-  subst s'.
-  split.
-  apply SV.InRemove_r in H; apply H.
-  apply SV.InRemove_l in H.
-  simpl; intro.
-  apply H; clear H.
-  apply inj_pair2_eq_dec in H0; try apply eq_dec.
-  symmetry; apply H0.
-
-  split.
-  apply H.
-  intro; apply n; clear n.
-  injection H0; intro; auto.  
-Qed.
-
-Definition vsFinite (vs: VarSet): Finite :=
-  PairFin Sort (fun s => asFinite (vs s)).
-
-Definition tm_vars {s'} (tm: term s'): VarSet :=
-  match tm with
-    Var _ v => vsSing v
-  | Cst _ s => vsEmpty
-  end.
-
-Definition lt_vars lt: VarSet :=
-  match lt with
-    PApp n p args => vsGUnion (fun i => tm_vars (args i))
-  end.
-
-Definition at_vars a : VarSet :=
-  match a with
-  | Literal a | NLiteral a => lt_vars a
-  | Eq _ t1 t2 | NEq _ t1 t2 => vsUnion (tm_vars t1) (tm_vars t2)
-  end.
-
-Fixpoint fm_vars f : VarSet :=
-  match f with
-  | FTrue | FFalse => vsEmpty
-  | Atom a => at_vars a
-  | And f1 f2 | Or f1 f2 => vsUnion (fm_vars f1) (fm_vars f2)
-  | Ex s v f | All s v f => fm_vars f
-  | F f | G f => fm_vars f
-  end.
-
-Definition removeVars `{K: Finite} {sk: K->Sort} (vk: forall k, variable (sk k)) (e:VarSet): VarSet :=
-  fun s => SV.Filter (fun (x:variable s) => NotDec (ExDecidable (ex_dec (fun k => isEq2 (U:=variable) s x (sk k) (vk k))))) (e s).
-
-Definition vsVars `{K: Finite} {sk: K->Sort} (vk: forall k, variable (sk k)) : VarSet :=
-  vsGUnion (fun k => vsSing (vk k)).
-
-Lemma vsSing_intro: forall s v, SV.set_In v (vsSing v s).
-Proof.
-  intros.
-  unfold vsSing.
-  destruct (eq_dec s s); try tauto.
-  rewrite (proof_irrelevance _ e eq_refl).
-  left; auto.
-Qed.
-
-Lemma vsSing_elim: forall s (v: variable s) s' (w: variable s'), 
-  SV.set_In v (vsSing w s) -> isEq2 (U:=variable) s v s' w.
-Proof.
-  intros.
-  unfold vsSing in H.
-  unfold isEq2; simpl.
-  destruct (eq_dec s' s); try tauto; subst.
-  destruct H; try tauto; subst; auto.
-Qed.
-
-Lemma vsSubsetSing: forall {s} {v: variable s} e, vsSubset (vsSing v) e -> SV.set_In v (e s).
-Proof.
-  intros.
-  apply SV.subset_sing; repeat intro.
-  generalize (H s v0); intro.
-  apply H1.
-  destruct H0.
-  subst v0.
-  apply vsSing_intro.
-  destruct H0.
-Qed.
-
-Lemma vsVars_intro: forall `{K: Finite} {sk: K->Sort} (vk: forall k, variable (sk k)),
-  forall k, SV.set_In (vk k) (vsVars vk (sk k)).
-Proof.
-  intros.
-  apply SV.InCUnion_intro with (u:=k); auto.
-  apply fin_all; simpl; intros; auto.
-  apply fin_all.
-  intro.
-  apply vsSing_intro.
-Qed.
-
-Lemma vsVars_elim: forall `{K: Finite} {sk: K->Sort} (vk: forall k, variable (sk k)),
-  forall s (v: variable s), SV.set_In v (vsVars vk s) -> exists k, isEq2 (U:=variable) (sk k) (vk k) s v.
-Proof.
-  intros.
-  unfold vsVars in H.
-  apply SV.InCUnion_elim in H.
-  destruct H as [u [h1 [h2 h3]]].
-  exists u; unfold isEq2; simpl.
-  apply h3 in h2; clear h3.
-  apply vsSing_elim in h2.
-  symmetry; apply h2.
-Qed.
-
-Definition at_free a: VarSet :=
-  match a with
-  | Literal lt | NLiteral lt => lt_vars lt
-  | Eq _ t1 t2 | NEq _ t1 t2 => vsUnion (tm_vars t1) (tm_vars t2)
-  end.
-
-Fixpoint free f: VarSet :=
-  match f with
-  | FTrue | FFalse => vsEmpty
-  | Atom a => at_vars a
-  | And f1 f2 | Or f1 f2 => vsUnion (free f1) (free f2)
-  | Ex s v f | All s v f => vsRemove v (free f)
-  | F f | G f => free f
-  end.
-
-  Lemma tm_sem_eq: forall (D: Dom mySig) (Itp: Interp D) s (tm: term s) (e1 e2: Env D),
-      (forall s (v: variable s), SV.set_In v (tm_vars tm s) -> e1 s v = e2 s v) ->
-        tm_sem (Itp:=Itp) e1 tm = tm_sem (Itp:=Itp) e2 tm.
-  Proof.
-    intros.
-    destruct tm; simpl in *.
-    apply H; clear H; auto.
-    apply vsSing_intro.
-    reflexivity.
-  Qed.
-
-  Lemma lt_free_X: forall l, lt_vars (ltX l) = lt_vars l.
-  Proof.
-    intro.
-    destruct l; simpl in *; auto.
-  Qed.
-  
-  Lemma at_free_X: forall a, at_vars (atX a) = at_vars a.
-  Proof.
-    intro.
-    destruct a; simpl; intros; auto.
-    apply lt_free_X.
-    apply lt_free_X.
-  Qed.
-  
-  Lemma free_X: forall f, free (X f) = free f.
-  Proof.
-    induction f; simpl; intros; auto.
-    apply at_free_X.
-    f_equal.
-    apply IHf1.
-    apply IHf2.
-    rewrite IHf1, IHf2; auto.
-    rewrite IHf; auto.
-    rewrite IHf; auto.
-  Qed.
-  
-  Lemma free_Ex: forall s (v: variable s) f, (free (Ex s v f)) = (vsRemove v (free f)).
-  Proof.
-    intros; reflexivity.
-  Qed.
-  
-  Lemma free_And: forall f1 f2, free (And f1 f2) = (vsUnion (free f1) (free f2)).
-  Proof.
-    intros.
-    reflexivity.
-  Qed.
-
-  Lemma free_Or: forall f1 f2,  free (Or f1 f2) = (vsUnion (free f1) (free f2)).
-  Proof.
-    intros; reflexivity.
-  Qed.
-
-  Lemma free_IAnd_sub: forall `(K: Finite) fk, vsSubset (free (IAnd K fk)) (vsGUnion (fun k => free (fk k))).
-  Proof.
-    intros; unfold IAnd, vsGUnion; simpl.
-    induction fin_set; simpl; intros; auto.
-    repeat intro.
-    destruct H.
-    
-    repeat intro.
-    apply vsUnion_elim in H.
-    destruct H.
-    apply SV.InCUnion_intro with (u:=a); simpl; now auto.
-    apply IHs in H; clear IHs.
-    apply SV.InCUnion_elim in H.
-    destruct H as [u [h1 h2]].
-    apply SV.InCUnion_intro with (u0:=u); simpl; intros; auto.
-    apply h2.
-    apply h1.
-  Qed.
-  
-  Lemma free_IAnd_sup: forall `(K: Finite) fk, vsSubset (vsGUnion (fun k => free (fk k))) (free (IAnd K fk)).
-  Proof.
-    intros; unfold IAnd, vsGUnion; simpl.
-    induction fin_set; simpl; intros; auto.
-    repeat intro.
-    destruct H.
-    
-    repeat intro.
-    apply SV.InCUnion_elim in H; simpl in H.
-    destruct H as [u [h1 [h2 h3]]].
-    apply h3 in h1; clear h3.
-    destruct h2.
-    subst u.
-    apply vsUnion_l; now auto.
-    apply vsUnion_r.
-    apply IHs; auto.
-    apply SV.InCUnion_intro with (u0:=u); auto.
-  Qed.
-
-  Lemma free_IOr_sub: forall `(K: Finite) fk, vsSubset (free (IOr K fk)) (vsGUnion (fun k => free (fk k))).
-  Proof.
-    intros; unfold IOr, vsGUnion; simpl.
-    induction fin_set; simpl; intros; auto.
-    repeat intro.
-    destruct H.
-    
-    repeat intro.
-    apply vsUnion_elim in H.
-    destruct H.
-    apply SV.InCUnion_intro with (u:=a); simpl; now auto.
-    apply IHs in H; clear IHs.
-    apply SV.InCUnion_elim in H.
-    destruct H as [u [h1 h2]].
-    apply SV.InCUnion_intro with (u0:=u); simpl; intros; auto.
-    apply h2.
-    apply h1.
-  Qed.
-  
-  Lemma free_IOr_sup: forall `(K: Finite) fk, vsSubset (vsGUnion (fun k => free (fk k))) (free (IOr K fk)).
-  Proof.
-    intros; unfold IOr, vsGUnion; simpl.
-    induction fin_set; simpl; intros; auto.
-    repeat intro.
-    destruct H.
-    
-    repeat intro.
-    apply SV.InCUnion_elim in H; simpl in H.
-    destruct H as [u [h1 [h2 h3]]].
-    apply h3 in h1; clear h3.
-    destruct h2.
-    subst u.
-    apply vsUnion_l; now auto.
-    apply vsUnion_r.
-    apply IHs; auto.
-    apply SV.InCUnion_intro with (u0:=u); auto.
-  Qed.
-  
-  Ltac psemTac :=
-    match goal with
-      H:psem _ _ ?sa |- psem _ _ ?sa' => assert (sa' = sa) as ae;
-          try (rewrite ae; assumption); (apply functional_extensionality_dep; intros)
-    end.
-
-  Lemma lt_sem_imp: forall (D: Dom mySig) (Itp: Interp D) (l: literal) t (e1 e2: Env D),
-      (forall s (v: variable s), SV.set_In v (lt_vars l s) -> e1 s v = e2 s v) ->
-        lt_sem (Itp:=Itp) e1 l t -> lt_sem (Itp:=Itp) e2 l t.
-  Proof.
-    intros.
-    destruct l; simpl in *.
-    psemTac.
-    apply tm_sem_eq; intros.
-    symmetry; apply H; clear H; intros; auto.
-    apply (vsGUnion_intro s x); auto.
-  Qed.
-
-  Lemma lt_sem_equiv: forall (D: Dom mySig) (Itp: Interp D) (l: literal ) t (e1 e2: Env D),
-      (forall s (v: variable s), SV.set_In v (lt_vars l s) -> e1 s v = e2 s v) ->
-        lt_sem (Itp:=Itp) e1 l t <-> lt_sem (Itp:=Itp) e2 l t.
-  Proof.
-    intros; split.
-    apply lt_sem_imp; auto.
-    apply lt_sem_imp; intros.
-    symmetry; apply H; auto. 
-  Qed.
-  
-  Lemma at_sem_equiv: forall (D: Dom mySig) (Itp: Interp D) (a: atom ) t (e1 e2: Env  D),
-      (forall s (v: variable s), SV.set_In v (at_free a s) -> e1 s v = e2 s v) ->
-        at_sem (Itp:=Itp) e1 a t <-> at_sem (Itp:=Itp) e2 a t.
-  Proof.
-    intros.
-    destruct a; simpl in *.
-    apply lt_sem_equiv; auto.
-    
-    apply not_iff_compat.
-    apply lt_sem_equiv; auto.
-
-    rewrite tm_sem_eq with (e1:=e2) (e2:=e1); intros; auto.
-    rewrite tm_sem_eq with (e1:=e2) (e2:=e1); intros; auto.
-    reflexivity.
-    symmetry; apply H; clear H.
-    apply vsUnion_r; auto.
-    symmetry; apply H; clear H.
-    apply vsUnion_l; auto.
-    
-    apply not_iff_compat.
-    rewrite tm_sem_eq with (e1:=e2) (e2:=e1); intros; auto.
-    rewrite tm_sem_eq with (e1:=e2) (e2:=e1); intros; auto.
-    reflexivity.
-    symmetry; apply H; clear H.
-    apply vsUnion_r; auto.
-    symmetry; apply H; clear H.
-    apply vsUnion_l; auto.
-  Qed.
-
-  Lemma fm_sem_equiv: forall (D: Dom mySig) (Itp: Interp D) (f: formula) t (e1 e2: Env D),
-      (forall s (v: variable s), SV.set_In v (free f s) -> e1 s v = e2 s v) ->
-        fm_sem (Itp:=Itp) e1 f t <-> fm_sem (Itp:=Itp) e2 f t.
-  Proof.
-    induction f; intros; auto.
-  - reflexivity.
-  - reflexivity.
-  - apply at_sem_equiv; auto.
-  - simpl.
-    rewrite (IHf1 t e1 e2), (IHf2 t e1 e2); auto.
-    reflexivity.
-    intros; apply H; auto.
-    apply vsUnion_r; apply H0.
-    intros; apply H; auto.
-    apply vsUnion_l; apply H0.
-  - simpl.
-    rewrite (IHf1 t e1 e2), (IHf2 t e1 e2); auto.
-    reflexivity.
-    intros; apply H; auto.
-    apply vsUnion_r; apply H0.
-    intros; apply H; auto.
-    apply vsUnion_l; apply H0.
-  - simpl.
-    assert (forall d, fm_sem (add e d e1) f t <-> fm_sem (add e d e2) f t).
-    intro.
-    apply IHf; clear IHf; intros.
-    unfold add.
-    destruct (eq_dec s s0); auto.
-    subst s0.
-    destruct (eq_dec e v); auto.
-    apply H; clear H; intros; auto.
-    simpl.
-    apply vsInRemove_intro; simpl; auto.
-    intro; apply n; clear n.
-    apply inj_pair2_eq_dec in H; try apply eq_dec; now auto.
-    apply H; clear H; intros; auto.
-    simpl.
-    apply vsInRemove_intro; simpl; auto.
-    intro; apply n; clear n.
-    injection H; clear H; intros; now auto.
-
-    setoid_rewrite H0; reflexivity.
-  - simpl.
-    assert (forall d, fm_sem (add e d e1) f t <-> fm_sem (add e d e2) f t).
-    intro.
-    apply IHf; clear IHf; intros.
-    unfold add.
-    destruct (eq_dec s s0); auto.
-    subst s0.
-    destruct (eq_dec e v); auto.
-    apply H; clear H; intros; auto.
-    simpl.
-    apply vsInRemove_intro; simpl; auto.
-    intro; apply n; clear n.
-    apply inj_pair2_eq_dec in H; try apply eq_dec; now auto.
-    apply H; clear H; intros; auto.
-    simpl.
-    apply vsInRemove_intro; simpl; auto.
-    intro; apply n; clear n.
-    injection H; clear H; intros; now auto.
-
-    setoid_rewrite H0; reflexivity.
-  - simpl.
-    assert (forall t', (t'>=t /\ fm_sem e1 f t') <-> (t'>=t /\ fm_sem e2 f t')).
-    intro.    
-    setoid_rewrite (IHf t' e1 e2); auto.
-    reflexivity.
-    setoid_rewrite H0; reflexivity.
-  - simpl.
-    assert (forall t', (t'>=t -> fm_sem e1 f t') <-> (t'>=t -> fm_sem e2 f t')).
-    intro.    
-    setoid_rewrite (IHf t' e1 e2); auto.
-    reflexivity.
-    setoid_rewrite H0; reflexivity.
-  Qed.
-
-(*
-env |- ex x1,..,xn. f <-> ex di. add xn dn ... (add x1 d1 env) |- f 
-*)
-
-(*
-Definition addl {K:Finite} {D: Dom mySig} (sk: K-> Sort) (vk: forall k, variable (sk k)) (dk: forall k, ssem (sk k)) (env: Env D): Env D :=
-  List.fold_left (fun e (k:K) => add (vk k) (dk k) e) fin_set env.
-*)
-
-Definition addl {D: Dom mySig} `(K: Finite) 
-  (sk: K->Sort) (vk: forall k:K, variable (sk k)) (dk: forall k:K, ssem (sk k)) (env: Env D): Env D :=
-  fun (s: Sort) (v: variable s) =>
-    match last_dec (fun k => isEq2 (U:=variable) (sk k) (vk k) s v) with
-      inleft (exist _ k h) =>
-        match h in _=sv return ssem (projT1 sv) with
-          eq_refl => dk k
-        end
-    | inright h => env s v
-    end.
-
-Definition addr {D: Dom mySig} `(K: Finite) 
-  (sk: K->Sort) (vk: forall k:K, variable (sk k)) (dk: forall k:K, ssem (sk k)) (env: Env D): Env D :=
-  fun (s: Sort) (v: variable s) =>
-    match first_dec (fun k => isEq2 (U:=variable) (sk k) (vk k) s v) with
-      inleft (exist _ k h) =>
-        match h in _=sv return ssem (projT1 sv) with
-          eq_refl => dk k
-        end
-    | inright h => env s v
-    end.
-
-Lemma fold_in: forall `{K:Finite} {D: Dom mySig} {sk: K-> Sort} (vk: forall k, variable (sk k)) (dk: forall k, ssem (sk k)) (env: Env D) l s (w: variable s) d,
-  (exists k, List.In k l /\ isEq2 (U:=variable) _ w _ (vk k)) -> forall s' v,
-    List.fold_left (fun (e : Env D) (k0 : K) => add (vk k0) (dk k0) e) l
-      (add w d env) s' v =
-    List.fold_left (fun (e : Env D) (k0 : K) => add (vk k0) (dk k0) e) l
-      env s' v.
-Proof.
-  intros.
-  revert env; induction l; simpl; intros; auto.
-  destruct H as [k [H _]]; destruct H.
-  
-  destruct (@dc_dec (isEq2 (U:=variable) s w (sk a) (vk a))).
-  simpl in d0; injection d0; clear d0; intros; subst s.
-  apply inj_pair2_eq_dec in H0; try apply eq_dec; subst w.
-  rewrite add_add_eq; now auto.
-  
-  assert (exists k : K, List.In k l /\ isEq2 (U:=variable) s w (sk k) (vk k)).
-  destruct H as [k [h1 h2]].
-  exists k; split; auto.
-  destruct h1; try tauto.
-  subst k; tauto.
-  rewrite add_add_ne_swp; auto.
-  simpl in *; intro; apply n; clear n.
-  injection H1; clear H1; intros; subst s; auto.
-Qed.
-
-Lemma fold_add_ex: forall `{K:Finite} {D: Dom mySig} {sk: K-> Sort} (vk: forall k, variable (sk k)) (dk: forall k, ssem (sk k)) (env: Env D) l s (w: variable s),
-  (exists k, SV.set_In k l /\ isEq2 (U:=variable) _ (vk k) _ w) -> forall d1 d2 s' v,
-  List.fold_left (fun (e : Env D) (k0 : K) => add (vk k0) (dk k0) e) l
-    (add w d1 env) s' v =
-  List.fold_left (fun (e : Env D) (k0 : K) => add (vk k0) (dk k0) e) l
-    (add w d2 env) s' v.
-Proof.
-  intros.
-  revert env d1 d2; induction l; simpl; intros; auto.
-  destruct H as [k [h1 h2]]; destruct h1.
-  
-  destruct H as [k [h1 h2]].
-  destruct h1.
-  subst k.
-  change  (
-    List.fold_left (fun (e : Env D) (k0 : K) => add (vk k0) (dk k0) e) (a::l)
-      (add w d1 env) s' v =
-    List.fold_left (fun (e : Env D) (k0 : K) => add (vk k0) (dk k0) e) (a::l)
-      (add w d2 env) s' v).
-  
-  rewrite fold_in.
-  rewrite fold_in; auto.
-  
-  exists a; split; simpl; now auto.
-  exists a; split; simpl; now auto.
-
-  destruct (@dc_dec (isEq2 (U:=variable) _ w _ (vk a))).
-  injection d; intros; subst s.
-  apply inj_pair2_eq_dec in d; try apply eq_dec; subst w.
-  do 2 rewrite add_add_eq; now auto.  
-
-  rewrite add_add_ne_swp with (v2:=w); auto.
-  rewrite add_add_ne_swp with (v2:=w); auto.
-  apply IHl.
-  exists k; split; now auto.
-  simpl in *; intro; apply n; clear n.
-  injection H0; clear H0; intros; subst s; auto.
-  simpl in *; intro; apply n; clear n.
-  injection H0; clear H0; intros; subst s; auto.
-Qed.
-
-Lemma fold_add_nex: forall `(K: EqDec) {D: Dom mySig} {sk: K-> Sort} (vk: forall k, variable (sk k)) (dk dk': forall k, ssem (sk k)) (env: Env D) l s (w: variable s) (a:K),
-  (forall k, List.In k l -> ~ (isEq2 (U:=variable) (sk k) (vk k) (sk a) (vk a))) ->
-  (forall k, a <> k -> dk' k = dk k) ->
-  List.fold_left (fun e k => add (vk k) (dk' k) e) l env s w =
-  List.fold_left (fun e k => add (vk k) (dk k) e) l env s w.
-Proof.
-  intros.
-  revert env; induction l; simpl; intros; auto.
-  
-  rewrite (H0 a0).
-  apply IHl; clear IHl; intros; auto.
-  apply H.
-  right; now auto.
-  intro; subst a0.
-  apply (H a); simpl; auto.
-Qed.
-
-Lemma IEx_sem: forall D (Itp: Interp D) env `(K: Finite) sk vk f t,
-    fm_sem env (IEx K sk vk f) t
-  <-> exists (dk: forall k, ssem (sk k)), fm_sem (addl K sk vk dk env) f t.
-Proof.
-  intros.
-  unfold addl, IEx.
-  unfold last_dec.
-  revert env; induction fin_set; simpl; intros.
-  
-  split; intro.
-  
-  exists (fun k => neDom (sk k)); now auto.
-  destruct H as [dk H].
-  apply H.
-  
-  split; intro.
-  destruct H as [d H].
-  (***)
-  
-  apply IHs in H; clear IHs.
-  destruct H as [dk H].
-  
-  destruct (SV.set_In_dec a s).
-  exists dk.
-  revert H; apply fm_sem_equiv; intros; clear H.
-  destruct (SV.last_dec (fun k : K => isEq2 (sk k) (vk k) s0 v) s); auto.
-  destruct s1 as [k [h1 h2]]; simpl; reflexivity.
-  destruct ( dec.isEq2_obligation_1 _ Sort _ (fun x : Sort => variable x)
-        (sk a) (vk a) s0 v); auto.
-  unfold and_ind.
-  injection e; intros; subst s0.
-  apply inj_pair2_eq_dec in H; try apply eq_dec; subst v.
-  exfalso; apply (n a i eq_refl).
-  rewrite add_ne2; now auto.
-    
-  set (dk' := fun k => 
-    match eq_dec a k return ssem (sk k) 
-    with left e =>
-      match e in _=k return ssem (sk k) with
-        eq_refl => d
-      end
-      | _ => dk k
-      end).
-  exists dk'.
-  
-  revert H; apply fm_sem_equiv; intros; clear H.
-  destruct (SV.last_dec (fun k : K => isEq2 (sk k) (vk k) s0 v) s); auto.
-  destruct s1 as [k [h1 h2]]; simpl.
-  
-  injection h2; intros; subst s0.
-  apply inj_pair2_eq_dec in H; try apply eq_dec; subst v.
-  rewrite (proof_irrelevance _ _ eq_refl).
-  unfold dk'.
-  destruct (eq_dec a k); auto.
-  subst k; tauto.
-  
-  destruct (dec.isEq2_obligation_1 _ Sort _ (fun x : Sort => variable x) 
-        (sk a) (vk a) s0 v); auto.
-  injection e; intros; subst s0.
-  destruct (eq_dec (sk a) (sk a)); try tauto.
-  unfold and_ind.
-  apply inj_pair2_eq_dec in H; try apply eq_dec; subst v.
-  rewrite (proof_irrelevance _ e eq_refl).
-  rewrite add_eq.
-  unfold dk'.
-  destruct (eq_dec a a); try tauto.
-  rewrite (proof_irrelevance _ e1 eq_refl); now auto.
-  rewrite add_ne2; now auto.
-  
-  destruct H as [dk H].
-  exists (dk a).
-  apply IHs; clear IHs.
-  exists dk.
-  unfold and_ind in *.
-  revert H; apply fm_sem_equiv; intros; auto.
-  destruct (SV.last_dec (fun k : K => isEq2 (sk k) (vk k) s0 v) s); auto.
-  destruct s1 as [k [h1 h2]]; simpl in *.
-  reflexivity.
-  destruct (dec.isEq2_obligation_1 _ Sort _ (fun x : Sort => variable x) 
-        (sk a) (vk a) s0 v); auto.
-  injection e; intros; subst s0.
-  apply inj_pair2_eq_dec in H0; try apply eq_dec; subst v.
-  rewrite add_eq.
-  rewrite (proof_irrelevance _ _ eq_refl); now auto.  
-  rewrite add_ne2; auto.
-Qed.
-
-Lemma IAll_sem: forall D (Itp: Interp D) env `(K: Finite) sk vk f t,
-  fm_sem env (IAll K sk vk f) t <-> forall (dk: forall k, ssem (sk k)), fm_sem (addl K sk vk dk env) f t.
-Proof.
-  intros.
-  assert (not (fm_sem env (IAll K sk vk f) t) <->
-           (exists dk : forall k : K, ssem (sk k), not (fm_sem (addl K sk vk dk env) f t))).
-  rewrite <-Not_sem.
-  setoid_rewrite <-Not_sem.
-  rewrite Not_IAll.
-  rewrite IEx_sem; now auto.
-  assert (not (fm_sem env (IAll K sk vk f) t) <->
-           not (forall dk : forall k : K, ssem (sk k), (fm_sem (addl K sk vk dk env) f t))).
-  rewrite H; clear H.
-  split; intro.
-  intro.
-  destruct H as [dk H]; apply H; apply H0; now auto.
-  apply not_all_ex_not in H; apply H.
-  clear H.
-  split; intros; try tauto.
-  apply proj2 in H0.
-  apply NNPP; intro; revert H; apply H0; clear H0; intro.
-  apply (H1 (H dk)).
-Qed.
 
 End FO.
 

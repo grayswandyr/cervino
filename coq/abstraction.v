@@ -6,6 +6,7 @@ Require Import Classical.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Coq.Arith.PeanoNat.
 Require Import Coq.Logic.IndefiniteDescription.
+Require Import Fin.
 
 Require Import Top.foltl.
 Require Import Top.dec.
@@ -14,10 +15,12 @@ Require Import Top.set.
 Require Import Top.subItp.
 Require Import Top.quantifiers.
 Require Import Top.env.
+Require Import Top.varset.
+Require Import Top.vars.
 
 Section Abstraction.
-  Context {Ts: Type} {Tv: Ts->Type} {Tc: Ts->Type} {Tp: Type} {Ta: Tp -> Type}.
-  Variable srcSig: @Sig Ts Tv Tc Tp Ta.
+  Context {Ts: Type} {Tv: Ts->Type} {Tc: Ts->Type} {Tp: Type}.
+  Variable srcSig: @Sig Ts Tv Tc Tp.
   Existing Instance srcSig.
 
   Section ExAll.
@@ -56,14 +59,14 @@ Section Abstraction.
   Qed.
 
   Definition dstTa (p:newPred): Type := 
-    match p with OldPred op => pr_arity op | NewPred _ _ _ => One end.
+    match p with OldPred op => Fin.t (pr_arity op) | NewPred _ _ _ => One end.
 
   Definition dstSig: Sig := {|
     Sort := Sort (Sig:=srcSig);
     variable := variable (Sig:=srcSig);
     constant := constant (Sig:=srcSig);
     predicate := newPredDec;
-    pr_arity p := match p return @ArityT (dstTa p) with OldPred op => pr_arity op | NewPred _ _ _ => (OneFin:ArityT) end;
+    pr_arity p := match p with OldPred op => pr_arity op | NewPred _ _ _ => 1 end;
     pr_args p := match p with OldPred op => pr_args op | NewPred s _ _ => fun i => s end
   |}.
 
@@ -272,7 +275,7 @@ Section Abstraction.
     psem p t := 
       match p with
         OldPred op => psem op t
-      | NewPred s v h => fun args => args one = pe t s v h
+      | NewPred s v h => fun args => args F1 = pe t s v h
       end
   |}.
   

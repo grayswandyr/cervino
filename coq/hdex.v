@@ -12,8 +12,8 @@ Require Import Top.set.
 
 Section FiniteModel_HdEx.
 
-  Context {Ts: Type} {Tv: Ts->Type} {Tc: Ts->Type} {Tp: Type} {Ta: Tp -> Type}.
-  Variable srcSig: @Sig Ts Tv Tc Tp Ta.
+  Context {Ts: Type} {Tv: Ts->Type} {Tc: Ts->Type} {Tp: Type}.
+  Variable srcSig: @Sig Ts Tv Tc Tp.
   Existing Instance srcSig.
 
   Inductive abs_ssem {D: Dom srcSig} (Itp: Interp D) (env: Env srcSig D) s :=

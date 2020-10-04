@@ -10,8 +10,8 @@ Require Import Top.finite.
 
 Section SubInterp.
 
-  Context {Ts: Type} {Tv: Ts->Type} {Tc: Ts->Type} {Tp: Type} {Ta: Tp -> Type}.
-  Variable srcSig: @Sig Ts Tv Tc Tp Ta.
+  Context {Ts: Type} {Tv: Ts->Type} {Tc: Ts->Type} {Tp: Type}.
+  Variable srcSig: @Sig Ts Tv Tc Tp.
 
   Ltac psemTac :=
     match goal with

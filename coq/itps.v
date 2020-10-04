@@ -86,8 +86,6 @@ Lemma at_itp_S_sem: forall `{Sg: Sig} (D: Dom Sg) env (itp: Interp D) (a: atom S
 Proof.
   intros.
   destruct a; simpl; try rewrite lt_itp_S_sem; try reflexivity.
-  do 2 rewrite <-tm_itp_S_sem; reflexivity.
-  do 2 rewrite <-tm_itp_S_sem; reflexivity.
 Qed.
 
 Lemma at_itp_add_sem: forall `{Sg: Sig} (D: Dom Sg) env (itp: Interp D) i (a: atom Sg) t,
@@ -95,8 +93,6 @@ Lemma at_itp_add_sem: forall `{Sg: Sig} (D: Dom Sg) env (itp: Interp D) i (a: at
 Proof.
   intros.
   destruct a; simpl; try rewrite lt_itp_add_sem; try reflexivity.
-  do 2 rewrite <-tm_itp_add_sem; reflexivity.
-  do 2 rewrite <-tm_itp_add_sem; reflexivity.
 Qed.
 
 Lemma at_itp_P_sem: forall `{Sg: Sig} (D: Dom Sg) env (itp: Interp D) (a: atom Sg) t,
@@ -104,8 +100,6 @@ Lemma at_itp_P_sem: forall `{Sg: Sig} (D: Dom Sg) env (itp: Interp D) (a: atom S
 Proof.
   intros.
   destruct a; simpl; try rewrite lt_itp_P_sem; try reflexivity.
-  do 2 rewrite <-tm_itp_P_sem; reflexivity.
-  do 2 rewrite <-tm_itp_P_sem; reflexivity.
 Qed.
 
 Lemma itp_add_sem: forall `{Sg: Sig} (D: Dom Sg) env (itp: Interp D) (f: formula Sg) i t,

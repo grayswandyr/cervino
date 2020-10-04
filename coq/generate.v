@@ -8,11 +8,6 @@ Require Import Top.finite.
 Require Extraction.
 
 (*
-Extract Inlined Constant DataType => "int".
-Extract Inlined Constant dZero => "0".
-Extract Inlined Constant dAdd => "(+)".
-Extract Inlined Constant dInc => "succ".
-
 Require Import extraction.ExtrOcamlString.
 Extract Inlined Constant print => "print_string".
 Extract Inlined Constant String.append => "(^)".
@@ -28,5 +23,9 @@ Extract Inlined Constant app => "(@)".
 Extract Inductive sigT => "( * )" [ "" ].
 Extract Inlined Constant projT1 => "fst".
 Extract Inlined Constant projT2 => "snd".
+
+Extraction Inline eq_dec dc_dec.
+Extraction Inline dec.OneDec dec.isEq2_obligation_1 dec.PairDec_obligation_1.
+Extraction Inline finite.asDec_obligation_1 finite.asDec abstraction.newPredDec_obligation_1.
 
 Extraction "/tmp/generate.ml" abstract_ExAll.

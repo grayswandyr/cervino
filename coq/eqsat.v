@@ -12,6 +12,9 @@ Require Import Top.foltl_diff.
 Require Import Top.set.
 Require Import Top.itps.
 Require Import Top.extend.
+Require Import Top.varset.
+Require Import Top.vars.
+Require Import Top.fosem.
 
 (*
 isSatForC Fr (X f) <-> isSatForC Fr f
@@ -29,15 +32,15 @@ isSatForC (vsRemove v (free f)) (ExD v f) <-> isSatForC (free f) f
 *)
 
 Section EquiSatC.
-  Context {Ts: Type} {Tv: Ts->Type} {Tc: Ts->Type} {Tp: Type} {Ta: Tp -> Type}.
-  Variable Sg: @Sig Ts Tv Tc Tp Ta.
+  Context {Ts: Type} {Tv: Ts->Type} {Tc: Ts->Type} {Tp: Type}.
+  Variable Sg: @Sig Ts Tv Tc Tp.
 
   Variable D: Dom Sg.
   Variable cs: forall s, constant s -> ssem s.
   (* Hyp: domaine assez grand -- sinon LTL sur dom fini *)
   Variable extEnv: VarSet Sg -> VarSet Sg -> Env Sg D -> Env Sg D.
 
-Definition isItpForC (itp: Interp D) := @csem _ _ _ _ _ _ _ itp = cs.
+Definition isItpForC (itp: Interp D) := @csem _ _ _ _ _ _ itp = cs.
 
 Definition isUniq (F: VarSet Sg) (env: Env Sg D) :=
   (forall s v1 v2, vsIn Sg v1 F -> vsIn Sg v2 F -> env s v1 = env s v2 -> v1 = v2) /\
