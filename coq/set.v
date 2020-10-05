@@ -147,7 +147,7 @@ Module SV.
     destruct H.
     destruct H; apply n0.
     apply (n x H).
-  Qed.
+  Defined.
 
   Fixpoint first_dec `{T: EqDec} (p: T->Decidable) (s: set T): {x | In x s /\ p x} + {forall x, In x s -> not (p x)} :=
     match s with
@@ -231,6 +231,14 @@ Module SV.
   Definition subset  `(T: EqDec) (s1 s2: set T) : Prop := forall v, In v s1 -> In v s2.
   Definition set_eq  `(T: EqDec) (s1 s2: set T) : Prop := forall v, In v s1 <-> In v s2.
   Definition disjoint  `(T: EqDec) (s1 s2: set T) : Prop := forall v, not (In v s1 /\ In v s2).
+
+  Program Instance emptyDec `(T:EqDec) (s: set T) : Decidable := {| 
+     dcPred := is_empty s
+  |}.
+  Next Obligation.
+    destruct s; [left | right]; repeat intro; auto.
+    apply (H e); left; reflexivity.
+  Defined.
 
   Lemma empty_is_empty: forall `(T:EqDec), is_empty (empty T).
   Proof.

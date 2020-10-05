@@ -218,13 +218,4 @@ Record mlModel := {
   mlEvents: list mlEvent;
 }.
 
-(***
-Record mlSignedFormula := { (* A REVOIR: changement de signature *)
-  mlSfForm : mlFormula;
-}.
-
-Definition mlTransform (m: mlModel) (chk: mlCheck) : option mlSignedFormula.
-Admitted.
-***)
 End MLCervino.
-

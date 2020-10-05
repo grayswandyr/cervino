@@ -988,6 +988,37 @@ Fixpoint isExAll f :=
   | f => isAll f
   end.
 
+Lemma isProp_dec f : {isProp f}+{not (isProp f)}.
+Proof.
+  induction f; simpl; intros; try (left; now auto); try (right; tauto).
+  destruct IHf1; [idtac | right; tauto].
+  destruct IHf2; [left | right]; tauto.
+
+  destruct IHf1; [idtac | right; tauto].
+  destruct IHf2; [left | right]; tauto.
+Defined.
+
+Lemma isAll_dec f : {isAll f}+{not (isAll f)}.
+Proof.
+  induction f; simpl; intros; try (left; now auto); try (right; tauto); auto.
+  destruct (isProp_dec f1); [idtac | right; tauto].
+  destruct (isProp_dec f2); [left | right]; tauto.
+
+  destruct (isProp_dec f1); [idtac | right; tauto].
+  destruct (isProp_dec f2); [left | right]; tauto.
+Defined.
+
+Lemma isExAll_dec f : {isExAll f}+{not (isExAll f)}.
+Proof.
+  induction f; simpl; intros; try (left; now auto); try (right; tauto); auto.
+  destruct (isProp_dec f1); [idtac | right; tauto].
+  destruct (isProp_dec f2); [left | right]; tauto.
+
+  destruct (isProp_dec f1); [idtac | right; tauto].
+  destruct (isProp_dec f2); [left | right]; tauto.
+
+  apply (isAll_dec f).  
+Defined.
 
 End FO.
 
