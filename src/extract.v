@@ -26,4 +26,4 @@ Extraction Inline eq_dec dc_dec.
 Extraction Inline dec.OneDec dec.isEq2_obligation_1 dec.PairDec_obligation_1.
 Extraction Inline finite.asDec_obligation_1 finite.asDec abstraction.newPredDec_obligation_1.
 
-Extraction "/tmp/extract.ml" MLCervino transfo.Transfo.
+Extraction "extract.ml" MLCervino transfo.Transfo.

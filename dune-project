@@ -1,4 +1,4 @@
-(lang dune 2.6)
+(lang dune 2.7)
 (using menhir 2.0)
 (using coq 0.2)
 
