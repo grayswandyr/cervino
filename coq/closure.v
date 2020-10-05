@@ -1,15 +1,14 @@
-Add LoadPath "$HOME/COQ/FO-LTL" as Top.
 
 Require Import Eqdep_dec.
 Require Import Fin.
 
-Require Import Top.foltl.
-Require Import Top.dec.
-Require Import Top.finite.
-Require Import Top.set.
-Require Import Top.varset.
-Require Import Top.vars.
-Require Import Top.fosem.
+Require Import foltl.
+Require Import dec.
+Require Import finite.
+Require Import set.
+Require Import varset.
+Require Import vars.
+Require Import fosem.
 
 Section Closure.
   Context {Ts: Type} {Tv: Ts->Type} {Tc: Ts->Type} {Tp: Type}.

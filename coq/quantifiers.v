@@ -1,17 +1,16 @@
-Add LoadPath "$HOME/COQ/FO-LTL" as Top.
 
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Eqdep_dec.
 Require Import ProofIrrelevance.
 
-Require Import Top.foltl.
-Require Import Top.dec.
-Require Import Top.finite.
-Require Import Top.set.
-Require Import Top.env.
-Require Import Top.varset.
-Require Import Top.fosem.
-Require Import Top.vars.
+Require Import foltl.
+Require Import dec.
+Require Import finite.
+Require Import set.
+Require Import env.
+Require Import varset.
+Require Import fosem.
+Require Import vars.
 
 
   Fixpoint getEx `{Sg: Sig} (f: formula Sg): VarSet Sg :=

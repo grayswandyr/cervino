@@ -1,9 +1,8 @@
-Add LoadPath "$HOME/COQ/FO-LTL" as Top.
 
-Require Import Top.foltl.
-Require Import Top.abstraction.
-Require Import Top.dec.
-Require Import Top.finite.
+Require Import foltl.
+Require Import abstraction.
+Require Import dec.
+Require Import finite.
 
 Require Extraction.
 

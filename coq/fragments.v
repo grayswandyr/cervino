@@ -1,6 +1,5 @@
-Add LoadPath "$HOME/COQ/FO-LTL" as Top.
 
-Require Import Top.foltl.
+Require Import foltl.
 
 Module V1.
 

@@ -1,7 +1,6 @@
-Add LoadPath "$HOME/COQ/FO-LTL" as Top.
 
 Require Import Coq.Logic.FunctionalExtensionality.
-Require Import Top.foltl.
+Require Import foltl.
 
 Definition itp_add `{Sg: Sig} {D: Dom Sg} i (itp: Interp D): Interp D := {|
   csem s c := csem c;

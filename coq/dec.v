@@ -1,4 +1,3 @@
-Add LoadPath "$HOME/COQ/FO-LTL" as Top.
 
 Require Import Eqdep_dec.
 Require Import Coq.Logic.JMeq.

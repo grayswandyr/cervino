@@ -1,4 +1,3 @@
-Add LoadPath "$HOME/COQ/FO-LTL" as Top.
 
 Require Import Eqdep_dec.
 Require Import Coq.Logic.FunctionalExtensionality.
@@ -8,9 +7,9 @@ Require Import ProofIrrelevance.
 Require Import Classical.
 Require Import Fin.
 
-Require Import Top.dec.
-Require Import Top.finite.
-Require Import Top.set.
+Require Import dec.
+Require Import finite.
+Require Import set.
 
 (*
 http://people.mpi-inf.mpg.de/~mvoigt/files/LICS2016_slides.pdf
@@ -67,7 +66,7 @@ Class Interp `{Sg: Sig} (D: Dom Sg) := {
 }.
 
 Section FO.
-  Context {Ts: Type} {Tv: Ts->Type} {Tc: Ts->Type} {Tp: Type} {Ta: Tp -> Type}.
+  Context {Ts: Type} {Tv: Ts->Type} {Tc: Ts->Type} {Tp: Type}.
   Variable mySig: @Sig Ts Tv Tc Tp.
   Existing Instance mySig.
 

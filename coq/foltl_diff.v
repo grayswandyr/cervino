@@ -1,4 +1,3 @@
-Add LoadPath "$HOME/COQ/FO-LTL" as Top.
 
 Require Import ProofIrrelevance.
 Require Import Coq.Logic.JMeq.
@@ -6,13 +5,13 @@ Require Import Eqdep_dec.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Classical.
 
-Require Import Top.foltl.
-Require Import Top.dec.
-Require Import Top.finite.
-Require Import Top.set.
-Require Import Top.vars.
-Require Import Top.varset.
-Require Import Top.fosem.
+Require Import foltl.
+Require Import dec.
+Require Import finite.
+Require Import set.
+Require Import vars.
+Require Import varset.
+Require Import fosem.
 
 Ltac fm_semTac :=
     match goal with

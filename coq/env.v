@@ -1,11 +1,10 @@
-Add LoadPath "$HOME/COQ/FO-LTL" as Top.
 
 Require Import Coq.Logic.FunctionalExtensionality.
 
-Require Import Top.dec.
-Require Import Top.finite.
-Require Import Top.set.
-Require Import Top.foltl.
+Require Import dec.
+Require Import finite.
+Require Import set.
+Require Import foltl.
 
 Definition pEnv `{Sg:Sig} (D: Dom Sg) (vs: forall s, SV.set (variable s)) :=
   forall s v, SV.set_In v (vs s) -> ssem s.

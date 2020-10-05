@@ -1,4 +1,3 @@
-Add LoadPath "$HOME/COQ/FO-LTL" as Top.
 
 Require Import ProofIrrelevance.
 Require Import Eqdep_dec.
@@ -8,15 +7,15 @@ Require Import Coq.Arith.PeanoNat.
 Require Import Coq.Logic.IndefiniteDescription.
 Require Import Fin.
 
-Require Import Top.foltl.
-Require Import Top.dec.
-Require Import Top.finite.
-Require Import Top.set.
-Require Import Top.subItp.
-Require Import Top.quantifiers.
-Require Import Top.env.
-Require Import Top.varset.
-Require Import Top.vars.
+Require Import foltl.
+Require Import dec.
+Require Import finite.
+Require Import set.
+Require Import subItp.
+Require Import quantifiers.
+Require Import env.
+Require Import varset.
+Require Import vars.
 
 Section Abstraction.
   Context {Ts: Type} {Tv: Ts->Type} {Tc: Ts->Type} {Tp: Type}.

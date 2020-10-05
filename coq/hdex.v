@@ -1,14 +1,13 @@
-Add LoadPath "$HOME/COQ/FO-LTL" as Top.
 
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import ProofIrrelevance.
 Require Import Eqdep_dec.
 
-Require Import Top.foltl.
-Require Import Top.dec.
-Require Import Top.finite.
-Require Import Top.subItp.
-Require Import Top.set.
+Require Import foltl.
+Require Import dec.
+Require Import finite.
+Require Import subItp.
+Require Import set.
 
 Section FiniteModel_HdEx.
 

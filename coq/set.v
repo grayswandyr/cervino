@@ -1,8 +1,7 @@
-Add LoadPath "$HOME/COQ/FO-LTL" as Top.
 Set Implicit Arguments.
 
 Require List.
-Require Import Top.dec.
+Require Import dec.
 Require Ensembles.
 Require Import Morphisms.
 Require Import Setoid.

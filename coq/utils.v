@@ -1,4 +1,3 @@
-Add LoadPath "$HOME/COQ/FO-LTL" as Top.
 
 Require Import ProofIrrelevance.
 

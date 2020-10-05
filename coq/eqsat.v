@@ -1,20 +1,19 @@
-Add LoadPath "$HOME/COQ/FO-LTL" as Top.
 
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Eqdep_dec.
 Require Import Lia.
 Require Import ProofIrrelevance.
 
-Require Import Top.dec.
-Require Import Top.finite.
-Require Import Top.foltl.
-Require Import Top.foltl_diff.
-Require Import Top.set.
-Require Import Top.itps.
-Require Import Top.extend.
-Require Import Top.varset.
-Require Import Top.vars.
-Require Import Top.fosem.
+Require Import dec.
+Require Import finite.
+Require Import foltl.
+Require Import foltl_diff.
+Require Import set.
+Require Import itps.
+Require Import extend.
+Require Import varset.
+Require Import vars.
+Require Import fosem.
 
 (*
 isSatForC Fr (X f) <-> isSatForC Fr f

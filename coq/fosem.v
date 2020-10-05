@@ -1,16 +1,15 @@
-Add LoadPath "$HOME/COQ/FO-LTL" as Top.
 
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Eqdep_dec.
 Require Import ProofIrrelevance.
 Require Import Classical.
 
-Require Import Top.foltl.
-Require Import Top.set.
-Require Import Top.dec.
-Require Import Top.finite.
-Require Import Top.vars.
-Require Import Top.varset.
+Require Import foltl.
+Require Import set.
+Require Import dec.
+Require Import finite.
+Require Import vars.
+Require Import varset.
 
 Section FOsem.
 

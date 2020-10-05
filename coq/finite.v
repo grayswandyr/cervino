@@ -1,12 +1,11 @@
-Add LoadPath "$HOME/COQ/FO-LTL" as Top.
 
 Require Import Classical.
 Require Import Eqdep_dec.
 Require Import Fin.
 Require Import List.
 
-Require Import Top.dec.
-Require Import Top.set.
+Require Import dec.
+Require Import set.
 
 Inductive isFinite `(T: EqDec): Prop :=
   isFinite_intro: forall s: SV.set T, (forall x, SV.set_In x s) -> isFinite T.

@@ -1,9 +1,8 @@
-Add LoadPath "$HOME/COQ/FO-LTL" as Top.
 
 Require Import List.
 Require Import String.
 
-Require Import Top.utils.
+Require Import utils.
 
 Definition mlSort := string.
 
@@ -240,4 +239,4 @@ Extract Inductive string => "string" [ """""" "(fun (a, b) -> (String.make 1 a) 
 
 Extract Inductive nat => int [ "0" "succ" ] "(fun fO fS n -> if n=0 then fO () else fS (n-1))".
 
-Extraction "/tmp/generate.ml" MLCervino.
+Extraction "api.ml" MLCervino.

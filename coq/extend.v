@@ -1,4 +1,3 @@
-Add LoadPath "$HOME/COQ/FO-LTL" as Top.
 
 Require Import List.
 Include ListNotations.
@@ -7,9 +6,9 @@ Require Import Lia.
 Require Import Coq.Logic.ClassicalEpsilon.
 Require Import Classical.
 
-Require Import Top.dec.
-Require Import Top.set.
-Require Import Top.finite.
+Require Import dec.
+Require Import set.
+Require Import finite.
 
 Definition pInjective `{T: EqDec} (D: SV.set T) (f: T -> T) :=
   forall x y, SV.set_In x D -> SV.set_In y D -> f x = f y -> x = y.

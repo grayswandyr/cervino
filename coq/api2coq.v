@@ -1,4 +1,3 @@
-Add LoadPath "$HOME/COQ/FO-LTL" as Top.
 
 Require Import String.
 Require Import List.
@@ -7,11 +6,11 @@ Require Import ProofIrrelevance.
 Require Import Init.Logic.
 Import  EqNotations.
 
-Require Import Top.api.
-Require Import Top.foltl.
-Require Import Top.finite.
-Require Import Top.dec.
-Require Import Top.utils.
+Require Import api.
+Require Import foltl.
+Require Import finite.
+Require Import dec.
+Require Import utils.
 
 Instance StrDec : EqDec := {| eq_dec := string_dec |}.
 Instance NatDec : EqDec := {| eq_dec := Coq.Arith.PeanoNat.Nat.eq_dec |}.

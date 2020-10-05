@@ -1,9 +1,13 @@
-Add LoadPath "$HOME/COQ/FO-LTL" as Top.
+Require Import JMeq.
+Require Import Coq.Logic.FunctionalExtensionality.
+Require Import Classical.
 
-Require Import Top.foltl.
-Require Import Top.set.
-Require Import Top.dec.
-Require Import Top.finite.
+Require Import foltl.
+Require Import set.
+Require Import dec.
+Require Import finite.
+Require Import varset.
+Require Import vars.
 
 (*
 associer a un predicat p de la signature une liste de predicats g de meme arite
@@ -20,27 +24,25 @@ hyp: r(xi) --> phi(xi)
 
 *)
 
-Require Import JMeq.
-Require Import Coq.Logic.FunctionalExtensionality.
-Require Import Classical.
-
 Section Stability.
-  Variable Sg : Sig.
+  Context {Ts: Type} {Tv: Ts->Type} {Tc: Ts->Type} {Tp: Type}.
+  Variable (Sg: @Sig Ts Tv Tc Tp).
+
   Variable D : Dom Sg.
   Variable itp: Interp D.
-  Variable FC : @predicate Sg -> formula Sg.
+  Variable FC : predicate (Sig:=Sg) -> formula Sg.
   Variable FC_fo: forall p, isFO Sg (FC p).
-  Variable FCv: forall p (i: pr_arity p), @variable Sg (pr_args p i).
+  Variable FCv: forall p (i: Fin.t (pr_arity p)), variable (pr_args p i).
   (*
   Variable FCf: forall p i, vsIn Sg (FCv p i) (free Sg (FC p)).
   Variable FCr: forall (p: @predicate Sg) (s: @Sort Sg) (v: variable s), vsIn Sg v (free Sg (FC p)) -> exists (i: pr_arity p), JMeq (FCv p i) v.
   *)
 
-  Definition inst (p: @predicate Sg) m : formula Sg :=
-    IEx Sg (pr_arity p) (pr_args p)
+  Definition inst (p: predicate) m : formula Sg :=
+    IEx Sg (uptoFinite (pr_arity p)) (pr_args p)
         (FCv p) 
         (And Sg (FC p)
-                  (IAnd Sg (pr_arity p) 
+                  (IAnd Sg (uptoFinite (pr_arity p)) 
                       (fun i => Atom Sg (Eq Sg _ (Var Sg _ (FCv p i)) (m i))))
         ).
 
@@ -192,11 +194,13 @@ Section Stability.
     generalize (H1 l); clear H1; intro H1.
     destruct l; simpl in *.
     subst n; simpl in *.
-    assert (psem p t (fun i : pr_arity p => tm_sem Sg env1 (t0 i))).    
+    assert (psem p t (fun i : Fin.t (pr_arity p) => tm_sem Sg env1 (t0 i))).    
     psemTac.
     destruct (t0 x) eqn:e; simpl; auto.
     apply H1; simpl; auto.
     apply SV.InCUnion_intro with (u:=x); simpl; try apply fin_all; simpl; intros.
+    exact (fin_all (T:=uptoFinite (pr_arity p)) x).
+    exact (fin_all (T:=uptoFinite (pr_arity p)) x).
     rewrite e; simpl; auto.
     apply vsSing_intro.
     apply H2 in H; simpl in H.
@@ -204,17 +208,21 @@ Section Stability.
     destruct (t0 x) eqn:e; simpl; auto.
     symmetry; apply H1; simpl; auto.
     apply SV.InCUnion_intro with (u:=x); simpl; try apply fin_all; simpl; intros.
+    exact (fin_all (T:=uptoFinite (pr_arity p)) x).
+    exact (fin_all (T:=uptoFinite (pr_arity p)) x).
     rewrite e; simpl; auto.
     apply vsSing_intro.
     
     generalize (H1 l); clear H1; intro H1.
     destruct l; simpl in *.
     subst n; simpl in *.
-    assert (psem p (S t) (fun i : pr_arity p => tm_sem Sg env1 (t0 i))).
+    assert (psem p (S t) (fun i : Fin.t (pr_arity p) => tm_sem Sg env1 (t0 i))).
     psemTac.
     destruct (t0 x) eqn:e; simpl; auto.
     apply H1; simpl; auto.
     apply SV.InCUnion_intro with (u:=x); simpl; try apply fin_all; simpl; intros.
+    exact (fin_all (T:=uptoFinite (pr_arity p)) x).
+    exact (fin_all (T:=uptoFinite (pr_arity p)) x).
     rewrite e; simpl; auto.
     apply vsSing_intro.
     apply H2 in H; simpl in H.
@@ -222,6 +230,8 @@ Section Stability.
     destruct (t0 x) eqn:e; simpl; auto.
     symmetry; apply H1; simpl; auto.
     apply SV.InCUnion_intro with (u:=x); simpl; try apply fin_all; simpl; intros.
+    exact (fin_all (T:=uptoFinite (pr_arity p)) x).
+    exact (fin_all (T:=uptoFinite (pr_arity p)) x).
     rewrite e; simpl; auto.
     apply vsSing_intro.
   Qed.
@@ -305,4 +315,4 @@ Section Stability.
     apply stability; now auto.
   Qed.
   
-   
+End Stability.
