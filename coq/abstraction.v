@@ -381,18 +381,33 @@ Section Abstraction.
     reflexivity.
   Qed.
   
-  Lemma fm_dst_sem: forall f (nfo: noFO srcSig f) t (D: Dom srcSig) (env: Env srcSig D) (env': Env dstSig (tfr_dom D)) (Itp: Interp D) (Itp': Interp (tfr_dom D)), 
+  Lemma fm_dst_sem: forall f t (D: Dom srcSig) (env: Env srcSig D) (env': Env dstSig (tfr_dom D)) (Itp: Interp D) (Itp': Interp (tfr_dom D)), 
     isExtItp Itp Itp'  -> isExtEnv env env' ->
       (fm_sem srcSig (Itp:=Itp) env f t <-> fm_sem dstSig (Itp:=Itp') env' (fm_dstSig f) t).
   Proof.
     intros.
-    revert f nfo t env env' H H0.
+    revert f t env env' H H0.
     induction f; simpl; intros; auto; try tauto.
   - rewrite at_dst_sem with (env':=env'); auto.
     reflexivity.
     auto.
   - rewrite <-IHf1, <-IHf2; auto; try tauto; try reflexivity; auto.
   - rewrite <-IHf1, <-IHf2; auto; try tauto; try reflexivity; auto.
+  - split; intros.
+    destruct H1 as [d H1]; exists d.
+    revert H1; apply IHf; auto.
+    apply isExtEnv_add; auto.
+
+    destruct H1 as [d H1]; exists d.
+    revert H1; apply IHf; auto.
+    apply isExtEnv_add; auto.
+  - split; intros.
+    specialize H1 with d.
+    revert H1; apply IHf; auto.
+    apply isExtEnv_add; auto.
+    specialize H1 with d.
+    revert H1; apply IHf; auto.
+    apply isExtEnv_add; auto.
   - split; intros.
     destruct H1 as [t' [h1 h2]].
     exists t'; split; auto.
@@ -895,6 +910,7 @@ Section Abstraction.
     forall env Itp,
     (forall t, P t -> fm_sem (Itp:=Itp) srcSig env f t) ->
       exists (Itp': Interp (tfr_dom (getExF f) D)),
+        isExtItp (getExF f) Itp Itp' /\
         forall t, P t ->
         fm_sem (dstSig _) (Itp:=Itp') env (abstract_ExAll f hf fv) t.
   Proof.
@@ -908,7 +924,9 @@ Section Abstraction.
     setoid_rewrite <-ALL_sem in H; auto.
 
     set (Itp' := (tfr_itp (getExF f) Itp pe)).
-    exists Itp'; intros t h.
+    exists Itp'; split.
+    apply tfr_itp_ext.
+    intros t h.
     generalize (H t h); clear H; intro H.
 
     apply semAll_intro; intro; auto.
@@ -948,6 +966,7 @@ Section Abstraction.
     forall env t, 
       fm_sem srcSig (Itp:=Itp) env (G _ f) t ->
         exists (Itp': Interp (tfr_dom (getExF f) D)),
+        isExtItp (getExF f) Itp Itp' /\
         fm_sem (dstSig _) (Itp:=Itp') env
           (G _ (abstract_ExAll f hf fv)) t.
   Proof.
@@ -973,6 +992,25 @@ Section Abstraction.
     exists env.
     exists t.
     apply H.
+  Qed.
+
+  Theorem abstractionInConj_OK: forall (f g: formula srcSig) (hf: isExAll _ f) (fv: forall s, SV.is_empty (free _ f s)),
+    isSat srcSig (And _ (G _ f) g) -> 
+      isSat (dstSig (getExF f)) (And _ (G _ (abstract_ExAll f hf fv)) (fm_dstSig (getExF f) g)).
+  Proof.
+    intros.
+    destruct H as [D [Itp [env [t H]]]].
+    apply And_sem in H; destruct H as [H1 H2].
+    exists (tfr_dom (getExF f) D).
+    apply abstract_GEA_sem with (fv:=fv) (hf:=hf) in H1.
+    destruct H1 as [itp' [H1 H3]].
+    exists itp'.
+    exists env.
+    exists t.
+    apply And_sem; split.
+    apply H3.
+    apply fm_dst_sem with (env:=env) (Itp:=Itp); auto.
+    split.
   Qed.
 
 End Abstraction.
