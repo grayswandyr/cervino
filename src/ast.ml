@@ -66,6 +66,12 @@ type transfo =
   | TFC of (event -> formula)
 [@@deriving sexp_of]
 
+type path =
+  { tc : relation;
+    base : relation
+  }
+[@@deriving make, eq, ord, sexp_of]
+
 type check =
   { chk_name : Name.t;
     chk_body : formula;
@@ -74,21 +80,17 @@ type check =
   }
 [@@deriving make, sexp_of]
 
-type path =
-  { tc : relation;
-    base : relation
-  }
-[@@deriving make, eq, ord, sexp_of]
-
-type model =
+type t =
   { sorts : sort list;
     relations : relation list; [@sexp.omit_nil]
     constants : constant list; [@sexp.omit_nil]
     axioms : formula list; [@sexp.omit_nil]
     events : event list;
-    closures : path list [@sexp.omit_nil]
+    closures : path list; [@sexp.omit_nil]
+    check : check
   }
 [@@deriving make, sexp_of]
+
 
 (* smart constructors *)
 let var v = Var v

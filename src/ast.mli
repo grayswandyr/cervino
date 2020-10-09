@@ -78,13 +78,14 @@ type path = private
   }
 [@@deriving make, eq, ord, sexp_of]
 
-type model = private
+type t =
   { sorts : sort list;
     relations : relation list; [@sexp.omit_nil]
     constants : constant list; [@sexp.omit_nil]
     axioms : formula list; [@sexp.omit_nil]
     events : event list;
-    closures : path list [@sexp.omit_nil]
+    closures : path list; [@sexp.omit_nil]
+    check : check
   }
 [@@deriving make, sexp_of]
 
