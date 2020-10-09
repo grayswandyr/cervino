@@ -3,6 +3,9 @@
 all:
 	dune build
 
+check:
+	dune build @check @fmt --auto-promote -w
+
 fmt:
 	dune build @fmt --auto-promote
 
