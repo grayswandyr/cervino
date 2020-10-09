@@ -93,6 +93,10 @@ val var : variable -> term
 
 val cst : constant -> term
 
+val sort_of_var : variable -> sort
+
+val sort_of_cst : constant -> sort
+
 val pos_app : int -> sort -> term list -> literal
 (** pre: int >= 0 && |list| >= 0 *)
 

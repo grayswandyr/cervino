@@ -94,6 +94,10 @@ type t =
 (* smart constructors *)
 let var v = Var v
 
+let sort_of_var {var_sort; _} = var_sort
+
+let sort_of_cst {cst_sort; _} = cst_sort
+
 let cst c = Cst c
 
 let pos_app nexts p args =
