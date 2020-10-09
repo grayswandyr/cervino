@@ -8,7 +8,7 @@ type position = Lexing.position =
 
 type 'a t =
   { content : 'a;
-    startpos : position; 
+    startpos : position;
     endpos : position
   }
 [@@deriving eq, ord]

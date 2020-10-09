@@ -10,8 +10,7 @@
 
 (ocamllex scanner)
 
-
-(coq.extraction
- (prelude extract)
- (extracted_modules extract)
- (theories coqfo))
+; (coq.extraction
+;  (prelude extract)
+;  (extracted_modules extract)
+;  (theories coqfo))

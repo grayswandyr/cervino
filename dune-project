@@ -1,6 +1,6 @@
 (lang dune 2.7)
 (using menhir 2.0)
-(using coq 0.2)
+; (using coq 0.2)
 
 (name cervino)
 

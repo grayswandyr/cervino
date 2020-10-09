@@ -56,9 +56,9 @@ let rec dispatch_aux p (names: Ident.t list) paragraphs = match paragraphs with
       (* for any n in names... *)
       let* n = names in
       (* such that name(nn) = name(n) *)
-      if L.equal_content String.equal nn n then 
+      if Ident.equal nn n then 
         (* return their respective positions *)
-        [ L.positions n; L.positions nn ] 
+        [ Ident.positions n; Ident.positions nn ] 
       else 
         (* or ignore these ones and loop to the next ones *)
         []
