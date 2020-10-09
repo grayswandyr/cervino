@@ -38,7 +38,7 @@ type formula =
   | Lit of literal
   | And of formula * formula
   | Or of formula * formula
-  | Ex of variable * formula
+  | Exists of variable * formula
   | All of variable * formula
   | F of formula
   | G of formula
@@ -91,7 +91,6 @@ type t =
   }
 [@@deriving make, sexp_of]
 
-
 (* smart constructors *)
 let var v = Var v
 
@@ -99,13 +98,13 @@ let cst c = Cst c
 
 let pos_app nexts p args =
   assert (nexts >= 0);
-  assert (List.length args >= 0);
+  assert (List.length args > 0);
   Pos_app (nexts, p, args)
 
 
 let neg_app nexts p args =
   assert (nexts >= 0);
-  assert (List.length args >= 0);
+  assert (List.length args > 0);
   Neg_app (nexts, p, args)
 
 
@@ -136,34 +135,40 @@ and not_ = function
       or_ (not_ f1) (not_ f2)
   | Or (f1, f2) ->
       and_ (not_ f1) (not_ f2)
-  | Ex (x, f) ->
-      all_ x (not_ f)
+  | Exists (x, f) ->
+      all x (not_ f)
   | All (x, f) ->
-      ex_ x (not_ f)
+      exists x (not_ f)
   | F f ->
-      g_ (not_ f)
+      always (not_ f)
   | G f ->
-      f_ (not_ f)
+      eventually (not_ f)
 
 
 and and_ f1 f2 = And (f1, f2)
 
 and or_ f1 f2 = Or (f1, f2)
 
-and all_ x f = All (x, f)
+and all x f = All (x, f)
 
-and ex_ x f = Ex (x, f)
+and exists x f = Exists (x, f)
 
-and f_ f = F f
+and eventually f = F f
 
-and g_ f = G f
-
-let conjunction fs = List.fold_left and_ true_ fs
-
-let disjunction fs = List.fold_left or_ false_ fs
+and always f = G f
 
 let tea = TEA
 
 let ttc rel var f = TTC (rel, var, f)
 
 let tfc mapping = TFC mapping
+
+let conj fs = List.fold_left and_ true_ fs
+
+let disj fs = List.fold_left or_ false_ fs
+
+let implies f1 f2 = or_ (not_ f1) f2
+
+let iff f1 f2 = and_ (implies f1 f2) (implies f2 f1)
+
+let ite c t e = and_ (implies c t) (implies (not_ c) e)

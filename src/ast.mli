@@ -36,7 +36,7 @@ type formula = private
   | Lit of literal
   | And of formula * formula
   | Or of formula * formula
-  | Ex of variable * formula
+  | Exists of variable * formula
   | All of variable * formula
   | F of formula
   | G of formula
@@ -115,17 +115,21 @@ val and_ : formula -> formula -> formula
 
 val or_ : formula -> formula -> formula
 
-val all_ : variable -> formula -> formula
+val all : variable -> formula -> formula
 
-val ex_ : variable -> formula -> formula
+val exists : variable -> formula -> formula
 
-val f_ : formula -> formula
+val eventually : formula -> formula
 
-val g_ : formula -> formula
+val always : formula -> formula
 
-val conjunction : formula list -> formula
+val conj : formula list -> formula
 
-val disjunction : formula list -> formula
+val disj : formula list -> formula
+
+val iff : formula -> formula -> formula
+
+val ite : formula -> formula -> formula -> formula
 
 val tea : transfo
 
