@@ -64,7 +64,7 @@ type transfo = private
   | TFC of (event -> formula)
 [@@deriving sexp_of]
 
-type check = private
+type check = 
   { chk_name : Name.t;
     chk_body : formula;
     chk_assuming : formula;
@@ -97,6 +97,8 @@ val sort_of_var : variable -> sort
 
 val sort_of_cst : constant -> sort
 
+val sort_of_term : term -> sort
+
 val pos_app : int -> sort -> term list -> literal
 (** pre: int >= 0 && |list| >= 0 *)
 
@@ -118,6 +120,8 @@ val not_ : formula -> formula
 val and_ : formula -> formula -> formula
 
 val or_ : formula -> formula -> formula
+
+val implies : formula -> formula -> formula
 
 val all : variable -> formula -> formula
 
