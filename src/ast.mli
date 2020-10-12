@@ -64,7 +64,7 @@ type transfo = private
   | TFC of (event -> formula)
 [@@deriving sexp_of]
 
-type check = 
+type check = private
   { chk_name : Name.t;
     chk_body : formula;
     chk_assuming : formula;
