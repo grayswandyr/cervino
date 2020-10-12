@@ -1,5 +1,3 @@
 module type S = sig
-  type t
-
-  val convert : t -> Ast.t -> Ast.t
+  val convert : Ast.t -> Ast.t
 end

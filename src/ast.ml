@@ -96,6 +96,14 @@ let var v = Var v
 
 let cst c = Cst c
 
+let sort_of_var {var_sort; _} = var_sort
+
+let sort_of_cst {cst_sort; _} = cst_sort
+
+let sort_of_term = function 
+  | Var v -> sort_of_var v
+  | Cst c -> sort_of_cst c
+
 let pos_app nexts p args =
   assert (nexts >= 0);
   assert (List.length args > 0);

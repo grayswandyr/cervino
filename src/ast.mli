@@ -93,6 +93,12 @@ val var : variable -> term
 
 val cst : constant -> term
 
+val sort_of_var : variable -> sort
+
+val sort_of_cst : constant -> sort
+
+val sort_of_term : term -> sort
+
 val pos_app : int -> sort -> term list -> literal
 (** pre: int >= 0 && |list| >= 0 *)
 
@@ -114,6 +120,8 @@ val not_ : formula -> formula
 val and_ : formula -> formula -> formula
 
 val or_ : formula -> formula -> formula
+
+val implies : formula -> formula -> formula
 
 val all : variable -> formula -> formula
 
