@@ -6,6 +6,8 @@ type position = Lexing.position =
   }
 [@@deriving eq, ord]
 
+let dummy = { pos_fname = "<dummy>"; pos_lnum = 0; pos_bol = 0; pos_cnum = 0 }
+
 type 'a t =
   { content : 'a;
     startpos : position;

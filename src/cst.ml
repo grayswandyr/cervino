@@ -14,16 +14,13 @@ type formula = prim_formula Location.t
 and prim_formula =
   | False
   | True
-  | Atom of atom
+  | Pred of pred
+  | Test of compop * Ident.t * Ident.t
   | Binary of binop * formula * formula
   | Unary of unop * formula
   | Ite of formula * formula * formula
   | Quant of quantifier * telescope * block (* non empty list *)
   | Block of block
-
-and atom =
-  | Pred of pred
-  | Test of compop * Ident.t * Ident.t
 
 and compop =
   | Eq
