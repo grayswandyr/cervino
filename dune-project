@@ -16,7 +16,7 @@
 (package
  (name cervino)
  (depends
-  (ocaml (>= 4.10.0))
+  (ocaml (>= 4.11.0))
   dune
   cmdliner
   (containers (>= 3.0)) 

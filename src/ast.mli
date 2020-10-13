@@ -79,13 +79,18 @@ type path = private
   }
 [@@deriving make, eq, ord, sexp_of]
 
-type t =
+type model =
   { sorts : sort list;
     relations : relation list; [@sexp.omit_nil]
     constants : constant list; [@sexp.omit_nil]
     closures : path list; [@sexp.omit_nil]
     axioms : formula list; [@sexp.omit_nil]
-    events : event list;
+    events : event list
+  }
+[@@deriving make, sexp_of]
+
+type t =
+  { model : model;
     check : check
   }
 [@@deriving make, sexp_of]
@@ -93,6 +98,12 @@ type t =
 val var : variable -> term
 
 val cst : constant -> term
+
+val sort_of_var : variable -> sort
+
+val sort_of_cst : constant -> sort
+
+val sort_of_term : term -> sort
 
 val pos_app : int -> sort -> term list -> literal
 (** pre: int >= 0 && |list| >= 0 *)
@@ -141,5 +152,9 @@ val tea : transfo
 val ttc : relation -> variable -> formula -> transfo
 
 val tfc : (event -> formula option) -> transfo
+
+val eq_term_list : term list -> term list -> formula
+
+val neq_term_list : term list -> term list -> formula
 
 val pp : Format.formatter -> t -> unit

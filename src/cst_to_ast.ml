@@ -309,4 +309,7 @@ let convert (cst : Cst.t) (check : string) =
   let check = convert_check env check_id cst.checks in
   (* TODO *)
   let events = [] in
-  make ~sorts ~relations ~constants ~closures ~axioms ~events ~check ()
+  let model =
+    make_model ~sorts ~relations ~constants ~closures ~axioms ~events ()
+  in
+  make ~model ~check
