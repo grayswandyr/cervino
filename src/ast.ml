@@ -79,14 +79,19 @@ type check =
     chk_using : transfo
   }
 [@@deriving make, sexp_of]
-
+type model = 
+{
+  sorts : sort list;
+  relations : relation list; [@sexp.omit_nil]
+  constants : constant list; [@sexp.omit_nil]
+  axioms : formula list; [@sexp.omit_nil]
+  events : event list;
+  closures : path list; [@sexp.omit_nil]
+}
+[@@deriving make, sexp_of]
 type t =
-  { sorts : sort list;
-    relations : relation list; [@sexp.omit_nil]
-    constants : constant list; [@sexp.omit_nil]
-    axioms : formula list; [@sexp.omit_nil]
-    events : event list;
-    closures : path list; [@sexp.omit_nil]
+  { 
+    model : model;
     check : check
   }
 [@@deriving make, sexp_of]
@@ -180,3 +185,9 @@ let implies f1 f2 = or_ (not_ f1) f2
 let iff f1 f2 = and_ (implies f1 f2) (implies f2 f1)
 
 let ite c t e = and_ (implies c t) (implies (not_ c) e)
+
+let eq_term_list tl1 tl2 =
+  conj (List.map2 (fun t1 t2 -> lit @@ eq t1 t2) tl1 tl2)
+
+let neq_term_list tl1 tl2 =
+  disj (List.map2 (fun t1 t2 -> lit @@ neq t1 t2) tl1 tl2)

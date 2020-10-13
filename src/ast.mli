@@ -78,13 +78,17 @@ type path = private
   }
 [@@deriving make, eq, ord, sexp_of]
 
-type t =
+type model =
   { sorts : sort list;
     relations : relation list; [@sexp.omit_nil]
     constants : constant list; [@sexp.omit_nil]
     axioms : formula list; [@sexp.omit_nil]
     events : event list;
-    closures : path list; [@sexp.omit_nil]
+    closures : path list [@sexp.omit_nil]
+  }[@@deriving make, sexp_of]
+
+type t =
+  { model : model;
     check : check
   }
 [@@deriving make, sexp_of]
@@ -144,3 +148,7 @@ val tea : transfo
 val ttc : relation -> variable -> formula -> transfo
 
 val tfc : (event -> formula) -> transfo
+
+val eq_term_list : term list -> term list -> formula
+
+val neq_term_list : term list -> term list -> formula
