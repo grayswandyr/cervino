@@ -79,19 +79,19 @@ type check =
     chk_using : transfo
   }
 [@@deriving make, sexp_of]
-type model = 
-{
-  sorts : sort list;
-  relations : relation list; [@sexp.omit_nil]
-  constants : constant list; [@sexp.omit_nil]
-  axioms : formula list; [@sexp.omit_nil]
-  events : event list;
-  closures : path list; [@sexp.omit_nil]
-}
+
+type model =
+  { sorts : sort list;
+    relations : relation list; [@sexp.omit_nil]
+    constants : constant list; [@sexp.omit_nil]
+    axioms : formula list; [@sexp.omit_nil]
+    events : event list;
+    closures : path list [@sexp.omit_nil]
+  }
 [@@deriving make, sexp_of]
+
 type t =
-  { 
-    model : model;
+  { model : model;
     check : check
   }
 [@@deriving make, sexp_of]
@@ -101,13 +101,11 @@ let var v = Var v
 
 let cst c = Cst c
 
-let sort_of_var {var_sort; _} = var_sort
+let sort_of_var { var_sort; _ } = var_sort
 
-let sort_of_cst {cst_sort; _} = cst_sort
+let sort_of_cst { cst_sort; _ } = cst_sort
 
-let sort_of_term = function 
-  | Var v -> sort_of_var v
-  | Cst c -> sort_of_cst c
+let sort_of_term = function Var v -> sort_of_var v | Cst c -> sort_of_cst c
 
 let pos_app nexts p args =
   assert (nexts >= 0);
@@ -188,6 +186,7 @@ let ite c t e = and_ (implies c t) (implies (not_ c) e)
 
 let eq_term_list tl1 tl2 =
   conj (List.map2 (fun t1 t2 -> lit @@ eq t1 t2) tl1 tl2)
+
 
 let neq_term_list tl1 tl2 =
   disj (List.map2 (fun t1 t2 -> lit @@ neq t1 t2) tl1 tl2)

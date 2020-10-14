@@ -85,7 +85,8 @@ type model =
     axioms : formula list; [@sexp.omit_nil]
     events : event list;
     closures : path list [@sexp.omit_nil]
-  }[@@deriving make, sexp_of]
+  }
+[@@deriving make, sexp_of]
 
 type t =
   { model : model;
