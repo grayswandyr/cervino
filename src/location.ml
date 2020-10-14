@@ -33,7 +33,7 @@ let equal_content eq_c { content = c1; _ } { content = c2; _ } = eq_c c1 c2
 (* first column is at index 1, last column is the pointer in lexbuf *)
 let get_file_line_chars pos1 pos2 =
   let file = pos1.pos_fname in
-  let line = pos1.pos_lnum in
+  let line = pos1.pos_lnum - 1 in
   let char1 = pos1.pos_cnum - pos1.pos_bol + 1 in
   let char2 = pos2.pos_cnum - pos1.pos_bol + 1 in
   (* intentionally [pos1.pos_bol] *)
@@ -60,7 +60,7 @@ let pp_excerpt fmt (pos1, pos2) =
   let lines = IO.read_lines_l ic in
   match List.get_at_idx (line - 1) lines with
   | None ->
-      assert false
+      Msg.err (fun m -> m "%s: internal error" __LOC__)
   | Some l ->
       let blanks, carets =
         (String.repeat " " (idx1 - 1), String.repeat "^" (idx2 - idx1 + 1))

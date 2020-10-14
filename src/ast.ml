@@ -175,9 +175,9 @@ let ttc rel var f = TTC (rel, var, f)
 
 let tfc mapping = TFC mapping
 
-let conj fs = List.fold_left and_ true_ fs
+let rec conj = function [] -> true_ | [ f ] -> f | f :: fs -> and_ f (conj fs)
 
-let disj fs = List.fold_left or_ false_ fs
+let rec disj = function [] -> false_ | [ f ] -> f | f :: fs -> or_ f (disj fs)
 
 let implies f1 f2 = or_ (not_ f1) f2
 

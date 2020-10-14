@@ -29,35 +29,6 @@ let pp_header ppf (l, h) =
       @@ CCOpt.map_or ~default:(keyword l) (fun s -> short l ^ s) h
 
 
-let parse_lexbuf lexbuf =
-  let open Parser in
-  try parse Scanner.main lexbuf with
-  | Error ->
-      let pos = Location.positions_of_lexbuf lexbuf in
-      Msg.err
-      @@ fun m ->
-      m
-        "%a syntax error:@\n%a"
-        Location.pp_positions
-        pos
-        Location.pp_excerpt
-        pos
-
-
-let parse_file file =
-  IO.with_in file
-  @@ fun ic ->
-  let lexbuf = Lexing.from_channel ic in
-  lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = file };
-  parse_lexbuf lexbuf
-
-
-let parse_string s =
-  let lexbuf = Lexing.from_string s in
-  lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = "<string>" };
-  parse_lexbuf lexbuf
-
-
 let machinery process verbosity file check =
   Printexc.record_backtrace true;
   Logs.set_reporter (Logs_fmt.reporter ~pp_header ());
@@ -77,7 +48,7 @@ let machinery process verbosity file check =
 
 let process file check =
   Msg.info (fun m -> m "Processing file %S." file);
-  let model = parse_file file in
+  let model = Parsing.parse_file file in
   Msg.info (fun m -> m "Parsing done.");
   Msg.debug (fun m -> m "Recognized model:@.%a" Cst.pp model);
   let ast = Cst_to_ast.convert model check in

@@ -26,6 +26,7 @@
   logs
   menhir
   ppx_deriving
+  ppx_expect {build}
   ppx_sexp_conv
   sexplib
   )
