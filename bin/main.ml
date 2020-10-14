@@ -29,26 +29,7 @@ let pp_header ppf (l, h) =
       @@ CCOpt.map_or ~default:(keyword l) (fun s -> short l ^ s) h
 
 
-let parse_file file =
-  let open Parser in
-  IO.with_in file
-  @@ fun ic ->
-  let lexbuf = Lexing.from_channel ic in
-  lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = file };
-  try parse Scanner.main lexbuf with
-  | Error ->
-      let pos = Location.positions_of_lexbuf lexbuf in
-      Msg.err
-      @@ fun m ->
-      m
-        "%a syntax error:@\n%a"
-        Location.pp_positions
-        pos
-        Location.pp_excerpt
-        pos
-
-
-let machinery process verbosity file =
+let machinery process verbosity file check =
   Printexc.record_backtrace true;
   Logs.set_reporter (Logs_fmt.reporter ~pp_header ());
   Fmt_tty.setup_std_outputs ();
@@ -62,14 +43,17 @@ let machinery process verbosity file =
   in
   Logs.app (fun m ->
       m "%a" Fmt.(styled `Bold string) ("cervino (C) 2020 ONERA " ^ version));
-  try process file with Exit -> ()
+  try process file check with Exit -> ()
 
 
-let process file =
+let process file check =
   Msg.info (fun m -> m "Processing file %S." file);
-  let model = parse_file file in
+  let model = Parsing.parse_file file in
   Msg.info (fun m -> m "Parsing done.");
-  Msg.debug (fun m -> m "Recognized model:@.%a" Cst.pp model)
+  Msg.debug (fun m -> m "Recognized model:@.%a" Cst.pp model);
+  let ast = Cst_to_ast.convert model check in
+  Msg.info (fun m -> m "Conversion to AST done.");
+  Msg.debug (fun m -> m "AST:@.%a" Ast.pp ast)
 
 
 (* Wf.unique_names model *)

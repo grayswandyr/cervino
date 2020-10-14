@@ -27,7 +27,7 @@
 (* Also checks that the name (of a paragraph to dispatch) has not already
    been used in another declaration or definition. *)
 (* - p: accumulator containing the currently dispatched paragraphs *)
-(* - paragraphs: remaining paragraphs to diasptch in p's fields *)
+(* - paragraphs: remaining paragraphs to dispatch in p's fields *)
 let rec dispatch_aux p (names: Ident.t list) paragraphs = match paragraphs with
 | [] -> p
 | hd::tl ->
@@ -39,7 +39,8 @@ let rec dispatch_aux p (names: Ident.t list) paragraphs = match paragraphs with
       | `Constant x -> 
         ({ p with constants = x :: p.constants }, [x.c_name])
       | `Transclos x -> 
-        ({ p with closures = x :: p.closures }, x.t_tc :: Option.to_list x.t_between)      
+      (* doesn't introduce new names as must have been declared first *)
+        ({ p with closures = x :: p.closures }, [])      
       | `Event x -> 
         ({ p with events = x :: p.events }, [x.e_name])
       | `Axiom x -> 
@@ -171,7 +172,7 @@ prim_formula:
   | TRUE
   { True }
   | r = atom
-  { Atom r }
+  { r }
   | f1 = formula op = lbinop f2 = formula 
   { Binary (op, f1, f2) }
 	| q = quant rangings = comma_sep1(ranging) b = block_or_bar

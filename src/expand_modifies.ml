@@ -30,7 +30,7 @@ let expand_evt_modifes { mod_rel; mod_mods } =
   List.fold_right (fun v f -> all v f) vars_expand unchanged_formula
 
 
-let expand_modifes_full_event evt =
+let expand_modifies_full_event evt =
   let fml_to_add = conj @@ List.map expand_evt_modifes evt.ev_modifies in
   make_event
     ~ev_name:evt.ev_name
@@ -41,5 +41,5 @@ let expand_modifes_full_event evt =
 
 
 let expand_modifies_model m =
-  let new_events = List.map expand_modifes_full_event m.events in
+  let new_events = List.map expand_modifies_full_event m.events in
   { m with events = new_events }

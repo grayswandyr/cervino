@@ -44,11 +44,11 @@ type formula =
   | G of formula
 [@@deriving eq, ord, sexp_of]
 
-type ev_modication = term list [@@deriving eq, ord, sexp_of]
+type ev_modification = term list [@@deriving eq, ord, sexp_of]
 
 type ev_modify =
   { mod_rel : relation;
-    mod_mods : ev_modication list
+    mod_mods : ev_modification list
   }
 [@@deriving make, eq, ord, sexp_of]
 
@@ -63,12 +63,13 @@ type event =
 type transfo =
   | TEA
   | TTC of relation * variable * formula
-  | TFC of (event -> formula)
+  | TFC of (Name.t -> formula option)
 [@@deriving sexp_of]
 
 type path =
   { tc : relation;
-    base : relation
+    base : relation;
+    between : relation option [@sexp.omit_nil]
   }
 [@@deriving make, eq, ord, sexp_of]
 
@@ -84,9 +85,9 @@ type model =
   { sorts : sort list;
     relations : relation list; [@sexp.omit_nil]
     constants : constant list; [@sexp.omit_nil]
+    closures : path list; [@sexp.omit_nil]
     axioms : formula list; [@sexp.omit_nil]
-    events : event list;
-    closures : path list [@sexp.omit_nil]
+    events : event list
   }
 [@@deriving make, sexp_of]
 
@@ -174,15 +175,44 @@ let ttc rel var f = TTC (rel, var, f)
 
 let tfc mapping = TFC mapping
 
-let conj fs = List.fold_left and_ true_ fs
+let rec conj = function [] -> true_ | [ f ] -> f | f :: fs -> and_ f (conj fs)
 
-let disj fs = List.fold_left or_ false_ fs
+let rec disj = function [] -> false_ | [ f ] -> f | f :: fs -> or_ f (disj fs)
 
 let implies f1 f2 = or_ (not_ f1) f2
 
 let iff f1 f2 = and_ (implies f1 f2) (implies f2 f1)
 
 let ite c t e = and_ (implies c t) (implies (not_ c) e)
+
+let rec next = function
+  | True ->
+      false_
+  | False ->
+      true_
+  | Lit (Pos_app (nexts, p, args)) ->
+      lit (pos_app (nexts + 1) p args)
+  | Lit (Neg_app (nexts, p, args)) ->
+      lit (neg_app (nexts + 1) p args)
+  | Lit (Eq (t1, t2)) ->
+      lit (eq t1 t2)
+  | Lit (Not_eq (t1, t2)) ->
+      lit (neq t1 t2)
+  | And (f1, f2) ->
+      and_ (next f1) (next f2)
+  | Or (f1, f2) ->
+      or_ (next f1) (next f2)
+  | Exists (x, f) ->
+      exists x (next f)
+  | All (x, f) ->
+      all x (next f)
+  | F f ->
+      eventually (next f)
+  | G f ->
+      always (next f)
+
+
+let pp fmt model = Sexplib.Sexp.pp_hum fmt (sexp_of_t model)
 
 let eq_term_list tl1 tl2 =
   conj (List.map2 (fun t1 t2 -> lit @@ eq t1 t2) tl1 tl2)

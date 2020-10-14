@@ -19,6 +19,8 @@ let equal c1 c2 = L.equal_content String.equal c1 c2
 
 let positions = L.positions
 
+let of_ident (id : Ident.t) = make (Ident.content id) (Ident.positions id)
+
 module Set = CCSet.Make (struct
   type nonrec t = t
 

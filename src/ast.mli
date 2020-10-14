@@ -42,11 +42,11 @@ type formula = private
   | G of formula
 [@@deriving eq, ord, sexp_of]
 
-type ev_modication = term list [@@deriving eq, ord, sexp_of]
+type ev_modification = term list [@@deriving eq, ord, sexp_of]
 
 type ev_modify = private
   { mod_rel : relation;
-    mod_mods : ev_modication list
+    mod_mods : ev_modification list
   }
 [@@deriving make, eq, ord, sexp_of]
 
@@ -61,7 +61,7 @@ type event = private
 type transfo = private
   | TEA
   | TTC of relation * variable * formula
-  | TFC of (event -> formula)
+  | TFC of (Name.t -> formula option)
 [@@deriving sexp_of]
 
 type check = private
@@ -74,7 +74,8 @@ type check = private
 
 type path = private
   { tc : relation;
-    base : relation
+    base : relation;
+    between : relation option [@sexp.omit_nil]
   }
 [@@deriving make, eq, ord, sexp_of]
 
@@ -82,9 +83,9 @@ type model =
   { sorts : sort list;
     relations : relation list; [@sexp.omit_nil]
     constants : constant list; [@sexp.omit_nil]
+    closures : path list; [@sexp.omit_nil]
     axioms : formula list; [@sexp.omit_nil]
-    events : event list;
-    closures : path list [@sexp.omit_nil]
+    events : event list
   }
 [@@deriving make, sexp_of]
 
@@ -126,8 +127,6 @@ val and_ : formula -> formula -> formula
 
 val or_ : formula -> formula -> formula
 
-val implies : formula -> formula -> formula
-
 val all : variable -> formula -> formula
 
 val exists : variable -> formula -> formula
@@ -140,16 +139,22 @@ val conj : formula list -> formula
 
 val disj : formula list -> formula
 
+val implies : formula -> formula -> formula
+
 val iff : formula -> formula -> formula
 
 val ite : formula -> formula -> formula -> formula
+
+val next : formula -> formula
 
 val tea : transfo
 
 val ttc : relation -> variable -> formula -> transfo
 
-val tfc : (event -> formula) -> transfo
+val tfc : (Name.t -> formula option) -> transfo
 
 val eq_term_list : term list -> term list -> formula
 
 val neq_term_list : term list -> term list -> formula
+
+val pp : Format.formatter -> t -> unit

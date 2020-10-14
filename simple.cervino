@@ -3,10 +3,11 @@ sort Id
 
 relation elected in Node
 relation succ in Node * Node
+relation succ_tc in Node * Node
 relation toSend in Node * Id
 relation id in Node * Id
 relation inf in Id * Id
-//relation btw in Node * Node * Node
+relation btw in Node * Node * Node
 
 constant imax in Id
 constant lmax in Id
@@ -24,8 +25,8 @@ axiom init  {
 	&& all x : Node | ! elected(x)
 } 
 
-event send [sender: Node, receiver: Node, transferred: Id] 
-modifies toSend at {(x,i), (xs,i)}, elected at {xs} { 
+event send [sender, receiver: Node, transferred: Id] 
+modifies toSend at {(sender,transferred), (receiver,transferred)}, elected at {receiver} { 
 	 elected'(receiver) <=> (toSend'(receiver,transferred) && id(receiver,transferred))
 }
 
@@ -34,13 +35,13 @@ using TFC [
 	send, 
 		{{all x:Node | x != receiver => ! elected(x)} 
 			&& {all x,y:Node,i:Id | ! id(y,i) || (x=receiver && i=transferred) 
-						|| (x=sender && i=transferred) || ! toSend(x,i) || btw(x,lmax,y)
+						|| (x=sender && i=transferred) || ! toSend(x,i) 
 			}
 		}
 ]
 
 check prop2 { F (some y: Node | elected(y)) } 
-assuming {all x,x2 : Node, i:Id | G F (succ(x,xs) && (id(x,i) || toSend(x,i))) => G F send(x,xs,i)} 
+assuming {all x,x2 : Node, i:Id | G F ( (id(x,i) || toSend(x,i)) )} 
 using TTC[prop, {toSend(imax, x)}]
 
 

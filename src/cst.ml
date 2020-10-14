@@ -14,16 +14,13 @@ type formula = prim_formula Location.t
 and prim_formula =
   | False
   | True
-  | Atom of atom
+  | Pred of pred
+  | Test of compop * Ident.t * Ident.t
   | Binary of binop * formula * formula
   | Unary of unop * formula
   | Ite of formula * formula * formula
   | Quant of quantifier * telescope * block (* non empty list *)
   | Block of block
-
-and atom =
-  | Pred of pred
-  | Test of compop * Ident.t * Ident.t
 
 and compop =
   | Eq
@@ -57,13 +54,13 @@ and ranging = Ident.t list * sort
 (* list may be empty*)
 and block = formula list [@@deriving eq, ord, sexp_of]
 
-type modification = Ident.t list [@@deriving eq, ord, sexp_of]
-
 type transfo =
   | TEA
   | TFC
   | TTC
 [@@deriving eq, ord, sexp_of]
+
+type modification = Ident.t list [@@deriving eq, ord, sexp_of]
 
 type t =
   { sorts : sort list;
@@ -100,7 +97,7 @@ and axiom =
 
 and event =
   { e_name : Ident.t;
-    e_args : ranging list; [@sexp.omit_nil] (* may be emtpy *)
+    e_args : telescope; [@sexp.omit_nil] (* may be emtpy *)
     e_modifies : modified_field list; [@sexp.omit_nil] (* may be empty *)
     e_body : block
   }
