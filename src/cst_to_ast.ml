@@ -28,6 +28,8 @@ module Env : sig
 
   val get_constants : t -> Cst.constant list
 
+  val get_events : t -> Cst.event list
+
   (* pre: seeked relation IS present *)
   val get_profile : t -> Ident.t -> Ident.t list
 
@@ -50,6 +52,8 @@ end = struct
     List.map (fun r -> r.r_name) relations
 
 
+  let get_events ({ events; _ }, _) = events
+
   let get_profile ({ relations; _ }, _) pred =
     match List.find_opt (fun p -> Ident.equal pred p.r_name) relations with
     | None ->
@@ -62,7 +66,7 @@ end = struct
 
   let get_constants ({ constants; _ }, _) = constants
 
-  let push_variables (cst, subst) vars = (cst, List.rev vars @ subst)
+  let push_variables (cst, subst) vars = (cst, vars @ subst)
 
   let check_relation env pred = check (get_relations env) pred
 
@@ -76,8 +80,9 @@ let quantify q (x, s) b =
   match q with Cst.All -> all var b | Cst.Exists -> exists var b
 
 
-(* converts [ ([x;y], s); ([w;z], t)] into [(x,s); (y,s); (w,t); (z,t)*)
-let flatten_telescope (env : Env.t) (ts : Cst.telescope) : Env.subst =
+(* converts [ ([x;y], s); ([w;z], t)] into (mind the reversal!):
+[(z,t) (w,t) (y,s) (x,s)]*)
+let flatten_telescope (env : Env.t) (ts : Cst.telescope) =
   let open List.Infix in
   let* xs, s = ts in
   let* x = xs in
@@ -151,8 +156,8 @@ and walk_prim_formula env =
   | Quant (_, [], _) ->
       assert false
   | Quant (q, ts, b) ->
-      let ts' = flatten_telescope env ts in
-      (* variables are pushed in reverse order (subst = stack) *)
+      (* reverse to make stack-shaped substitution *)
+      let ts' = flatten_telescope env ts |> List.rev in
       let env' = Env.push_variables env ts' in
       let b' = walk_block env' b in
       List.fold_right (quantify q) ts' b'
@@ -168,13 +173,15 @@ and check_type x s1 s2 =
   else
     Msg.err (fun m ->
         m
-          "Type error: %a (of type %a) is expected to have type %a"
-          Location.pp_location
-          (Ident.positions x)
+          "Type error: %a (of type %a) is expected to have type %a@\n%a"
+          Ident.pp
+          x
           Ident.pp
           s1
           Ident.pp
-          s2)
+          s2
+          Location.pp_location
+          (Ident.positions x))
 
 
 and walk_term env t =
@@ -195,7 +202,9 @@ and walk_term env t =
           Msg.err
           @@ fun m ->
           m
-            "Not a variable or constant:@\n%a"
+            "Not a variable or constant: %a@\n%a"
+            Ident.pp
+            t
             Location.pp_location
             (Ident.positions t) )
 
@@ -206,9 +215,9 @@ and walk_term_sort env t sort =
   term
 
 
-let check_existence msg ident idents todo =
+let check_existence msg ident idents if_ok =
   if List.mem ~eq:Ident.equal ident idents
-  then todo ()
+  then if_ok ()
   else
     Msg.err (fun m ->
         m
@@ -220,7 +229,7 @@ let check_existence msg ident idents todo =
           (Ident.positions ident))
 
 
-let check_sort ident sorts todo = check_existence "sort" ident sorts todo
+let check_sort ident sorts if_ok = check_existence "sort" ident sorts if_ok
 
 let convert_relation sorts Cst.{ r_name; r_profile } =
   let rel_profile =
@@ -239,14 +248,18 @@ let convert_constant sorts Cst.{ c_name; c_domain } =
     ~cst_sort:(Name.of_ident c_domain)
 
 
-(* TODO rewrite because now tc and between must be declared as relations, too *)
-let convert_path (relations : relation list) Cst.{ t_tc; t_base; t_between } =
+let find_relation relations ident =
+  List.find_opt (fun r -> Name.equal r.rel_name (Name.of_ident ident)) relations
+
+
+let convert_path (relations : relation list) Cst.{ t_base; t_tc; t_between } =
+  (* search base (Ast) relation *)
   match
-    List.find_opt
-      (fun r -> Name.equal r.rel_name (Name.of_ident t_base))
-      relations
+    ( find_relation relations t_base,
+      find_relation relations t_tc,
+      Option.map (find_relation relations) t_between )
   with
-  | None ->
+  | None, _, _ ->
       Msg.err (fun m ->
           m
             "%a is not a relation:@\n%a"
@@ -254,35 +267,146 @@ let convert_path (relations : relation list) Cst.{ t_tc; t_base; t_between } =
             t_base
             Location.pp_location
             (Ident.positions t_base))
-  | Some ({ rel_profile; _ } as base) ->
-    ( match rel_profile with
-    | [ s1; s2 ] when Name.equal s1 s2 ->
-        let tc = make_relation ~rel_name:(Name.of_ident t_tc) ~rel_profile () in
-        let between =
-          match t_between with
-          | None ->
-              None
-          | Some btw ->
-              (* TODO: handle between profile *)
-              Some
-                (make_relation ~rel_name:(Name.of_ident btw) ~rel_profile:[] ())
-        in
-        make_path ~tc ~base ?between ()
-    | _ ->
-        Msg.err (fun m ->
-            m
-              "%a is not a binary relation over one given sort:@\n%a"
-              Ident.pp
-              t_base
-              Location.pp_location
-              (Ident.positions t_base)) )
+  | _, None, _ ->
+      Msg.err (fun m ->
+          m
+            "%a is not a relation:@\n%a"
+            Ident.pp
+            t_tc
+            Location.pp_location
+            (Ident.positions t_tc))
+  | _, _, Some None ->
+      Msg.err (fun m ->
+          m
+            "%a is not a relation:@\n%a"
+            (Option.pp Ident.pp)
+            t_between
+            (Option.pp Location.pp_location)
+            (Option.map Ident.positions t_between))
+  | ( Some ({ rel_profile = [ s1; s2 ]; _ } as base),
+      Some ({ rel_profile = [ _; _ ] as tcp; _ } as tc),
+      None )
+    when Name.(equal s1 s2 && List.for_all (equal s1) tcp) ->
+      make_path ~tc ~base ?between:None ()
+  | ( Some ({ rel_profile = [ s1; s2 ]; _ } as base),
+      Some ({ rel_profile = [ _; _ ] as tcp; _ } as tc),
+      Some (Some ({ rel_profile = [ _; _; _ ] as btwp; _ } as between)) )
+    when Name.(
+           equal s1 s2
+           && List.for_all (equal s1) tcp
+           && List.for_all (equal s1) btwp) ->
+      make_path ~tc ~base ~between ()
+  | _ ->
+      Msg.err (fun m ->
+          m
+            "Erroneous `paths` clause on %a: wrong typing for one of the \
+             relations@\n\
+             %a"
+            Ident.pp
+            t_base
+            Location.pp_location
+            (Ident.positions t_base))
 
 
 let convert_axiom env Cst.{ a_body; _ } = walk_block env a_body
 
-(* let convert_event env Cst.{ e_name; e_args; e_modifies; e_body } = assert false *)
-(* TODO *)
-let convert_using _ _ = assert false
+let convert_modifies env relations Cst.{ mod_field; mod_modifications } =
+  match
+    List.find_opt
+      (fun r -> Name.equal (Name.of_ident mod_field) r.rel_name)
+      relations
+  with
+  | None ->
+      Msg.err (fun m ->
+          m
+            "Unknown relation in `modifies` clause: %a@\n%a"
+            Ident.pp
+            mod_field
+            Location.pp_positions
+            (Ident.positions mod_field))
+  | Some mod_rel ->
+      let open Mysc.List.Infix in
+      let mod_mods =
+        let profile = Env.get_profile env mod_field in
+        let+ modif = mod_modifications in
+        (* let+/and+ provides a cartesian product while here we want a lock-step product (aka ziplist) *)
+        let& t = modif
+        and& s = profile in
+        walk_term_sort env t s
+      in
+      make_ev_modify ~mod_rel ~mod_mods ()
+
+
+let convert_event env relations Cst.{ e_name; e_args; e_modifies; e_body } =
+  if not
+     @@ Mysc.List.has_no_dups
+          ~eq:(fun f1 f2 -> Ident.equal f1.Cst.mod_field f2.Cst.mod_field)
+          e_modifies
+  then
+    Msg.err (fun m ->
+        m "Duplicates in `modifies` section of event %a" Ident.pp e_name)
+  else
+    let ev_name = Name.of_ident e_name in
+    let flattened = flatten_telescope env e_args in
+    let ev_args =
+      List.map
+        (fun (x, s) ->
+          let var_name = Name.of_ident x in
+          let var_sort = Name.of_ident s in
+          make_variable ~var_name ~var_sort)
+        flattened
+    in
+    (* args form a stack-shaped substitution => reverse *)
+    let env' = Env.push_variables env (List.rev flattened) in
+    (* handle modifies *)
+    let ev_modifies = List.map (convert_modifies env' relations) e_modifies in
+    (* handle body *)
+    let ev_body = walk_block env' e_body in
+    make_event ~ev_name ~ev_args ~ev_body ~ev_modifies ()
+
+
+let convert_using env Cst.{ u_name; u_args } =
+  match u_name with
+  | Cst.TEA ->
+      if not @@ List.is_empty u_args
+      then
+        Msg.err (fun m -> m "TEA expects no parameters (see checked command)")
+      else tea
+  | Cst.TTC ->
+      (* TODO *)
+      assert false
+  | Cst.TFC ->
+      assert (not @@ List.is_empty u_args);
+      let open List.Infix in
+      let events = Env.get_events env in
+      if not
+         @@ Mysc.List.has_no_dups
+              ~eq:(fun e1 e2 -> Ident.equal e1.Cst.e_name e2.Cst.e_name)
+              events
+      then Msg.err (fun m -> m "Non-unique event names in TFC parameters")
+      else
+        let assoc =
+          let+ ev_id, ev_block = u_args in
+          match
+            List.find_opt (fun e -> Ident.equal ev_id e.Cst.e_name) events
+          with
+          | None ->
+              Msg.err (fun m ->
+                  m
+                    "Unknown event: %a@\n%a"
+                    Ident.pp
+                    ev_id
+                    Location.pp_positions
+                    (Ident.positions ev_id))
+          | Some Cst.{ e_args; _ } ->
+              (* reverse to make stack-shaped substitution *)
+              let subst = flatten_telescope env e_args |> List.rev in
+              let env' = Env.push_variables env subst in
+              let fml = walk_block env' ev_block in
+              (Name.of_ident ev_id, fml)
+        in
+        tfc (fun event_name -> List.assoc_opt ~eq:Name.equal event_name assoc)
+
 
 let convert_check env chk_id checks =
   match List.find_opt (fun c -> Ident.equal c.Cst.check_name chk_id) checks with
@@ -296,7 +420,6 @@ let convert_check env chk_id checks =
       make_check ~chk_name ~chk_body ~chk_assuming ~chk_using
 
 
-(* TODO closures are relations too *)
 let convert (cst : Cst.t) (check : string) =
   let map = List.map in
   let sorts = map Name.of_ident cst.sorts in
@@ -305,10 +428,9 @@ let convert (cst : Cst.t) (check : string) =
   let closures = map (convert_path relations) cst.closures in
   let env = Env.make cst in
   let axioms = map (convert_axiom env) cst.axioms in
+  let events = map (convert_event env relations) cst.events in
   let check_id = Ident.of_string check in
   let check = convert_check env check_id cst.checks in
-  (* TODO *)
-  let events = [] in
   let model =
     make_model ~sorts ~relations ~constants ~closures ~axioms ~events ()
   in

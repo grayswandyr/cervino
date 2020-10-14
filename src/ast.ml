@@ -44,11 +44,11 @@ type formula =
   | G of formula
 [@@deriving eq, ord, sexp_of]
 
-type ev_modication = term list [@@deriving eq, ord, sexp_of]
+type ev_modification = term list [@@deriving eq, ord, sexp_of]
 
 type ev_modify =
   { mod_rel : relation;
-    mod_mods : ev_modication list
+    mod_mods : ev_modification list
   }
 [@@deriving make, eq, ord, sexp_of]
 
@@ -63,7 +63,7 @@ type event =
 type transfo =
   | TEA
   | TTC of relation * variable * formula
-  | TFC of (event -> formula option)
+  | TFC of (Name.t -> formula option)
 [@@deriving sexp_of]
 
 type path =

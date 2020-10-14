@@ -42,11 +42,11 @@ type formula = private
   | G of formula
 [@@deriving eq, ord, sexp_of]
 
-type ev_modication = term list [@@deriving eq, ord, sexp_of]
+type ev_modification = term list [@@deriving eq, ord, sexp_of]
 
 type ev_modify = private
   { mod_rel : relation;
-    mod_mods : ev_modication list
+    mod_mods : ev_modification list
   }
 [@@deriving make, eq, ord, sexp_of]
 
@@ -61,7 +61,7 @@ type event = private
 type transfo = private
   | TEA
   | TTC of relation * variable * formula
-  | TFC of (event -> formula option)
+  | TFC of (Name.t -> formula option)
 [@@deriving sexp_of]
 
 type check = private
@@ -151,7 +151,7 @@ val tea : transfo
 
 val ttc : relation -> variable -> formula -> transfo
 
-val tfc : (event -> formula option) -> transfo
+val tfc : (Name.t -> formula option) -> transfo
 
 val eq_term_list : term list -> term list -> formula
 
