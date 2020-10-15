@@ -24,8 +24,8 @@ type term = private
 [@@deriving eq, ord, sexp_of]
 
 type literal = private
-  | Pos_app of int * Name.t * term list (* int = number of X, is >= 0 *)
-  | Neg_app of int * Name.t * term list (* int = number of X, is >= 0 *)
+  | Pos_app of int * relation * term list (* int = number of X, is >= 0 *)
+  | Neg_app of int * relation * term list (* int = number of X, is >= 0 *)
   | Eq of term * term
   | Not_eq of term * term
 [@@deriving eq, ord, sexp_of]
@@ -105,10 +105,10 @@ val sort_of_cst : constant -> sort
 
 val sort_of_term : term -> sort
 
-val pos_app : int -> sort -> term list -> literal
+val pos_app : int -> relation -> term list -> literal
 (** pre: int >= 0 && |list| >= 0 *)
 
-val neg_app : int -> sort -> term list -> literal
+val neg_app : int -> relation -> term list -> literal
 (** pre: int >= 0 && |list| >= 0 *)
 
 val eq : term -> term -> literal

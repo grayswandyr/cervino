@@ -24,8 +24,8 @@ let expand_evt_modifes { mod_rel; mod_mods } =
     implies
       unchanged_condition
       (iff
-         (lit @@ pos_app 0 mod_rel.rel_name terms_expand)
-         (lit @@ pos_app 1 mod_rel.rel_name terms_expand))
+         (lit @@ pos_app 0 mod_rel terms_expand)
+         (lit @@ pos_app 1 mod_rel terms_expand))
   in
   List.fold_right (fun v f -> all v f) vars_expand unchanged_formula
 

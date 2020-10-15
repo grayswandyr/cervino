@@ -34,11 +34,11 @@ let rec remove_eq_fml = function
         (Sorts.empty, lit (neg_app i n tl))
     | Eq (t1, t2) ->
         let s = sort_of_term t1 in
-        let pred_eq = build_pred_eq_name_from_sort s in
+        let pred_eq = build_pred_eq_from_sort s in
         (Sorts.add s Sorts.empty, lit @@ pos_app 0 pred_eq [ t1; t2 ])
     | Not_eq (t1, t2) ->
         let s = sort_of_term t1 in
-        let pred_eq = build_pred_eq_name_from_sort s in
+        let pred_eq = build_pred_eq_from_sort s in
         (Sorts.add s Sorts.empty, lit @@ neg_app 0 pred_eq [ t1; t2 ]) )
   | And (f1, f2) ->
       let ss1, fml1 = remove_eq_fml f1 in
@@ -99,11 +99,10 @@ let equality_axiom_for_rel_at_i rel i =
   let term_y = var var_y in
   let left_tuple = List.insert_at_idx i term_x (List.map var vars_except_i) in
   let right_tuple = List.insert_at_idx i term_y (List.map var vars_except_i) in
-  let left_atom = lit @@ pos_app 0 rel.rel_name left_tuple in
-  let right_atom = lit @@ pos_app 0 rel.rel_name right_tuple in
+  let left_atom = lit @@ pos_app 0 rel left_tuple in
+  let right_atom = lit @@ pos_app 0 rel right_tuple in
   let x_equals_y =
-    lit
-    @@ pos_app 0 (build_pred_eq_name_from_sort s) (List.cons term_x [ term_y ])
+    lit @@ pos_app 0 (build_pred_eq_from_sort s) (List.cons term_x [ term_y ])
   in
   all
     var_x

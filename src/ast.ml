@@ -26,8 +26,8 @@ type term =
 [@@deriving eq, ord, sexp_of]
 
 type literal =
-  | Pos_app of int * Name.t * term list (* int = number of X, is >= 0 *)
-  | Neg_app of int * Name.t * term list (* int = number of X, is >= 0 *)
+  | Pos_app of int * relation * term list (* int = number of X, is >= 0 *)
+  | Neg_app of int * relation * term list (* int = number of X, is >= 0 *)
   | Eq of term * term
   | Not_eq of term * term
 [@@deriving eq, ord, sexp_of]

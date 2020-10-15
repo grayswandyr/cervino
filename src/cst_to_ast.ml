@@ -73,6 +73,10 @@ end = struct
   let check_sort (cst, _) sort = check cst.sorts sort
 end
 
+let find_relation relations ident =
+  List.find_opt (fun r -> Name.equal r.rel_name (Name.of_ident ident)) relations
+
+
 let quantify q (x, s) b =
   let var_name = Name.of_ident x in
   let var_sort = Name.of_ident s in
@@ -90,14 +94,38 @@ let flatten_telescope (env : Env.t) (ts : Cst.telescope) =
   List.return (x, s)
 
 
+let check_existence msg ident idents if_ok =
+  if List.mem ~eq:Ident.equal ident idents
+  then if_ok ()
+  else
+    Msg.err (fun m ->
+        m
+          "%a is not a %s:@\n%a"
+          Ident.pp
+          ident
+          msg
+          Location.excerpt
+          (Ident.positions ident))
+
+
+let check_sort ident sorts if_ok = check_existence "sort" ident sorts if_ok
+
+let convert_relation sorts Cst.{ r_name; r_profile } =
+  let rel_profile =
+    List.map
+      (fun column -> check_sort column sorts @@ fun () -> Name.of_ident column)
+      r_profile
+  in
+  make_relation ~rel_name:(Name.of_ident r_name) ~rel_profile ()
+
+
 let rec walk_formula env (f : Cst.formula) =
   let pf = Location.content f in
   walk_prim_formula env pf
 
 
-and walk_prim_formula env =
-  let open Cst in
-  function
+and walk_prim_formula env (f : Cst.prim_formula) =
+  match f with
   | False ->
       false_
   | True ->
@@ -106,8 +134,14 @@ and walk_prim_formula env =
       Env.check_relation env pred;
       let profile = Env.get_profile env pred in
       let next = if primed then 1 else 0 in
+      let pred' =
+        make_relation
+          ~rel_name:(Name.of_ident pred)
+          ~rel_profile:(List.map Name.of_ident profile)
+          ()
+      in
       let args' = List.map2 (walk_term_sort env) args profile in
-      lit (pos_app next (Name.of_ident pred) args')
+      lit (pos_app next pred' args')
   | Test (op, t1, t2) ->
       let s1, t1' = walk_term env t1 in
       let s2, t2' = walk_term env t2 in
@@ -215,41 +249,12 @@ and walk_term_sort env t sort =
   term
 
 
-let check_existence msg ident idents if_ok =
-  if List.mem ~eq:Ident.equal ident idents
-  then if_ok ()
-  else
-    Msg.err (fun m ->
-        m
-          "%a is not a %s:@\n%a"
-          Ident.pp
-          ident
-          msg
-          Location.excerpt
-          (Ident.positions ident))
-
-
-let check_sort ident sorts if_ok = check_existence "sort" ident sorts if_ok
-
-let convert_relation sorts Cst.{ r_name; r_profile } =
-  let rel_profile =
-    List.map
-      (fun column -> check_sort column sorts @@ fun () -> Name.of_ident column)
-      r_profile
-  in
-  make_relation ~rel_name:(Name.of_ident r_name) ~rel_profile ()
-
-
 let convert_constant sorts Cst.{ c_name; c_domain } =
   check_sort c_domain sorts
   @@ fun () ->
   make_constant
     ~cst_name:(Name.of_ident c_name)
     ~cst_sort:(Name.of_ident c_domain)
-
-
-let find_relation relations ident =
-  List.find_opt (fun r -> Name.equal r.rel_name (Name.of_ident ident)) relations
 
 
 let convert_path (relations : relation list) Cst.{ t_base; t_tc; t_between } =
