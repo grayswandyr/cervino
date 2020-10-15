@@ -6,7 +6,7 @@ let check idents ident =
   else
     Msg.err
     @@ fun m ->
-    m "Unknown identifier:@\n%a" Location.pp_location (Ident.positions ident)
+    m "Unknown identifier.@\n%a" Location.excerpt (Ident.positions ident)
 
 
 (* 
@@ -180,7 +180,7 @@ and check_type x s1 s2 =
           s1
           Ident.pp
           s2
-          Location.pp_location
+          Location.excerpt
           (Ident.positions x))
 
 
@@ -205,7 +205,7 @@ and walk_term env t =
             "Not a variable or constant: %a@\n%a"
             Ident.pp
             t
-            Location.pp_location
+            Location.excerpt
             (Ident.positions t) )
 
 
@@ -225,7 +225,7 @@ let check_existence msg ident idents if_ok =
           Ident.pp
           ident
           msg
-          Location.pp_location
+          Location.excerpt
           (Ident.positions ident))
 
 
@@ -265,7 +265,7 @@ let convert_path (relations : relation list) Cst.{ t_base; t_tc; t_between } =
             "%a is not a relation:@\n%a"
             Ident.pp
             t_base
-            Location.pp_location
+            Location.excerpt
             (Ident.positions t_base))
   | _, None, _ ->
       Msg.err (fun m ->
@@ -273,7 +273,7 @@ let convert_path (relations : relation list) Cst.{ t_base; t_tc; t_between } =
             "%a is not a relation:@\n%a"
             Ident.pp
             t_tc
-            Location.pp_location
+            Location.excerpt
             (Ident.positions t_tc))
   | _, _, Some None ->
       Msg.err (fun m ->
@@ -281,7 +281,7 @@ let convert_path (relations : relation list) Cst.{ t_base; t_tc; t_between } =
             "%a is not a relation:@\n%a"
             (Option.pp Ident.pp)
             t_between
-            (Option.pp Location.pp_location)
+            (Option.pp Location.excerpt)
             (Option.map Ident.positions t_between))
   | ( Some ({ rel_profile = [ s1; s2 ]; _ } as base),
       Some ({ rel_profile = [ _; _ ] as tcp; _ } as tc),
@@ -304,7 +304,7 @@ let convert_path (relations : relation list) Cst.{ t_base; t_tc; t_between } =
              %a"
             Ident.pp
             t_base
-            Location.pp_location
+            Location.excerpt
             (Ident.positions t_base))
 
 
@@ -319,10 +319,10 @@ let convert_modifies env relations Cst.{ mod_field; mod_modifications } =
   | None ->
       Msg.err (fun m ->
           m
-            "Unknown relation in `modifies` clause: %a@\n%a"
+            "Unknown relation in `modifies` clause: %a.@\n%a"
             Ident.pp
             mod_field
-            Location.pp_positions
+            Location.excerpt
             (Ident.positions mod_field))
   | Some mod_rel ->
       let open Mysc.List.Infix in
@@ -393,10 +393,10 @@ let convert_using env Cst.{ u_name; u_args } =
           | None ->
               Msg.err (fun m ->
                   m
-                    "Unknown event: %a@\n%a"
+                    "Unknown event: %a.@\n%a"
                     Ident.pp
                     ev_id
-                    Location.pp_positions
+                    Location.excerpt
                     (Ident.positions ev_id))
           | Some Cst.{ e_args; _ } ->
               (* reverse to make stack-shaped substitution *)
@@ -411,7 +411,7 @@ let convert_using env Cst.{ u_name; u_args } =
 let convert_check env chk_id checks =
   match List.find_opt (fun c -> Ident.equal c.Cst.check_name chk_id) checks with
   | None ->
-      Msg.err (fun m -> m "No check named: %a" Ident.pp chk_id)
+      Msg.err (fun m -> m "No check named %a" Ident.pp chk_id)
   | Some Cst.{ check_body; check_assuming; check_using; _ } ->
       let chk_name = Name.of_ident chk_id in
       let chk_body = walk_block env check_body in

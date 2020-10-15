@@ -33,7 +33,7 @@ let keywords =
 
 let error lexbuf msg  =
     Msg.err @@ fun m -> 
-    m "%a@ %s" L.pp_positions (L.positions_of_lexbuf lexbuf) msg
+    m "%s: %a" msg L.excerpt (L.positions_of_lexbuf lexbuf) 
 
 
 } (* END HEADER *)

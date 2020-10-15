@@ -16,6 +16,13 @@ let warn = Setup.warn
 
 let err m = Setup.kmsg (fun () -> raise Exit) Logs.Error m
 
+(* let err args =
+  Setup.kmsg (fun () -> raise Exit) Logs.Error
+  @@ fun m ->
+  args (fun ?pos msg ->
+      m "%a.%a" msg (Fmt.option (Fmt.prefix Fmt.cut Location.excerpt)) pos)
+ *)
+
 let style =
   let open! Logs in
   let open Logs_fmt in

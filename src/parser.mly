@@ -69,7 +69,7 @@ let rec dispatch_aux p (names: Ident.t list) paragraphs = match paragraphs with
     else
       Msg.err (fun m -> 
         m "Same name(s) used in multiple paragraphs:@\n%a" 
-          (List.pp L.pp_location) common)
+          (List.pp L.excerpt) common)
 
 let dispatch ps = dispatch_aux Cst.empty [] ps
 %}
