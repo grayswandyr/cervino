@@ -328,11 +328,26 @@ let convert_modifies env relations Cst.{ mod_field; mod_modifications } =
       let open Mysc.List.Infix in
       let mod_mods =
         let profile = Env.get_profile env mod_field in
+        let arity = List.length profile in
         let+ modif = mod_modifications in
-        (* let+/and+ provides a cartesian product while here we want a lock-step product (aka ziplist) *)
-        let& t = modif
-        and& s = profile in
-        walk_term_sort env t s
+        if List.length modif <> arity
+        then
+          Msg.err (fun m ->
+              m
+                "Wrong arity in `modifies` clause for %a (expected arity is \
+                 %d).@\n\
+                 %a"
+                Ident.pp
+                mod_field
+                arity
+                Location.excerpt
+                ( fst @@ Ident.positions @@ List.hd modif,
+                  snd @@ Ident.positions @@ List.hd @@ List.last 1 modif ))
+        else
+          (* let+/and+ provides a cartesian product while here we want a lock-step product (aka ziplist) *)
+          let& t = modif
+          and& s = profile in
+          walk_term_sort env t s
       in
       make_ev_modify ~mod_rel ~mod_mods ()
 
