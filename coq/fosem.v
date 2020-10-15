@@ -356,4 +356,184 @@ Proof.
   apply (H1 (H dk)).
 Qed.
 
+  Lemma esubst_sem:
+    forall s D (f: formula Sg) (itp: Interp D) (env1 env2: Env Sg D) t (x : variable s) (tm: term Sg s), 
+    (forall s' z, vsIn Sg z (free Sg f) -> not (isEq2 (U:=variable) s x s' z) -> env1 s' z = env2 s' z) ->
+      env1 s x = tm_sem Sg env2 tm -> not (vsIn Sg x (tm_vars Sg tm)) ->
+        fm_sem Sg (Itp:=itp) env1 f t <-> fm_sem Sg (Itp:=itp) env2 (esubst Sg x tm f) t.
+  Proof.
+    intros.
+    unfold esubst.
+    rewrite Ex_sem.
+    setoid_rewrite And_sem.
+    simpl.
+    setoid_rewrite add_eq.
+    split; intros.
+    exists (tm_sem Sg env2 tm); split; auto.
+    destruct tm; simpl in *; auto.
+    rewrite add_upd; auto.
+    rewrite <-H0.
+    revert H2; apply fm_sem_equiv; intros.
+    destruct (@dc_dec (isEq2 (U:=variable) s x s0 v)).
+    injection d; intros; subst.
+    apply inj_pair2_eq_dec in H3; try apply eq_dec; subst.
+    rewrite add_eq; now auto.
+    rewrite add_ne2; auto.
+    symmetry; apply H; now auto.
+    
+    destruct H2 as [d [h1 h2]].
+    revert h2; apply fm_sem_equiv; intros.
+    destruct (@dc_dec (isEq2 (U:=variable) s x s0 v)).
+    injection d0; intros; subst.
+    apply inj_pair2_eq_dec in H3; try apply eq_dec; subst.
+    rewrite add_eq.
+    rewrite H0, h1.
+    destruct tm; simpl in *; auto.
+    rewrite add_ne; auto; intro.
+    subst e.
+    apply H1.
+    apply vsSing_intro.
+    rewrite add_ne2; auto.
+  Qed.
+
+  Lemma asubst_sem:
+    forall s D (f: formula Sg) (itp: Interp D) (env1 env2: Env Sg D) t (x : variable s) (tm: term Sg s), 
+    (forall s' z, vsIn Sg z (free Sg f) -> not (isEq2 (U:=variable) s x s' z) -> env1 s' z = env2 s' z) ->
+      env1 s x = tm_sem Sg env2 tm -> not (vsIn Sg x (tm_vars Sg tm)) ->
+        fm_sem Sg (Itp:=itp) env1 f t <-> fm_sem Sg (Itp:=itp) env2 (asubst Sg x tm f) t.
+  Proof.
+    intros.
+    unfold asubst.
+    rewrite All_sem.
+    setoid_rewrite Imp_sem.
+    simpl.
+    setoid_rewrite add_eq.
+    split; intros.
+
+    revert H2; apply fm_sem_equiv; intros.
+    destruct (@dc_dec (isEq2 (U:=variable) s x s0 v)).
+    injection d0; intros; subst.
+    apply inj_pair2_eq_dec in H4; try apply eq_dec; subst.
+    rewrite add_eq.
+    rewrite H3, H0.
+    destruct tm; simpl in *; auto.
+    rewrite add_ne; auto; intro.
+    subst e.
+    apply H1.
+    apply vsSing_intro.
+    rewrite add_ne2; auto.
+    symmetry; apply H; now auto.
+    
+    generalize (H2 (tm_sem Sg env2 tm)); clear H2; intro H2.
+    assert (tm_sem Sg env2 tm = tm_sem Sg (add Sg x (tm_sem Sg env2 tm) env2) tm).
+    destruct tm; simpl in *; auto.
+    rewrite add_upd; now auto.
+    apply H2 in H3; clear H2.
+    revert H3; apply fm_sem_equiv; intros.
+    destruct (@dc_dec (isEq2 (U:=variable) s x s0 v)).
+    injection d; intros; subst.
+    apply inj_pair2_eq_dec in H3; try apply eq_dec; subst.
+    rewrite add_eq; now auto.
+    rewrite add_ne2; auto.
+  Qed.
+
+Lemma tm_subst_sem:
+    forall s s' D (t: term Sg s') (itp: Interp D) (env1 env2: Env Sg D) (x : variable s) (tm: term Sg s), 
+    (forall s' z, vsIn Sg z (tm_vars Sg t) -> not (isEq2 (U:=variable) s x s' z) -> env1 s' z = env2 s' z) ->
+      env1 s x = tm_sem Sg env2 tm -> not (vsIn Sg x (tm_vars Sg tm)) ->
+        tm_sem Sg (Itp:=itp) env1 t = tm_sem Sg (Itp:=itp) env2 (tm_subst Sg x tm t).
+Proof.
+  intros.
+  destruct t; simpl; auto.
+  destruct (eq_dec s' s); simpl; try subst s'; auto.
+  destruct (eq_dec x e); simpl; try subst e; auto.
+  apply H; intros; auto.
+  apply vsSing_intro.
+  intro eh; apply inj_pair2_eq_dec in eh; try apply eq_dec; tauto.
+  apply H; intros; auto.
+  apply vsSing_intro.
+  intro eh; injection eh; intros; subst; tauto.
+Qed.
+
+Lemma lt_subst_sem:
+    forall s D (l: literal Sg) (itp: Interp D) (env1 env2: Env Sg D) t (x : variable s) (tm: term Sg s), 
+    (forall s' z, vsIn Sg z (lt_vars Sg l) -> not (isEq2 (U:=variable) s x s' z) -> env1 s' z = env2 s' z) ->
+      env1 s x = tm_sem Sg env2 tm -> not (vsIn Sg x (tm_vars Sg tm)) ->
+        lt_sem Sg (Itp:=itp) env1 l t <-> lt_sem Sg (Itp:=itp) env2 (lt_subst Sg x tm l) t.
+Proof.
+  intros; destruct l; simpl; intros; auto.
+  split; intros; psemTac.
+  symmetry; apply tm_subst_sem; intros; auto.
+  apply H; auto.
+  simpl.
+  apply (vsGUnion_intro Sg (K:=uptoFinite (pr_arity p))
+    (ek := (fun i => tm_vars Sg (t0 i)))) in H3.
+  apply H3.
+  apply tm_subst_sem; intros; auto.
+  apply H; auto.
+  simpl.
+  apply (vsGUnion_intro Sg (K:=uptoFinite (pr_arity p))
+    (ek := (fun i => tm_vars Sg (t0 i)))) in H3.
+  apply H3.  
+Qed.
+
+Lemma at_subst_sem:
+    forall s D (a: atom Sg) (itp: Interp D) (env1 env2: Env Sg D) t (x : variable s) (tm: term Sg s), 
+    (forall s' z, vsIn Sg z (at_vars Sg a) -> not (isEq2 (U:=variable) s x s' z) -> env1 s' z = env2 s' z) ->
+      env1 s x = tm_sem Sg env2 tm -> not (vsIn Sg x (tm_vars Sg tm)) ->
+        at_sem Sg (Itp:=itp) env1 a t <-> at_sem Sg (Itp:=itp) env2 (at_subst Sg x tm a) t.
+Proof.
+  intros; destruct a; simpl; intros; auto.
+  apply lt_subst_sem; auto.
+  
+  apply not_iff_compat.
+  apply lt_subst_sem; auto.
+  
+  rewrite <-tm_subst_sem with (env1:=env1); auto.
+  rewrite <-tm_subst_sem with (env1:=env1); auto.
+  tauto.
+  intros.
+  apply H; auto.
+  simpl.
+  apply vsUnion_r; apply H2.
+  intros.
+  apply H; auto.
+  simpl.
+  apply vsUnion_l; apply H2.
+  
+  apply not_iff_compat.
+  rewrite <-tm_subst_sem with (env1:=env1); auto.
+  rewrite <-tm_subst_sem with (env1:=env1); auto.
+  tauto.  
+  intros.
+  apply H; auto.
+  simpl.
+  apply vsUnion_r; apply H2.
+  intros.
+  apply H; auto.
+  simpl.
+  apply vsUnion_l; apply H2.
+Qed.
+
+Lemma subst_sem:
+    forall s D (f: formula Sg) (itp: Interp D) (env1 env2: Env Sg D) t (x : variable s) (tm: term Sg s), 
+    (forall s' z, vsIn Sg z (free Sg f) -> not (isEq2 (U:=variable) s x s' z) -> env1 s' z = env2 s' z) ->
+      env1 s x = tm_sem Sg env2 tm -> not (vsIn Sg x (tm_vars Sg tm)) ->
+        fm_sem Sg (Itp:=itp) env1 f t <-> fm_sem Sg (Itp:=itp) env2 (subst Sg x tm f) t.
+Proof.
+  intros.
+  revert t; induction f; intros; auto; try (simpl; tauto).
+  - apply at_subst_sem; now auto.
+  - simpl; rewrite <-IHf1, <-IHf2; auto; try tauto.
+    intros; apply H; intros; auto; apply vsUnion_r; apply H2.
+    intros; apply H; intros; auto; apply vsUnion_l; apply H2.
+  - simpl; rewrite <-IHf1, <-IHf2; auto; try tauto.
+    intros; apply H; intros; auto; apply vsUnion_r; apply H2.
+    intros; apply H; intros; auto; apply vsUnion_l; apply H2.
+  - apply esubst_sem; now auto.
+  - apply asubst_sem; now auto.
+  - simpl; setoid_rewrite <-IHf; tauto.
+  - simpl; setoid_rewrite <-IHf; tauto.
+Qed.
+
 End FOsem.

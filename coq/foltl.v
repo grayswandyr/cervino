@@ -812,6 +812,53 @@ Proof.
   intros; reflexivity.
 Qed.
 
+Definition tm_subst {s s'} (x : variable s) (tm: term s) (t: term s'): term s' :=
+  match t with
+    Var _ y => 
+      match eq_dec s' s return term s' with
+        left e =>
+          match e in _ = s return variable s -> term s -> term s' with
+            eq_refl => fun x tm => if eq_dec x y then tm else Var _ y
+          end x tm
+      | right _ => t
+      end
+  | Cst _ c => Cst _ c
+  end.
+
+Definition lt_subst {s} (v : variable s) (tm: term s) (l: literal) :=
+  match l with
+    PApp x r args => PApp x r (fun i => tm_subst v tm (args i))
+  end.
+
+Definition at_subst {s} (x : variable s) (tm: term s) (a: atom) :=
+  match a with
+    Literal l => Literal (lt_subst x tm l)
+  | NLiteral l => NLiteral (lt_subst x tm l)
+  | Eq s' t1 t2 => Eq s' (tm_subst x tm t1) (tm_subst x tm t2)
+  | NEq s' t1 t2  => NEq s' (tm_subst x tm t1) (tm_subst x tm t2)
+  end.
+
+Definition esubst {s} (x : variable s) (tm: term s) (P: formula) :=
+  Ex s x (And (Atom (Eq s (Var s x) tm)) P).
+
+Definition asubst {s} (x : variable s) (tm: term s) (P: formula) :=
+  All s x (Imp (Atom (Eq s (Var s x) tm)) P).
+
+Fixpoint subst {s} (x: variable s) (tm: term s) (f: formula) :=
+  match f with
+  | FTrue => FTrue
+  | FFalse => FFalse
+  | Atom a => Atom (at_subst x tm a)
+  | And f1 f2 => And (subst x tm f1) (subst x tm f2)
+  | Or f1 f2 => Or (subst x tm f1) (subst x tm f2)
+  | Ex s' w f' => esubst x tm f
+  | All s' w f' => asubst x tm f
+  | F f => F (subst x tm f)
+  | G f => G (subst x tm f)
+  end.
+
+Notation "'[' x ':=' y ']'" := (subst x y).  
+
 Lemma Not_IAll: forall `(K:Finite) (sk: K->Sort) (vk:forall k, variable (sk k)) (f: formula),
   Not (IAll K sk vk f) = IEx K sk vk (Not f).
 Proof.

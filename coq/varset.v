@@ -17,7 +17,23 @@ Definition VarSet := forall s, SV.set (variable s).
 
 Definition vsIn {s} (v: variable s) (F: VarSet) := SV.set_In v (F s).
 
+Lemma vsIn_dec {s} (v: variable s) F : {vsIn v F} + {not (vsIn v F)}.
+Proof.
+  destruct (SV.set_In_dec v (F s)); [left|right]; auto.
+Defined.
+
 Definition vsSubset e1 e2 := forall s, SV.subset (T:=variable s) (e1 s) (e2 s).
+
+Lemma vsSubset_dec e1 e2 : {vsSubset e1 e2} + { not (vsSubset e1 e2) }.
+Proof.
+  intros.
+  unfold vsSubset.
+  destruct (all_dec (fun (s: (Sort (Sig:=Sg))) => {| dc_dec := SV.subset_dec (e1 s) (e2 s) |})); simpl in *.
+  left; auto.
+  destruct s as [s h].
+  right; intro.
+  apply h; apply H.  
+Defined.
 
 Lemma vsSubset_refl : forall e, vsSubset e e.
 Proof.
@@ -253,6 +269,19 @@ Proof.
   left; auto.
 Qed.
 
+Lemma vsSing_intro_eq: forall s (v: variable s) s' (w: variable s'), isEq2 (U:=variable) s v s' w -> vsIn v (vsSing w).
+Proof.
+  intros.
+  unfold vsSing, vsIn.
+  destruct (eq_dec s' s); try tauto.
+  subst s'.
+  left.
+  apply inj_pair2_eq_dec in H; try apply eq_dec.
+  symmetry; assumption.
+  exfalso; apply n.
+  injection H; intros; auto.
+Qed.
+
 Lemma vsSing_elim: forall s (v: variable s) s' (w: variable s'), 
   SV.set_In v (vsSing w s) -> isEq2 (U:=variable) s v s' w.
 Proof.
@@ -273,6 +302,13 @@ Proof.
   subst v0.
   apply vsSing_intro.
   destruct H0.
+Qed.
+
+Lemma vsSubsetSing_r: forall {s} {v: variable s} e, vsSubset e (vsSing v) -> forall s' (w: variable s'), vsIn w e -> isEq2 (U:=variable) s' w s v.
+Proof.
+  intros.
+  generalize (H _ w H0); clear H; intro.
+  apply vsSing_elim in H; auto.
 Qed.
 
 Definition vsVars `{K: Finite} {sk: K->Sort} (vk: forall k, variable (sk k)) : VarSet :=

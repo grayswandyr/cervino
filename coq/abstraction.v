@@ -994,9 +994,11 @@ Section Abstraction.
     apply H.
   Qed.
 
+  Definition abstract_G_EAf_and_g (f g: formula srcSig) (hf: isExAll _ f) (fv: forall s, SV.is_empty (free _ f s)) : formula (dstSig (getExF f)) := 
+    (And _ (G _ (abstract_ExAll f hf fv)) (fm_dstSig (getExF f) g)).
+  
   Theorem abstractionInConj_OK: forall (f g: formula srcSig) (hf: isExAll _ f) (fv: forall s, SV.is_empty (free _ f s)),
-    isSat srcSig (And _ (G _ f) g) -> 
-      isSat (dstSig (getExF f)) (And _ (G _ (abstract_ExAll f hf fv)) (fm_dstSig (getExF f) g)).
+    isSat srcSig (And _ (G _ f) g) -> isSat (dstSig (getExF f)) (abstract_G_EAf_and_g f g hf fv).
   Proof.
     intros.
     destruct H as [D [Itp [env [t H]]]].

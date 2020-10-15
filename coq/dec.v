@@ -14,6 +14,12 @@ Class EqDec {T: Type} := {
 }.
 Coercion eqDom: EqDec >-> Sortclass.
 
+Fixpoint assoc `{T1: EqDec} {T2} (x: T1) (l: list (T1*T2)) : option T2 :=
+  match l with
+    nil => None
+  | cons (y1, y2) l' => if eq_dec x y1 then Some y2 else assoc x l'
+  end.
+
 Class Decidable := {
   dcPred: Prop;
   dc_dec: {dcPred }+{not dcPred}

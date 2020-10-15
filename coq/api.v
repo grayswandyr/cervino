@@ -6,136 +6,56 @@ Require Import utils.
 
 Definition mlSort := string.
 
-Record mlPath := {
-  mlTC : string;
-  mlBase : string;
-}.
-
-Inductive mlKind : Type :=
-  MSort
-| MVar (s: mlSort)
-| MCst (s: mlSort)
-| MRel (al: list mlSort)
-| MError.
-
-Definition isMLSort k := match k with MSort => True | _ => False end.
-Definition isMLRel k := match k with MRel _ => True | _ => False end.
-Definition isMLVar k := match k with MVar _ => True | _ => False end.
-Definition isMLCst k := match k with MCst _ => True | _ => False end.
-
-Definition isMLSortDec k : {isMLSort k}+{not(isMLSort k)} :=
-  match k return {isMLSort k}+{not(isMLSort k)} with MSort => left I | _ => right (fun h => match h:False with end) end.
-
-Definition isMLVarDec k : {isMLVar k}+{not(isMLVar k)} :=
-  match k return {isMLVar k}+{not(isMLVar k)} with MVar _ => left I | _ => right (fun h => match h:False with end) end.
-
-Definition isMLCstDec k : {isMLCst k}+{not(isMLCst k)} :=
-  match k return {isMLCst k}+{not(isMLCst k)} with MCst _ => left I | _ => right (fun h => match h:False with end) end.
-
-Definition isMLRelDec k : {isMLRel k}+{not(isMLRel k)} :=
-  match k return {isMLRel k}+{not(isMLRel k)} with MRel _ => left I | _ => right (fun h => match h:False with end) end.
-
-Record mlSig := {
-  mlIdents : list string;
-  mlKinds : string -> mlKind;
-  mlClosures: list mlPath;
-(* auxiliairy *)
-  isMLSortB s := if isMLSortDec (mlKinds s) then true else false;
-  isMLVarB s := if isMLVarDec (mlKinds s) then true else false;
-  isMLCstB s := if isMLCstDec (mlKinds s) then true else false;
-(* WF *)
-  mlSorts: list mlSort := List.filter isMLSortB mlIdents;
-  mlVwf: forall v s, mlKinds v = MVar s -> List.In s mlSorts;
-  mlCwf: forall v s, mlKinds v = MCst s -> List.In s mlSorts;
-  mlRwf: forall v sl, mlKinds v = MRel sl -> forall s, List.In s sl -> List.In s mlSorts;
-}.
-
-Module Type MLSignature.
-  Parameter sg: mlSig.
-End MLSignature.
-
-Module MLCervino(Sg: MLSignature).
-
 Record mlVariable := {
   mlVarName: string;
-  mlVar_dcl : isMLVar (mlKinds Sg.sg mlVarName);
-  mlVar_in : List.In mlVarName (mlIdents Sg.sg)
+  mlVarSort: mlSort;
 }.
-
-Definition mlVarSort (r: mlVariable): mlSort :=
-  match mlKinds Sg.sg (mlVarName r) as k return isMLVar k -> _ with
-    MVar s => fun h => s
-  | _ => fun h => match h with end
-  end (mlVar_dcl r).
-
-Lemma mlVariableWF: forall v, mlKinds Sg.sg (mlVarName v) = MVar (mlVarSort v).
-Proof.
-  intros.
-  destruct v as [n d].
-  unfold mlVarSort; simpl.
-  destruct (mlKinds Sg.sg n); simpl in *; tauto.
-Qed.
-
-Definition mlAllVariables :=
-  imap_filter (fun id => isMLVarDec (mlKinds Sg.sg id))
-    (mlIdents Sg.sg)
-    (fun v h1 h2 => {| mlVarName := v; mlVar_dcl := h1; mlVar_in := h2 |}).
-
-Definition mlVariables s :=
-  List.filter (fun v => if string_dec (mlVarSort v) s then true else false) mlAllVariables.
 
 Record mlConstant := {
   mlCstName: string;
-  mlCst_dcl : isMLCst (mlKinds Sg.sg mlCstName);
-  mlCst_in : List.In mlCstName (mlIdents Sg.sg)
+  mlCstSort: mlSort;
 }.
-
-Definition mlCstSort (r: mlConstant): mlSort :=
-  match mlKinds Sg.sg (mlCstName r) as k return isMLCst k -> _ with
-    MCst s => fun h => s
-  | _ => fun h => match h with end
-  end (mlCst_dcl r).
-
-Lemma mlConstantWF: forall v, mlKinds Sg.sg (mlCstName v) = MCst (mlCstSort v).
-Proof.
-  intros.
-  destruct v as [n d].
-  unfold mlCstSort; simpl.
-  destruct (mlKinds Sg.sg n); simpl in *; tauto.
-Qed.
-
-Definition mlAllConstants :=
-  imap_filter (fun id => isMLCstDec (mlKinds Sg.sg id))
-    (mlIdents Sg.sg)
-    (fun v h1 h2 => {| mlCstName := v; mlCst_dcl := h1; mlCst_in := h2 |}).
-
-Definition mlConstants s :=
-  List.filter (fun v => if string_dec (mlCstSort v) s then true else false) mlAllConstants.
 
 Record mlRelation := {
   mlRelName: string;
-  mlRel_dcl : isMLRel (mlKinds Sg.sg mlRelName);
-  mlRel_in : List.In mlRelName (mlIdents Sg.sg);
+  mlRelArity : list mlSort;
 }.
 
-Definition mlRelArity (r: mlRelation) :=
-  match mlKinds Sg.sg (mlRelName r) as k return isMLRel k -> _ with
-    MRel al => fun h => al
-  | _ => fun h => match h with end
-  end (mlRel_dcl r).
+Inductive mlIdent :=
+| MLS (s: mlSort)
+| MLV (v: mlVariable)
+| MLC (c: mlConstant)
+| MLR (r: mlRelation).
 
-Lemma mlRelationWF: forall r, mlKinds Sg.sg (mlRelName r) = MRel (mlRelArity r).
+Definition isMLSort id := match id with MLS _ => True | _ => False end.
+Definition isMLVar id := match id with MLV _ => True | _ => False end.
+Definition isMLCst id := match id with MLC _ => True | _ => False end.
+Definition isMLRel id := match id with MLR _ => True | _ => False end.
+Definition getMLSort id : isMLSort id -> _ :=
+  match id return isMLSort id -> _ with MLS s => fun h => s | _ => fun h => match h with end end.
+Definition getMLVar id : isMLVar id -> _ :=
+  match id return isMLVar id -> _ with MLV v => fun h => v | _ => fun h => match h with end end.
+Definition getMLCst id : isMLCst id -> _ :=
+  match id return isMLCst id -> _ with MLC c => fun h => c | _ => fun h => match h with end end.
+Definition getMLRel id : isMLRel id -> _ :=
+  match id return isMLRel id -> _ with MLR r => fun h => r | _ => fun h => match h with end end.
+  
+Lemma isMLSortDec id : { isMLSort id } + { not (isMLSort id) }.
 Proof.
-  intros.
-  destruct r as [n d]; simpl.
-  unfold mlRelArity; simpl.
-  destruct (mlKinds Sg.sg n); simpl in *; tauto.
-Qed.
-
-Definition mlRelations :=
-  imap_filter (fun id => isMLRelDec (mlKinds Sg.sg id))
-    (mlIdents Sg.sg)
-    (fun v h1 h2 => {| mlRelName := v; mlRel_dcl := h1; mlRel_in := h2 |}).
+  destruct id; simpl; try (left; simpl; now auto); right; intro; tauto.
+Defined.
+Lemma isMLVarDec id : { isMLVar id } + { not (isMLVar id) }.
+Proof.
+  destruct id; simpl; try (left; simpl; now auto); right; intro; tauto.
+Defined.
+Lemma isMLCstDec id : { isMLCst id } + { not (isMLCst id) }.
+Proof.
+  destruct id; simpl; try (left; simpl; now auto); right; intro; tauto.
+Defined.
+Lemma isMLRelDec id : { isMLRel id } + { not (isMLRel id) }.
+Proof.
+  destruct id; simpl; try (left; simpl; now auto); right; intro; tauto.
+Defined.
 
 Inductive mlTerm : Type :=
   MLVar (v: mlVariable)
@@ -147,34 +67,17 @@ Definition mlTermSort (tm: mlTerm): mlSort :=
   | MLCst c => mlCstSort c
   end.
 
-Lemma mlTwf: forall t, List.In (mlTermSort t) (mlSorts Sg.sg).
-Proof.
-  intros.
-  destruct t; simpl.
-  apply mlVwf with (v:=mlVarName v); simpl.
-  generalize (mlVar_dcl v); intro.
-  destruct v as [n d]; simpl in *.
-  unfold mlVarSort; simpl.
-  destruct (mlKinds Sg.sg n); simpl in *; tauto.
-
-  apply mlCwf with (v:=mlCstName c); simpl.
-  generalize (mlCst_dcl c); intro.
-  destruct c as [n d]; simpl in *.
-  unfold mlCstSort; simpl.
-  destruct (mlKinds Sg.sg n); simpl in *; tauto.
-Qed.
-
 Definition isMLLit (r: mlRelation) (args: list mlTerm): Prop := 
   mlRelArity r = List.map mlTermSort args.
 
 Inductive mlLiteral: Type :=
-  MLPApp (nx: nat) (r: mlRelation) (args: list mlTerm) (wf: isMLLit r args).
+  MLPApp (nx: nat) (r: string) (args: list mlTerm).
 
 Inductive mlAtom: Type :=
 | MLLiteral (lt: mlLiteral)
 | MLNLiteral (lt: mlLiteral)
-| MLEq (s: mlSort) (t1: mlTerm) (t2: mlTerm) (hs1: mlTermSort t1 = s) (hs2: mlTermSort t2 = s)
-| MLNEq (s: mlSort) (t1: mlTerm) (t2: mlTerm) (hs1: mlTermSort t1 = s) (hs2: mlTermSort t2 = s).
+| MLEq (t1: mlTerm) (t2: mlTerm)
+| MLNEq (t1: mlTerm) (t2: mlTerm).
 
 Inductive mlFormula: Type :=
   MLFTrue: mlFormula
@@ -213,9 +116,134 @@ Record mlCheck := {
   mlChkUsing: mlUsing;
 }.
 
-Record mlModel := {
-  mlAxioms: list mlFormula;
-  mlEvents: list mlEvent;
+Record mlPath := {
+  mlTC : mlRelation;
+  mlBase : mlRelation;
 }.
 
-End MLCervino.
+Record mlModel := {
+  mlAxioms : list mlFormula;
+  mlEvents : list mlEvent;
+  mlClosures : list mlPath;
+  mlCheckWith : mlCheck;
+}.
+
+(*
+Require Import Extraction.
+Require Import Coq.extraction.ExtrOcamlBasic.
+
+Require Import extraction.ExtrOcamlString.
+Extract Inlined Constant String.append => "(^)".
+Extract Inlined Constant String.string_dec => "(=)".
+Extract Inductive string => "string" [ """""" "(fun (a, b) -> (String.make 1 a) ^ b)"] "(fun e c s -> if s = """" then e else c s.[0] (String.sub s 1 (String.length s - 1)))".
+
+Extract Inductive nat => int [ "0" "succ" ] "(fun fO fS n -> if n=0 then fO () else fS (n-1))".
+
+Extract Inductive sigT => "( * )" [ "" ].
+Extract Inlined Constant projT1 => "fst".
+Extract Inlined Constant projT2 => "snd".
+
+Extraction "/tmp/api.ml" mlCheck mlModel.
+*)
+
+(**************************************************************************)
+
+Definition mlVarIds v := MLV v :: MLS (mlVarSort v) :: nil.
+
+Definition mlCstIds c := MLC c :: MLS (mlCstSort c) :: nil.
+
+Definition mlRelIds r := MLR r :: (List.map MLS (mlRelArity r)).
+
+Definition mlTermIds tm: list mlIdent :=
+  match tm with
+   MLVar v => mlVarIds v
+  | MLCst c => mlCstIds c
+  end.
+
+Definition mlLitIds l : list mlIdent :=
+  match l with
+    MLPApp nx r args => 
+      mlRelIds {| mlRelName := r; mlRelArity := List.map mlTermSort args |} ++
+        List.concat (List.map mlTermIds args)
+  end.
+
+Definition mlAtomIds a : list mlIdent :=
+  match a with
+  | MLLiteral l => mlLitIds l
+  | MLNLiteral l => mlLitIds l
+  | MLEq t1 t2 => mlTermIds t1 ++ mlTermIds t2
+  | MLNEq t1 t2 => mlTermIds t1 ++ mlTermIds t2
+  end.
+
+Fixpoint mlFormulaIds f :=
+  match f with
+    MLFTrue | MLFFalse => nil
+  | MLAtom a => mlAtomIds a
+  | MLAnd f1 f2 | MLOr f1 f2 => mlFormulaIds f1 ++ mlFormulaIds f2
+  | MLEx v f' | MLAll v f' => MLS (mlVarSort v) :: MLV v :: mlFormulaIds f'
+  | MLF f' | MLG f' => mlFormulaIds f'
+  end.
+
+Definition mlEventIds ev :=
+  List.map MLV (mlEvArgs ev) ++ 
+  List.map MLS (List.map mlVarSort (mlEvArgs ev)) ++
+  mlFormulaIds (mlEvBody ev).
+
+Definition mlPathIds p := mlRelIds (mlTC p) ++ mlRelIds (mlBase p).
+
+Definition mlUsingIds u evts :=
+  match u with
+    TEA => nil
+  | TTC r v f => MLR r :: MLV v :: (mlFormulaIds f)
+  | TFC ef => List.concat (List.map (fun e => mlFormulaIds (ef e)) evts) 
+  end.
+
+Definition mlCheckIds chk evts :=
+  mlFormulaIds (mlChkBody chk) ++
+  mlFormulaIds (mlChkAssumes chk) ++
+  mlUsingIds (mlChkUsing chk) evts.
+
+Definition mlModelIds m :=
+  List.concat (List.map mlFormulaIds (mlAxioms m)) ++
+  List.concat (List.map mlEventIds (mlEvents m)) ++
+  List.concat (List.map mlPathIds (mlClosures m)) ++
+  (mlCheckIds (mlCheckWith m) (mlEvents m)).
+
+Definition mlSorts m := 
+  imap_filter isMLSortDec
+    (mlModelIds m)
+    (fun v h1 h2 => getMLSort v h1).
+
+Definition mlAllVariables m: list mlVariable :=
+  imap_filter isMLVarDec
+    (mlModelIds m)
+    (fun v h1 h2 => getMLVar v h1).
+
+Definition mlVariables m s :=
+  List.filter (fun v => if string_dec (mlVarSort v) s then true else false) (mlAllVariables m).
+
+Definition mlAllConstants m: list mlConstant :=
+  imap_filter isMLCstDec
+    (mlModelIds m)
+    (fun v h1 h2 => getMLCst v h1).
+
+Definition mlConstants m s :=
+  List.filter (fun v => if string_dec (mlCstSort v) s then true else false) (mlAllConstants m).
+
+Definition mlRelations m: list mlRelation :=
+  imap_filter isMLRelDec
+    (mlModelIds m)
+    (fun v h1 h2 => getMLRel v h1).
+
+Lemma mlSortOfVar: forall m v,
+  In v (mlAllVariables m) -> In (mlVarSort v) (mlSorts m).
+Admitted.
+
+Lemma mlSortOfCst: forall m c,
+  In c (mlAllConstants m) -> In (mlCstSort c) (mlSorts m).
+Admitted.
+
+Lemma mlSortOfRel: forall m r,
+  In r (mlRelations m) -> forall s, In s (mlRelArity r) -> In s (mlSorts m).
+Admitted.
+

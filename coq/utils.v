@@ -15,6 +15,12 @@ Fixpoint imap_filter {T U} {p: T->Prop} (P: forall x, {p x}+{not (p x)}) (l: lis
    end
   end.
 
+Fixpoint imap {T U} (l: list T):  (forall x, List.In x l -> U) -> list U :=
+  match l return (forall x, List.In x l -> U) -> list U with
+    nil => fun f => nil
+  | cons x l' => fun f => f x (or_introl eq_refl)::imap l' (fun x h => f x (or_intror h))
+  end.
+
 Lemma imap_filter_In_intro: forall T U {p: T->Prop} (P: forall x, {p x}+{not (p x)}) (l: list T) (f: forall x, p x -> List.In x l -> U),
   forall x (h1: p x) (h2: In x l), List.In (f x h1 h2) (imap_filter P l f).
 Proof.
@@ -81,3 +87,35 @@ Proof.
   rewrite H; simpl; now auto.
 Qed.
 
+Lemma incl_concat_r_intro: forall T (l1: list T) l2 i, incl l1 (fnth l2 i) -> incl l1 (concat l2).
+Proof.
+  induction l2; simpl; intros; auto.
+  inversion i.
+  
+  revert H; apply (caseS' i); simpl in *; intros.
+  apply incl_appl; now auto.
+  apply incl_appr.
+  revert H; apply IHl2.
+Qed.
+
+Lemma in_fnth: forall T (l: list T) x, In x l -> exists i, x = fnth l i.
+Proof.
+  induction l; simpl; intros; auto; try tauto.
+  destruct H.
+  exists F1; subst x; simpl; now auto.
+  apply IHl in H.
+  destruct H as [i H].
+  exists (FS i); simpl; auto.
+Qed.
+
+Lemma in_concat_map_intro: forall {T1 T2} (f:T1->list T2) l1 (l2: list T2), (exists i, incl l2 (f (fnth l1 i))) -> incl l2 (concat (map f l1)).
+Proof.
+  intros.
+  destruct H.
+  generalize (map_length f l1); intro.
+  apply incl_concat_r_intro with (i := rew [Fin.t] (eq_sym H0) in x).
+  rewrite fnth_map.
+  generalize (map_length f l1); intro.
+  rewrite (proof_irrelevance _ H0 e); clear H0.
+  rewrite e; simpl; auto.
+Qed.
