@@ -71,7 +71,18 @@ let rec dispatch_aux p (names: Ident.t list) paragraphs = match paragraphs with
         m "Same name(s) used in multiple paragraphs:@\n%a" 
           (List.pp L.excerpt) common)
 
-let dispatch ps = dispatch_aux Cst.empty [] ps
+let dispatch ps = 
+  (* dispatch_aux yields list in reversed order, put it back in the original
+    order to ease debugging *)
+  let cst = dispatch_aux Cst.empty [] ps in
+    { sorts = List.rev cst.sorts ;
+      relations = List.rev cst.relations;
+      constants = List.rev cst.constants;
+      closures = List.rev cst.closures;
+      axioms = List.rev cst.axioms;
+      events = List.rev cst.events;
+      checks = List.rev cst.checks
+    }
 %}
 
 %%

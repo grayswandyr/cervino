@@ -157,8 +157,8 @@ and walk_prim_formula env =
       assert false
   | Quant (q, ts, b) ->
       (* reverse to make stack-shaped substitution *)
-      let ts' = flatten_telescope env ts |> List.rev in
-      let env' = Env.push_variables env ts' in
+      let ts' = flatten_telescope env ts in
+      let env' = Env.push_variables env (List.rev ts') in
       let b' = walk_block env' b in
       List.fold_right (quantify q) ts' b'
   | Block b ->
