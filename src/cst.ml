@@ -56,8 +56,8 @@ and block = formula list [@@deriving eq, ord, sexp_of]
 
 type transfo =
   | TEA
-  | TFC
-  | TTC
+  | TFC of (Ident.t * block) list
+  | TTC of Ident.t * (Ident.t * sort) * telescope * block
 [@@deriving eq, ord, sexp_of]
 
 type modification = Ident.t list [@@deriving eq, ord, sexp_of]
@@ -112,12 +112,7 @@ and check =
   { check_name : Ident.t;
     check_body : block;
     check_assuming : block; [@sexp.omit_nil]
-    check_using : using
-  }
-
-and using =
-  { u_name : transfo;
-    u_args : (Ident.t * block) list (* may be empty *)
+    check_using : transfo
   }
 [@@deriving eq, ord, make, sexp_of]
 

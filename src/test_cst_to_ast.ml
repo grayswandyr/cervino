@@ -34,9 +34,7 @@ check prop {} using TEA
              ((Quant All (((x) T))
                ((Unary Not (Unary Not (Pred ((pred q) (primed) (args (x)))))))))))))
          (events ())
-         (checks
-          (((check_name prop) (check_body ())
-            (check_using ((u_name TEA) (u_args ())))))))
+         (checks (((check_name prop) (check_body ()) (check_using TEA)))))
         -->
         ((model
           ((sorts (S T))

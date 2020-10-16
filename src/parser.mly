@@ -103,7 +103,7 @@ paragraph:
   x = sort
   { `Sort x }
   | x = relation
-  { `Relation x }
+  { `Relation x } 
   | x = constant 
   { `Constant x }
   | x = paths
@@ -161,13 +161,21 @@ check:
   { make_check ~check_name ~check_body ~check_assuming ~check_using }
 
 using:
-  USING u_name = transfo u_args = loption(brackets(comma_sep1(separated_pair(ident, COMMA, block))))
-  { { u_name; u_args } }
+  USING TEA { TEA }
+  | USING r = tfc { r }
+  | USING r = ttc { r }
+  
+%inline tfc:
+  TFC args = brackets(comma_sep1(separated_pair(ident, COMMA, block)))
+  { TFC args }
 
-%inline transfo:
-  TEA { TEA }
-  | TFC { TFC }
-  | TTC { TTC }
+%inline ttc :
+  TTC 
+  rel = ident COMMA 
+  var = brackets(separated_pair(ident, COMMA, ident)) COMMA 
+  ts = brackets(comma_sep(ranging)) COMMA 
+  b = block
+  { TTC (rel, var, ts, b) }
   
 %inline block:
   fs = braces(formula*)
