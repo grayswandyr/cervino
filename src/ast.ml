@@ -62,7 +62,7 @@ type event =
 
 type transfo =
   | TEA
-  | TTC of relation * variable * formula
+  | TTC of relation * variable * variable list * formula
   | TFC of (Name.t -> formula option)
 [@@deriving sexp_of]
 
@@ -171,7 +171,7 @@ and always f = G f
 
 let tea = TEA
 
-let ttc rel var f = TTC (rel, var, f)
+let ttc rel var vars f = TTC (rel, var, vars, f)
 
 let tfc mapping = TFC mapping
 

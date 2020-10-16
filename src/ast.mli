@@ -60,7 +60,7 @@ type event = private
 
 type transfo = private
   | TEA
-  | TTC of relation * variable * formula
+  | TTC of relation * variable * variable list * formula
   | TFC of (Name.t -> formula option)
 [@@deriving sexp_of]
 
@@ -149,7 +149,7 @@ val next : formula -> formula
 
 val tea : transfo
 
-val ttc : relation -> variable -> formula -> transfo
+val ttc : relation -> variable -> variable list -> formula -> transfo
 
 val tfc : (Name.t -> formula option) -> transfo
 
