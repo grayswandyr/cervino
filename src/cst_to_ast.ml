@@ -24,6 +24,8 @@ module Env : sig
 
   val get_relations : t -> Ident.t list
 
+  val get_sorts : t -> Ident.t list
+
   val get_variables : t -> subst
 
   val get_constants : t -> Cst.constant list
@@ -51,6 +53,8 @@ end = struct
   let get_relations ({ relations; _ }, _) =
     List.map (fun r -> r.r_name) relations
 
+
+  let get_sorts ({ sorts; _ }, _) = sorts
 
   let get_events ({ events; _ }, _) = events
 
@@ -133,13 +137,13 @@ and walk_prim_formula env (f : Cst.prim_formula) =
   | Pred { pred; primed; args } ->
       Env.check_relation env pred;
       let profile = Env.get_profile env pred in
-      let next = if primed then 1 else 0 in
       let pred' =
         make_relation
           ~rel_name:(Name.of_ident pred)
           ~rel_profile:(List.map Name.of_ident profile)
           ()
       in
+      let next = if primed then 1 else 0 in
       let args' = List.map2 (walk_term_sort env) args profile in
       lit (pos_app next pred' args')
   | Test (op, t1, t2) ->
@@ -385,18 +389,37 @@ let convert_event env relations Cst.{ e_name; e_args; e_modifies; e_body } =
     make_event ~ev_name ~ev_args ~ev_body ~ev_modifies ()
 
 
-let convert_using env Cst.{ u_name; u_args } =
-  match u_name with
+let convert_using env = function
   | Cst.TEA ->
-      if not @@ List.is_empty u_args
-      then
-        Msg.err (fun m -> m "TEA expects no parameters (see checked command)")
-      else tea
-  | Cst.TTC ->
-      (* TODO *)
-      assert false
-  | Cst.TFC ->
-      assert (not @@ List.is_empty u_args);
+      tea
+  | Cst.TTC (rel_id, (x, s), ts, b) ->
+      Env.check_relation env rel_id;
+      let profile = Env.get_profile env rel_id in
+      let rel =
+        make_relation
+          ~rel_name:(Name.of_ident rel_id)
+          ~rel_profile:(List.map Name.of_ident profile)
+          ()
+      in
+      let v =
+        check_sort s (Env.get_sorts env)
+        @@ fun () ->
+        make_variable ~var_name:(Name.of_ident x) ~var_sort:(Name.of_ident s)
+      in
+      let ts' = flatten_telescope env ts in
+      let vars =
+        List.map
+          (fun (x, s) ->
+            make_variable
+              ~var_name:(Name.of_ident x)
+              ~var_sort:(Name.of_ident s))
+          ts'
+      in
+      let env' = Env.push_variables env ((x, s) :: List.rev ts') in
+      let f = walk_block env' b in
+      ttc rel v vars f
+  | Cst.TFC args ->
+      assert (not @@ List.is_empty args);
       let open List.Infix in
       let events = Env.get_events env in
       if not
@@ -406,7 +429,7 @@ let convert_using env Cst.{ u_name; u_args } =
       then Msg.err (fun m -> m "Non-unique event names in TFC parameters")
       else
         let assoc =
-          let+ ev_id, ev_block = u_args in
+          let+ ev_id, ev_block = args in
           match
             List.find_opt (fun e -> Ident.equal ev_id e.Cst.e_name) events
           with
