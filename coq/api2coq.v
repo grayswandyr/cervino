@@ -7,6 +7,7 @@ Require Import Init.Logic.
 Import  EqNotations.
 
 Require Import api.
+Require Import mlUtils.
 Require Import foltl.
 Require Import finite.
 Require Import dec.
@@ -83,15 +84,15 @@ Program Definition coqSig : Sig := {|
 |}.
 Next Obligation.
   destruct p as [r h]; simpl in *.
-  apply (mlSortOfRel mdl r h).
+  apply (mlSortOfRelAritiesIn mdl r h).
   apply fnth_In.
 Defined.
 
 Definition mlSortOfVar v h: Sort (Sig:=coqSig) :=
-  (mlSort2Sort (mlVarSort v) (mlSortOfVar mdl v h)).
+  (mlSort2Sort (mlVarSort v) (mlSortOfVarsIn mdl v h)).
 
 Definition mlSortOfCst v h: Sort (Sig:=coqSig) :=
-  (mlSort2Sort (mlCstSort v) (mlSortOfCst mdl v h)).
+  (mlSort2Sort (mlCstSort v) (mlSortOfCstsIn mdl v h)).
 
 Program Definition mlSortOfTerm t: List.incl (mlTermIds t) (mlModelIds mdl) -> Sort (Sig:=coqSig) := 
   match t return List.incl (mlTermIds t) (mlModelIds mdl) -> _ with
@@ -198,7 +199,7 @@ Next Obligation.
   generalize (mlLiteral2Literal_obligation_2 x p al h).
   generalize (mlLiteral2Literal_obligation_1 x p al h); intros.
   simpl in e.
-  generalize (mlSortOfRel mdl {| mlRelName := p; mlRelArity := map mlTermSort al |} i0
+  generalize (mlSortOfRelAritiesIn mdl {| mlRelName := p; mlRelArity := map mlTermSort al |} i0
      (fnth (map mlTermSort al) i) (fnth_In (map mlTermSort al) i)); intro.
   simpl in i1.
   revert i2; rewrite fnth_map; intros.

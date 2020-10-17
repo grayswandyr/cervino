@@ -21,6 +21,12 @@ Fixpoint imap {T U} (l: list T):  (forall x, List.In x l -> U) -> list U :=
   | cons x l' => fun f => f x (or_introl eq_refl)::imap l' (fun x h => f x (or_intror h))
   end.
 
+Fixpoint fmap {T} {n} : (Fin.t n -> T) -> list T :=
+  match n return (Fin.t n -> T) -> list T with
+    0 => fun f => nil
+  | S p => fun f => cons (f F1) (fmap (fun x => f (FS x)))
+  end.
+
 Lemma imap_filter_In_intro: forall T U {p: T->Prop} (P: forall x, {p x}+{not (p x)}) (l: list T) (f: forall x, p x -> List.In x l -> U),
   forall x (h1: p x) (h2: In x l), List.In (f x h1 h2) (imap_filter P l f).
 Proof.
@@ -36,6 +42,25 @@ Proof.
   destruct h2.
   subst x; destruct (n h1).
   apply (IHl (fun x h1 h2 => f x h1 (or_intror h2)) x h1 i).  
+Qed.
+
+Lemma imap_filiter_in_elim: forall T U {p: T->Prop} (P: forall x, {p x}+{not (p x)}) (l: list T) (f: forall x, p x -> List.In x l -> U),
+  forall v, List.In v (imap_filter P l f) -> exists u h1 h2, v = f u h1 h2.
+Proof.
+  induction l; simpl; intros; auto.
+  destruct H.
+  destruct (P a).
+  destruct H.
+  exists a; exists p0; exists (or_introl eq_refl).
+  symmetry; apply H.
+  
+  apply IHl in H.
+  destruct H as [u [h1 [h2 h3]]].
+  exists u; exists h1; exists (or_intror h2); auto.
+
+  apply IHl in H.
+  destruct H as [u [h1 [h2 h3]]].
+  exists u; exists h1; exists (or_intror h2); auto.  
 Qed.
 
 Fixpoint map_filter {T U} {p: T->Prop} (P: forall x, {p x}+{not (p x)}) (f: forall x, p x -> U) (l: list T): list U :=
@@ -118,4 +143,23 @@ Proof.
   generalize (map_length f l1); intro.
   rewrite (proof_irrelevance _ H0 e); clear H0.
   rewrite e; simpl; auto.
+Qed.
+
+Lemma In_app_imp_In_app: forall {T1 T2} (x1:T1) (x2:T2) l1 m1 l2 m2,
+  (List.In x1 l1 -> List.In x2 l2) ->
+  (List.In x1 m1 -> List.In x2 m2) ->
+  (List.In x1 (l1 ++ m1) -> List.In x2 (l2 ++ m2)).
+Proof.
+  intros.
+  rewrite in_app_iff in H1; apply in_app_iff.
+  destruct H1; [left|right]; auto.
+Qed.
+
+Lemma In_cmap_In_cmap: forall T1 T2 (f: T1-> list T2) x1 x2 l,
+  (forall x, In x1 (f x) -> In x2 (f x)) ->
+  (In x1 (List.concat (map f l)) -> In x2 (List.concat (map f l))).
+Proof.
+  induction l; simpl; intros; auto.
+  apply in_app_iff in H0; apply in_app_iff.
+  destruct H0; [left|right]; auto.
 Qed.
