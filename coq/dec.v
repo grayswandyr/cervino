@@ -160,7 +160,7 @@ Program Definition SumDec `(T1: EqDec) `(T2: EqDec) : @EqDec (T1+T2) := {|
 |}.
 Next Obligation.
   repeat intro; decide equality; apply eq_dec.
-Qed.
+Defined.
 
 Inductive IncType T :=
   New: IncType T

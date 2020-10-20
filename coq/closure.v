@@ -53,7 +53,7 @@ Section Closure.
   Next Obligation.
     repeat intro.
     decide equality.
-  Qed.
+  Defined.
   Definition AuxVarsSet: SV.set AuxVarsDec := (cons X1 (cons X2 (cons Z1 (cons Z2 nil)))).
   Program Definition AuxVarsFin: Finite := {| fin_set := AuxVarsSet |}.
   Next Obligation.
@@ -245,7 +245,7 @@ Section Closure.
     intros.
     apply (AndDec {| dc_dec := vsIn_dec Sg x (free Sg P) |}
                      {| dc_dec := vsSubset_dec Sg (free Sg P) (vsSing Sg x) |}).
-  Qed.
+  Defined.
   
   Lemma tfr_free: forall (P: formula srcSg) s' (w: variable s'),
     vsIn srcSg w (free srcSg P) <-> vsIn dstSg (tfrVar w) (free dstSg (tfrFormula P)).
@@ -515,7 +515,7 @@ Proof.
   destruct (unary_dec P v).
   left; split; simpl in *; intros; auto.
   right; intro cs; destruct cs; auto.
-Qed.
+Defined.
 
 Definition cs_sem `{srcSg: Sig} {s} {Succ Succ'} {P} {v} (cs: ClosureSpec srcSg s Succ Succ' P v) {D: Dom srcSg} (itp: Interp D) : Prop :=
   ClosureSem srcSg D s itp Succ Succ' (cs_prf cs) (cs_prf' cs) /\

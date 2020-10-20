@@ -24,7 +24,6 @@ SubClass VariableT {Tv} := @Finite Tv.
 SubClass ConstantT {Tc} := @Finite Tc.
 SubClass PredicateT {Tp} := @EqDec Tp.
 
-
 Class Sig {Ts: Type} {Tv: Ts->Type} {Tc: Ts->Type} {Tp} := {
   Sort: @SortT Ts;
   variable: forall (s:Sort), @VariableT (Tv s);
