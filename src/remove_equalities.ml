@@ -21,6 +21,22 @@ let build_pred_eq_from_sort s =
 
 let build_pred_eq_name_from_sort = Name.create_from_name_and_prefix "_eq_"
 
+let equivalence_axioms_for_rel rel =
+  assert (List.length rel.rel_profile = 2 && equal_sort (List.hd rel.rel_profile) (List.nth rel.rel_profile 1) );
+  let p = rel.rel_profile in
+  let s = List.hd p in 
+  let varx = make_variable ~var_name:(Name.make_unloc"_equiv_axioms_x") ~var_sort:s in
+  let vary = make_variable ~var_name:(Name.make_unloc"_equiv_axioms_y") ~var_sort:s in
+  let varz = make_variable ~var_name:(Name.make_unloc"_equiv_axioms_z") ~var_sort:s in
+  let reflexivity = all varx @@ always (lit @@ pos_app 0 rel [var varx; var varx]) in
+  let symmetry = all varx (all vary @@ always (implies (lit @@ pos_app 0 rel [var varx; var vary]) (lit @@ pos_app 0 rel [var vary; var varx]))) in
+  let transitivity = 
+    all varx (all vary (all varz @@
+      always (implies (and_ ((lit @@ pos_app 0 rel [var varx; var vary])) ((lit @@ pos_app 0 rel [var vary; var varz]))) 
+        ((lit @@ pos_app 0 rel [var varx; var varz]))))) 
+  in
+  and_ reflexivity (and_ symmetry transitivity)
+
 let rec remove_eq_fml = function
   | True ->
       (Sorts.empty, true_)
@@ -166,10 +182,11 @@ let remove_eq_model m =
       eq_sorts
       []
   in
+  let equivalence_axs = List.map equivalence_axioms_for_rel relations_eq in
   let updated_model =
     { m.model with
       relations = List.append m.model.relations relations_eq;
-      axioms = List.append equality_axioms updated_axioms
+      axioms = List.append equivalence_axs @@ List.append equality_axioms updated_axioms
     }
   in
   { model = updated_model; check = updated_check }
