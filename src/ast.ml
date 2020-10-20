@@ -254,3 +254,4 @@ let rec substitute x y fml = match fml with
   |G f ->
     always (substitute x y f)
   
+  let substitute_list xlist ylist fml = List.fold_left2 (fun cur_fml varx vary -> substitute varx vary cur_fml) fml xlist ylist
