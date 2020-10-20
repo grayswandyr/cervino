@@ -158,3 +158,7 @@ val eq_term_list : term list -> term list -> formula
 val neq_term_list : term list -> term list -> formula
 
 val pp : Format.formatter -> t -> unit
+
+val subst_in_term : variable -> variable -> term -> term
+
+val substitute : variable -> variable -> formula -> formula

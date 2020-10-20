@@ -187,9 +187,9 @@ let ite c t e = and_ (implies c t) (implies (not_ c) e)
 
 let rec next = function
   | True ->
-      false_
-  | False ->
       true_
+  | False ->
+      false_
   | Lit (Pos_app (nexts, p, args)) ->
       lit (pos_app (nexts + 1) p args)
   | Lit (Neg_app (nexts, p, args)) ->
@@ -220,3 +220,37 @@ let eq_term_list tl1 tl2 =
 
 let neq_term_list tl1 tl2 =
   disj (List.map2 (fun t1 t2 -> lit @@ neq t1 t2) tl1 tl2)
+
+let subst_in_term x y t = 
+  match t with 
+  | Cst (_) -> t
+  | Var(v) -> if equal_variable x v then Var(y) else t
+ 
+
+  (* substitute variable x by variable y in fml*)
+let rec substitute x y fml = match fml with
+  | True -> true_
+  | False -> false_
+  | Lit (Pos_app (nexts, p, args)) ->
+      let new_args = List.map (subst_in_term x y) args  in
+      lit (pos_app nexts p new_args)
+  | Lit (Neg_app (nexts, p, args)) ->
+      let new_args = List.map (subst_in_term x y) args  in
+      lit (neg_app nexts p new_args)
+  | Lit (Eq (t1, t2)) ->
+      lit (eq (subst_in_term x y t1) (subst_in_term x y t2))
+  | Lit (Not_eq (t1, t2)) ->
+    lit (neq (subst_in_term x y t1) (subst_in_term x y t2))
+  | And (f1, f2) ->
+      and_ (substitute x y f1) (substitute x y f2)
+  | Or (f1, f2) ->
+      or_ (substitute x y f1) (substitute x y f2)
+  | Exists (varx, f) ->
+    exists varx (substitute x y f)
+  | All (varx, f) ->
+    all varx (substitute x y f)
+  | F f ->
+    eventually (substitute x y f)
+  |G f ->
+    always (substitute x y f)
+  
