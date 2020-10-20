@@ -12,7 +12,7 @@ val make_unloc : string -> t
 
 val create_from_name_and_prefix : string -> t -> t
 
-val pp : Format.formatter -> String.t L.t -> unit
+val pp : Format.formatter -> t -> unit
 
 val positions : t -> L.position * L.position
 

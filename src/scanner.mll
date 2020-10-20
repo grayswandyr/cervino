@@ -51,6 +51,8 @@ let letter = [ 'A'-'Z' 'a'-'z' ]
 
 let ident = letter (letter | digit | '_')*
 
+let electrum_kwd = ("sig" | "var" | "one" | "fact" | "eventually" | "always")
+
 let comment_line = "//"
 let comment_beg = "/*"
 let comment_end = "*/"
@@ -78,6 +80,7 @@ rule main = parse
 | "&&" { AND }
 | "||" { OR }
 | "<=>" { IFF }
+| electrum_kwd as s { error lexbuf ("Reserved keyword:" ^ s ^ "\n")}
 | ident as s { 
     try Hashtbl.find keywords s 
     with Not_found -> IDENT s
@@ -89,7 +92,7 @@ rule main = parse
 | eof  
      { EOF } 
 | _ as c
-    { error lexbuf ("unexpected character(s): " ^ (String.make 1 c)) }
+    { error lexbuf ("Unexpected character: " ^ (String.make 1 c) ^ "\n") }
 
 and line_comment = parse
 | newline
@@ -110,6 +113,6 @@ and comment opened = parse
 | newline
     { Lexing.new_line lexbuf; comment opened lexbuf }
 | eof
-    { error lexbuf "nterminated comment" }
+    { error lexbuf "Unterminated comment" }
 | _
     { comment opened lexbuf }

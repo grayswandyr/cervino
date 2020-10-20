@@ -162,3 +162,8 @@ val pp : Format.formatter -> t -> unit
 val subst_in_term : variable -> variable -> term -> term
 
 val substitute : variable -> variable -> formula -> formula
+
+module Electrum : sig
+  val pp : t Fmt.t
+  (** does not print the events and closures fields, they must have been handled by prior transformations  *)
+end

@@ -4,8 +4,11 @@ let find_transitive_closure m rel =
   match
     List.find_pred (fun cur_path -> equal_relation cur_path.base rel) m.closures
   with
-  | None -> None
-  | Some p -> Some p.tc
+  | None ->
+      None
+  | Some p ->
+      Some p.tc
+
 
 let closure_axiom m rel x vars fml =
   let s = x.var_sort in
@@ -17,7 +20,8 @@ let closure_axiom m rel x vars fml =
   in
 
   let propagate =
-    all x_propag
+    all
+      x_propag
       ( all y_propag
       @@ always
            (implies
@@ -33,19 +37,24 @@ let closure_axiom m rel x vars fml =
     make_variable ~var_name:(Name.make_unloc "_ttc_y") ~var_sort:s
   in
   match find_transitive_closure m rel with
-  | None -> true_
+  | None ->
+      true_
   | Some tc_rel ->
-      all fresh_x
+      all
+        fresh_x
         ( all fresh_y
         @@ List.fold_right
              (fun cur_var cur_fml -> all cur_var cur_fml)
              vars
-             (implies propagate
+             (implies
+                propagate
                 ( always
                 @@ implies
-                     (and_ (substitute x fresh_x fml)
+                     (and_
+                        (substitute x fresh_x fml)
                         (lit @@ pos_app 0 tc_rel [ var fresh_x; var fresh_y ]))
                      (eventually @@ substitute x fresh_y fml) )) )
+
 
 let transfo_TTC m_with_check =
   let m = m_with_check.model in
@@ -54,8 +63,15 @@ let transfo_TTC m_with_check =
   | TTC (r, x, varlist, fml) ->
       let updated_axioms = closure_axiom m r x varlist fml :: m.axioms in
       let updated_model =
-        make_model ~sorts:m.sorts ~relations:m.relations ~constants:m.constants
-          ~closures:m.closures ~axioms:updated_axioms ~events:m.events ()
+        make_model
+          ~sorts:m.sorts
+          ~relations:m.relations
+          ~constants:m.constants
+          ~closures:m.closures
+          ~axioms:updated_axioms
+          ~events:m.events
+          ()
       in
       Ast.make ~model:updated_model ~check:ch
-  | _ -> assert false
+  | _ ->
+      assert false
