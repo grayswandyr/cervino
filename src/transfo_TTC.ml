@@ -1,13 +1,10 @@
 open Ast
 
 let find_transitive_closure m rel =
-  match
-    List.find_pred (fun cur_path -> equal_relation cur_path.base rel) m.closures
-  with
-  | None ->
-      None
-  | Some p ->
-      Some p.tc
+  Option.map (fun p -> p.tc)
+  @@ List.find_pred
+       (fun cur_path -> equal_relation cur_path.base rel)
+       m.closures
 
 
 let closure_axiom m rel x vars fml =
@@ -44,7 +41,7 @@ let closure_axiom m rel x vars fml =
         fresh_x
         ( all fresh_y
         @@ List.fold_right
-             (fun cur_var cur_fml -> all cur_var cur_fml)
+             all
              vars
              (implies
                 propagate
@@ -56,10 +53,10 @@ let closure_axiom m rel x vars fml =
                      (eventually @@ substitute x fresh_y fml) )) )
 
 
-let transfo_TTC m_with_check =
+let convert m_with_check =
   let m = m_with_check.model in
-  let ch = m_with_check.check in
-  match ch.chk_using with
+  let check = m_with_check.check in
+  match check.chk_using with
   | TTC (r, x, varlist, fml) ->
       let updated_axioms = closure_axiom m r x varlist fml :: m.axioms in
       let updated_model =
@@ -72,6 +69,6 @@ let transfo_TTC m_with_check =
           ~events:m.events
           ()
       in
-      Ast.make ~model:updated_model ~check:ch
+      Ast.make ~model:updated_model ~check
   | _ ->
       assert false

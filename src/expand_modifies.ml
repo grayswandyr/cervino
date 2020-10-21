@@ -4,11 +4,12 @@ let expand_evt_modifes { mod_rel; mod_mods } =
   let vars_expand =
     List.foldi
       (fun acc_list i cur_sort ->
-        List.cons
-          (make_variable
-             ~var_name:(Name.make_unloc ("_modifies_var_" ^ string_of_int i))
-             ~var_sort:cur_sort)
-          acc_list)
+        let var =
+          make_variable
+            ~var_name:(Name.make_unloc ("_modifies_var_" ^ string_of_int i))
+            ~var_sort:cur_sort
+        in
+        var :: acc_list)
       []
       mod_rel.rel_profile
   in
@@ -27,7 +28,7 @@ let expand_evt_modifes { mod_rel; mod_mods } =
          (lit @@ pos_app 0 mod_rel terms_expand)
          (lit @@ pos_app 1 mod_rel terms_expand))
   in
-  List.fold_right (fun v f -> all v f) vars_expand unchanged_formula
+  List.fold_right all vars_expand unchanged_formula
 
 
 let expand_modifies_full_event evt =
@@ -45,6 +46,6 @@ let expand_modifies_model m =
   { m with events = new_events }
 
 
-let expand_modifies_ast m_with_check =
+let convert m_with_check =
   let updated_model = expand_modifies_model m_with_check.model in
   Ast.make ~model:updated_model ~check:m_with_check.check

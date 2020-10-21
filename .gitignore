@@ -35,3 +35,6 @@ _opam/
 
 # End of https://www.toptal.com/developers/gitignore/api/ocaml
 
+grammar/*
+.vscode/*
+cervino.exe

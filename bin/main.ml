@@ -29,7 +29,7 @@ let pp_header ppf (l, h) =
       @@ CCOpt.map_or ~default:(keyword l) (fun s -> short l ^ s) h
 
 
-let main verbosity check input output =
+let main verbosity property input output =
   Printexc.record_backtrace true;
   Logs.set_reporter (Logs_fmt.reporter ~pp_header ());
   Fmt_tty.setup_std_outputs ();
@@ -49,16 +49,17 @@ let main verbosity check input output =
     let model = Parsing.parse_file input in
     Msg.info (fun m -> m "Parsing done.");
     Msg.debug (fun m -> m "Recognized model:@.%a" Cst.pp model);
-    let ast = Cst_to_ast.convert model check in
+    let ast = Cst_to_ast.convert model property in
     Msg.info (fun m -> m "Conversion to AST done.");
     Msg.debug (fun m -> m "AST:@.%a" Ast.pp ast);
+    let result = Transfo.process ast in
     match output with
     | None ->
-        Ast.Electrum.pp Fmt.stdout ast
+        Ast.Electrum.pp Fmt.stdout result
     | Some s ->
         IO.with_out s (fun out ->
             let fmt = Format.formatter_of_out_channel out in
-            Ast.Electrum.pp fmt ast)
+            Ast.Electrum.pp fmt result)
   with
   | Exit ->
       ()

@@ -24,9 +24,9 @@ let keywords =
     ; ("some", SOME)
     ; ("sort", SORT)
     ; ("paths", PATHS)
-    ; ("TEA", TEA)
-    ; ("TFC", TFC)
-    ; ("TTC", TTC)
+    ; (Transfo.Name.tea, TEA)
+    ; (Transfo.Name.tfc, TFC)
+    ; (Transfo.Name.ttc, TTC)
     ; ("true", TRUE)
     ; ("using", USING)
     ]

@@ -171,10 +171,15 @@ using:
 
 %inline ttc :
   TTC 
-  rel = ident COMMA 
-  var = brackets(separated_pair(ident, COMMA, ident)) COMMA 
-  ts = brackets(comma_sep(ranging)) COMMA 
+  LBRACKET
+  rel = ident 
+  COMMA 
+  var = brackets(separated_pair(ident, COMMA, ident)) 
+  COMMA 
+  ts = brackets(comma_sep(ranging)) 
+  COMMA 
   b = block
+  RBRACKET
   { TTC (rel, var, ts, b) }
   
 %inline block:

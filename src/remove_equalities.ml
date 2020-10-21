@@ -26,27 +26,23 @@ let equivalence_axioms_for_rel rel =
     List.length rel.rel_profile = 2
     && equal_sort (List.hd rel.rel_profile) (List.nth rel.rel_profile 1) );
   let p = rel.rel_profile in
-  let s = List.hd p in
+  let var_sort = List.hd p in
   let varx =
-    make_variable ~var_name:(Name.make_unloc "_equiv_axioms_x") ~var_sort:s
+    make_variable ~var_name:(Name.make_unloc "_equiv_axioms_x") ~var_sort
   in
+  let tx = var varx in
   let vary =
-    make_variable ~var_name:(Name.make_unloc "_equiv_axioms_y") ~var_sort:s
+    make_variable ~var_name:(Name.make_unloc "_equiv_axioms_y") ~var_sort
   in
+  let ty = var vary in
   let varz =
-    make_variable ~var_name:(Name.make_unloc "_equiv_axioms_z") ~var_sort:s
+    make_variable ~var_name:(Name.make_unloc "_equiv_axioms_z") ~var_sort
   in
-  let reflexivity =
-    all varx @@ always (lit @@ pos_app 0 rel [ var varx; var varx ])
-  in
+  let tz = var varz in
+  let app terms = lit @@ pos_app 0 rel terms in
+  let reflexivity = all varx @@ always (app [ tx; tx ]) in
   let symmetry =
-    all
-      varx
-      ( all vary
-      @@ always
-           (implies
-              (lit @@ pos_app 0 rel [ var varx; var vary ])
-              (lit @@ pos_app 0 rel [ var vary; var varx ])) )
+    all varx (all vary @@ always (implies (app [ tx; ty ]) (app [ ty; tx ])))
   in
   let transitivity =
     all
@@ -56,12 +52,10 @@ let equivalence_axioms_for_rel rel =
          ( all varz
          @@ always
               (implies
-                 (and_
-                    (lit @@ pos_app 0 rel [ var varx; var vary ])
-                    (lit @@ pos_app 0 rel [ var vary; var varz ]))
-                 (lit @@ pos_app 0 rel [ var varx; var varz ])) ))
+                 (and_ (app [ tx; ty ]) (app [ ty; tz ]))
+                 (app [ tx; tz ])) ))
   in
-  and_ reflexivity (and_ symmetry transitivity)
+  conj [ reflexivity; symmetry; transitivity ]
 
 
 let rec remove_eq_fml = function
@@ -109,7 +103,7 @@ let remove_eq_fml_list =
   List.fold_left
     (fun (acc_sort_set, acc_fml_list) cur_fml ->
       let new_ss, new_fml = remove_eq_fml cur_fml in
-      (Sorts.union acc_sort_set new_ss, List.cons new_fml acc_fml_list))
+      (Sorts.union acc_sort_set new_ss, new_fml :: acc_fml_list))
     (Sorts.empty, [])
 
 
@@ -125,11 +119,12 @@ let equality_axiom_for_rel_at_i rel i =
   let aux_vars =
     List.foldi
       (fun list_acc i cur_sort ->
-        List.cons
-          (make_variable
-             ~var_name:(Name.make_unloc ("_eq_var_" ^ string_of_int i))
-             ~var_sort:cur_sort)
-          list_acc)
+        let var =
+          make_variable
+            ~var_name:(Name.make_unloc ("_eq_var_" ^ string_of_int i))
+            ~var_sort:cur_sort
+        in
+        var :: list_acc)
       []
       restricted_prof
   in
@@ -145,7 +140,7 @@ let equality_axiom_for_rel_at_i rel i =
   let left_atom = lit @@ pos_app 0 rel left_tuple in
   let right_atom = lit @@ pos_app 0 rel right_tuple in
   let x_equals_y =
-    lit @@ pos_app 0 (build_pred_eq_from_sort s) (List.cons term_x [ term_y ])
+    lit @@ pos_app 0 (build_pred_eq_from_sort s) [ term_x; term_y ]
   in
   all
     var_x
@@ -154,7 +149,7 @@ let equality_axiom_for_rel_at_i rel i =
        (implies
           x_equals_y
           (List.fold_right
-             (fun cur_var cur_fml -> all cur_var cur_fml)
+             all
              vars_except_i
              (always (iff left_atom right_atom)))))
 
@@ -164,9 +159,7 @@ let equality_axiom_for_rel_and_s rel s =
     List.fold_left
       (fun (cur_list, cur_idx) cur_sort ->
         if equal_sort cur_sort s
-        then
-          ( List.cons (equality_axiom_for_rel_at_i rel cur_idx) cur_list,
-            cur_idx + 1 )
+        then (equality_axiom_for_rel_at_i rel cur_idx :: cur_list, cur_idx + 1)
         else (cur_list, cur_idx + 1))
       ([], 0)
       rel.rel_profile
@@ -178,7 +171,7 @@ let equality_axiom_for_rel_list_and_s rel_list s =
   List.flat_map (fun rel -> equality_axiom_for_rel_and_s rel s) rel_list
 
 
-let remove_eq_ast m =
+let convert m =
   let eq_sorts_axioms, updated_axioms = remove_eq_fml_list m.model.axioms in
   let eq_sorts_chk_fml, updated_chk_fml = remove_eq_fml m.check.chk_body in
   let eq_sorts_assuming, updated_assuming =
@@ -196,26 +189,22 @@ let remove_eq_ast m =
   in
   let relations_eq =
     Sorts.fold
-      (fun s rel_list -> List.cons (build_pred_eq_from_sort s) rel_list)
+      (fun s rel_list -> build_pred_eq_from_sort s :: rel_list)
       eq_sorts
       []
   in
   let equality_axioms =
     Sorts.fold
       (fun s cur_fmls ->
-        List.append
-          (equality_axiom_for_rel_list_and_s m.model.relations s)
-          cur_fmls)
+        equality_axiom_for_rel_list_and_s m.model.relations s @ cur_fmls)
       eq_sorts
       []
   in
   let equivalence_axs = List.map equivalence_axioms_for_rel relations_eq in
   let updated_model =
     { m.model with
-      relations = List.append m.model.relations relations_eq;
-      axioms =
-        List.append equivalence_axs
-        @@ List.append equality_axioms updated_axioms
+      relations = m.model.relations @ relations_eq;
+      axioms = equivalence_axs @ equality_axioms @ updated_axioms
     }
   in
   { model = updated_model; check = updated_check }
