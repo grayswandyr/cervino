@@ -316,7 +316,7 @@ module Electrum = struct
 
 
   and pp_quantified fmt q x s f =
-    pf fmt "@[<hov2>%s %a: %a {@ %a@,}@]" q Name.pp x Name.pp s pp_formula f
+    pf fmt "%s %a: %a {@ %a }" q Name.pp x Name.pp s pp_formula f
 
 
   and pp_relation fmt { rel_name; _ } = pf fmt "%s.%a" _global Name.pp rel_name
@@ -373,7 +373,7 @@ module Electrum = struct
       rel_profile
 
 
-  and pp_axiom fmt f = pf fmt "@[<hov2>fact {@ %a@,}@]" pp_formula f
+  and pp_axiom fmt f = pf fmt "@[<hov2>fact {@ %a@ }@]" pp_formula f
 
   and pp_check fmt { chk_name; chk_assuming; chk_body; _ } =
     pf fmt "@[<hov2>fact /* assuming */ {@ %a@ @]}@\n" pp_formula chk_assuming;

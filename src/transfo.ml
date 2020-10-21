@@ -13,13 +13,18 @@ module Name = struct
     match using with TEA -> tea | TTC _ -> ttc | TFC _ -> tfc
 end
 
+module Id = struct
+  let convert ast = ast
+end
+
 let get_transformation (using : Ast.transfo) : (module S) =
   match using with
   | TTC _ ->
       (module Transfo_TTC)
   | _ ->
-      Msg.err (fun m ->
-          m "Unimplemented transformation: %s" (Name.of_using using))
+      Msg.warn (fun m ->
+          m "Unimplemented transformation: %s" (Name.of_using using));
+      (module Id)
 
 
 let process Ast.({ check = { chk_using; _ }; _ } as ast) =
