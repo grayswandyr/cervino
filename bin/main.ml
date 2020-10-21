@@ -29,7 +29,7 @@ let pp_header ppf (l, h) =
       @@ CCOpt.map_or ~default:(keyword l) (fun s -> short l ^ s) h
 
 
-let machinery process verbosity file check =
+let main verbosity check input output =
   Printexc.record_backtrace true;
   Logs.set_reporter (Logs_fmt.reporter ~pp_header ());
   Fmt_tty.setup_std_outputs ();
@@ -43,19 +43,22 @@ let machinery process verbosity file check =
   in
   Logs.app (fun m ->
       m "%a" Fmt.(styled `Bold string) ("cervino (C) 2020 ONERA " ^ version));
-  try process file check with Exit -> ()
-
-
-let process file check =
-  Msg.info (fun m -> m "Processing file %S." file);
-  let model = Parsing.parse_file file in
-  Msg.info (fun m -> m "Parsing done.");
-  Msg.debug (fun m -> m "Recognized model:@.%a" Cst.pp model);
-  let ast = Cst_to_ast.convert model check in
-  Msg.info (fun m -> m "Conversion to AST done.");
-  Msg.debug (fun m -> m "AST:@.%a" Ast.pp ast)
-
-
-(* Wf.unique_names model *)
-
-let main = machinery process
+  (* real work done here *)
+  try
+    Msg.info (fun m -> m "Processing file %S." input);
+    let model = Parsing.parse_file input in
+    Msg.info (fun m -> m "Parsing done.");
+    Msg.debug (fun m -> m "Recognized model:@.%a" Cst.pp model);
+    let ast = Cst_to_ast.convert model check in
+    Msg.info (fun m -> m "Conversion to AST done.");
+    Msg.debug (fun m -> m "AST:@.%a" Ast.pp ast);
+    match output with
+    | None ->
+        Ast.Electrum.pp Fmt.stdout ast
+    | Some s ->
+        IO.with_out s (fun out ->
+            let fmt = Format.formatter_of_out_channel out in
+            Ast.Electrum.pp fmt ast)
+  with
+  | Exit ->
+      ()

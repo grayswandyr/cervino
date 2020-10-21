@@ -31,26 +31,31 @@ let main_info =
 
 (* OPTIONS *)
 
-let infile =
-  let doc = "File to process." in
-  Arg.(
-    required
-    & pos 0 (some ~none:"missing FILE" non_dir_file) None
-    & info [] ~docv:"CERVINO_FILE" ~doc)
-
-
 let check =
   let doc = "Check command to execute." in
   Arg.(
     required
-    & pos 1 (some ~none:"missing CHECK" string) None
+    & pos 0 (some ~none:"missing CHECK" string) None
     & info [] ~docv:"CHECK" ~doc)
+
+
+let infile =
+  let doc = "Input (Cervino) file." in
+  Arg.(
+    required
+    & pos 1 (some ~none:"missing CERVINO_FILE" non_dir_file) None
+    & info [] ~docv:"CERVINO_FILE" ~doc)
+
+
+let outfile =
+  let doc = "Output (Electrum) file." in
+  Arg.(value & pos 2 (some string) None & info [] ~docv:"OUTPUT_FILE" ~doc)
 
 
 (* verbosity options (already def'd in Logs_cli, thx!) *)
 let verb_term = Logs_cli.level ()
 
-let main_term = Term.(const Main.main $ verb_term $ infile $ check)
+let main_term = Term.(const Main.main $ verb_term $ check $ infile $ outfile)
 
 (* MAIN *)
 

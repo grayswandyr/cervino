@@ -13,7 +13,7 @@ let create_from_name_and_prefix pref n =
   L.make (pref ^ L.content n) (n.startpos, n.endpos)
 
 
-let pp fmt L.{ content; _ } = String.pp fmt content
+let pp fmt L.{ content; _ } = Fmt.string fmt content
 
 let equal c1 c2 = L.equal_content String.equal c1 c2
 

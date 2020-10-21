@@ -2,28 +2,16 @@ open Sexplib.Std
 
 type sort = Name.t [@@deriving eq, ord, sexp_of]
 
-type variable =
-  { var_name : Name.t;
-    var_sort : sort
-  }
+type variable = { var_name : Name.t; var_sort : sort }
 [@@deriving make, eq, ord, sexp_of]
 
-type constant =
-  { cst_name : Name.t;
-    cst_sort : sort
-  }
+type constant = { cst_name : Name.t; cst_sort : sort }
 [@@deriving make, eq, ord, sexp_of]
 
-type relation =
-  { rel_name : Name.t;
-    rel_profile : sort list
-  }
+type relation = { rel_name : Name.t; rel_profile : sort list }
 [@@deriving make, eq, ord, sexp_of]
 
-type term =
-  | Var of variable
-  | Cst of constant
-[@@deriving eq, ord, sexp_of]
+type term = Var of variable | Cst of constant [@@deriving eq, ord, sexp_of]
 
 type literal =
   | Pos_app of int * relation * term list (* int = number of X, is >= 0 *)
@@ -46,18 +34,15 @@ type formula =
 
 type ev_modification = term list [@@deriving eq, ord, sexp_of]
 
-type ev_modify =
-  { mod_rel : relation;
-    mod_mods : ev_modification list
-  }
+type ev_modify = { mod_rel : relation; mod_mods : ev_modification list }
 [@@deriving make, eq, ord, sexp_of]
 
-type event =
-  { ev_name : Name.t;
-    ev_args : variable list; [@sexp.omit_nil]
-    ev_body : formula;
-    ev_modifies : ev_modify list [@sexp.omit_nil]
-  }
+type event = {
+  ev_name : Name.t;
+  ev_args : variable list; [@sexp.omit_nil]
+  ev_body : formula;
+  ev_modifies : ev_modify list; [@sexp.omit_nil]
+}
 [@@deriving make, eq, ord, sexp_of]
 
 type transfo =
@@ -66,36 +51,32 @@ type transfo =
   | TFC of (Name.t -> formula option)
 [@@deriving sexp_of]
 
-type path =
-  { tc : relation;
-    base : relation;
-    between : relation option [@sexp.omit_nil]
-  }
+type path = {
+  tc : relation;
+  base : relation;
+  between : relation option; [@sexp.omit_nil]
+}
 [@@deriving make, eq, ord, sexp_of]
 
-type check =
-  { chk_name : Name.t;
-    chk_body : formula;
-    chk_assuming : formula;
-    chk_using : transfo
-  }
+type check = {
+  chk_name : Name.t;
+  chk_body : formula;
+  chk_assuming : formula;
+  chk_using : transfo;
+}
 [@@deriving make, sexp_of]
 
-type model =
-  { sorts : sort list;
-    relations : relation list; [@sexp.omit_nil]
-    constants : constant list; [@sexp.omit_nil]
-    closures : path list; [@sexp.omit_nil]
-    axioms : formula list; [@sexp.omit_nil]
-    events : event list
-  }
+type model = {
+  sorts : sort list;
+  relations : relation list; [@sexp.omit_nil]
+  constants : constant list; [@sexp.omit_nil]
+  closures : path list; [@sexp.omit_nil]
+  axioms : formula list; [@sexp.omit_nil]
+  events : event list;
+}
 [@@deriving make, sexp_of]
 
-type t =
-  { model : model;
-    check : check
-  }
-[@@deriving make, sexp_of]
+type t = { model : model; check : check } [@@deriving make, sexp_of]
 
 (* smart constructors *)
 let var v = Var v
@@ -113,12 +94,10 @@ let pos_app nexts p args =
   assert (List.length args > 0);
   Pos_app (nexts, p, args)
 
-
 let neg_app nexts p args =
   assert (nexts >= 0);
   assert (List.length args > 0);
   Neg_app (nexts, p, args)
-
 
 let eq t1 t2 = Eq (t1, t2)
 
@@ -131,31 +110,18 @@ and false_ = False
 and lit l = Lit l
 
 and not_ = function
-  | True ->
-      false_
-  | False ->
-      true_
-  | Lit (Pos_app (nexts, p, args)) ->
-      lit (neg_app nexts p args)
-  | Lit (Neg_app (nexts, p, args)) ->
-      lit (pos_app nexts p args)
-  | Lit (Eq (t1, t2)) ->
-      lit (neq t1 t2)
-  | Lit (Not_eq (t1, t2)) ->
-      lit (eq t1 t2)
-  | And (f1, f2) ->
-      or_ (not_ f1) (not_ f2)
-  | Or (f1, f2) ->
-      and_ (not_ f1) (not_ f2)
-  | Exists (x, f) ->
-      all x (not_ f)
-  | All (x, f) ->
-      exists x (not_ f)
-  | F f ->
-      always (not_ f)
-  | G f ->
-      eventually (not_ f)
-
+  | True -> false_
+  | False -> true_
+  | Lit (Pos_app (nexts, p, args)) -> lit (neg_app nexts p args)
+  | Lit (Neg_app (nexts, p, args)) -> lit (pos_app nexts p args)
+  | Lit (Eq (t1, t2)) -> lit (neq t1 t2)
+  | Lit (Not_eq (t1, t2)) -> lit (eq t1 t2)
+  | And (f1, f2) -> or_ (not_ f1) (not_ f2)
+  | Or (f1, f2) -> and_ (not_ f1) (not_ f2)
+  | Exists (x, f) -> all x (not_ f)
+  | All (x, f) -> exists x (not_ f)
+  | F f -> always (not_ f)
+  | G f -> eventually (not_ f)
 
 and and_ f1 f2 = And (f1, f2)
 
@@ -186,72 +152,129 @@ let iff f1 f2 = and_ (implies f1 f2) (implies f2 f1)
 let ite c t e = and_ (implies c t) (implies (not_ c) e)
 
 let rec next = function
-  | True ->
-      true_
-  | False ->
-      false_
-  | Lit (Pos_app (nexts, p, args)) ->
-      lit (pos_app (nexts + 1) p args)
-  | Lit (Neg_app (nexts, p, args)) ->
-      lit (neg_app (nexts + 1) p args)
-  | Lit (Eq (t1, t2)) ->
-      lit (eq t1 t2)
-  | Lit (Not_eq (t1, t2)) ->
-      lit (neq t1 t2)
-  | And (f1, f2) ->
-      and_ (next f1) (next f2)
-  | Or (f1, f2) ->
-      or_ (next f1) (next f2)
-  | Exists (x, f) ->
-      exists x (next f)
-  | All (x, f) ->
-      all x (next f)
-  | F f ->
-      eventually (next f)
-  | G f ->
-      always (next f)
-
+  | True -> true_
+  | False -> false_
+  | Lit (Pos_app (nexts, p, args)) -> lit (pos_app (nexts + 1) p args)
+  | Lit (Neg_app (nexts, p, args)) -> lit (neg_app (nexts + 1) p args)
+  | Lit (Eq (t1, t2)) -> lit (eq t1 t2)
+  | Lit (Not_eq (t1, t2)) -> lit (neq t1 t2)
+  | And (f1, f2) -> and_ (next f1) (next f2)
+  | Or (f1, f2) -> or_ (next f1) (next f2)
+  | Exists (x, f) -> exists x (next f)
+  | All (x, f) -> all x (next f)
+  | F f -> eventually (next f)
+  | G f -> always (next f)
 
 let pp fmt model = Sexplib.Sexp.pp_hum fmt (sexp_of_t model)
 
 let eq_term_list tl1 tl2 =
   conj (List.map2 (fun t1 t2 -> lit @@ eq t1 t2) tl1 tl2)
 
-
 let neq_term_list tl1 tl2 =
   disj (List.map2 (fun t1 t2 -> lit @@ neq t1 t2) tl1 tl2)
 
-let subst_in_term x y t = 
-  match t with 
-  | Cst (_) -> t
-  | Var(v) -> if equal_variable x v then Var(y) else t
- 
+let subst_in_term x y t =
+  match t with Cst _ -> t | Var v -> if equal_variable x v then Var y else t
 
-  (* substitute variable x by variable y in fml*)
-let rec substitute x y fml = match fml with
+(* substitute variable x by variable y in fml*)
+let rec substitute x y fml =
+  match fml with
   | True -> true_
   | False -> false_
   | Lit (Pos_app (nexts, p, args)) ->
-      let new_args = List.map (subst_in_term x y) args  in
+      let new_args = List.map (subst_in_term x y) args in
       lit (pos_app nexts p new_args)
   | Lit (Neg_app (nexts, p, args)) ->
-      let new_args = List.map (subst_in_term x y) args  in
+      let new_args = List.map (subst_in_term x y) args in
       lit (neg_app nexts p new_args)
-  | Lit (Eq (t1, t2)) ->
-      lit (eq (subst_in_term x y t1) (subst_in_term x y t2))
+  | Lit (Eq (t1, t2)) -> lit (eq (subst_in_term x y t1) (subst_in_term x y t2))
   | Lit (Not_eq (t1, t2)) ->
-    lit (neq (subst_in_term x y t1) (subst_in_term x y t2))
-  | And (f1, f2) ->
-      and_ (substitute x y f1) (substitute x y f2)
-  | Or (f1, f2) ->
-      or_ (substitute x y f1) (substitute x y f2)
-  | Exists (varx, f) ->
-    exists varx (substitute x y f)
-  | All (varx, f) ->
-    all varx (substitute x y f)
-  | F f ->
-    eventually (substitute x y f)
-  |G f ->
-    always (substitute x y f)
-  
-  let substitute_list xlist ylist fml = List.fold_left2 (fun cur_fml varx vary -> substitute varx vary cur_fml) fml xlist ylist
+      lit (neq (subst_in_term x y t1) (subst_in_term x y t2))
+  | And (f1, f2) -> and_ (substitute x y f1) (substitute x y f2)
+  | Or (f1, f2) -> or_ (substitute x y f1) (substitute x y f2)
+  | Exists (varx, f) -> exists varx (substitute x y f)
+  | All (varx, f) -> all varx (substitute x y f)
+  | F f -> eventually (substitute x y f)
+  | G f -> always (substitute x y f)
+
+let substitute_list xlist ylist fml =
+  List.fold_left2
+    (fun cur_fml varx vary -> substitute varx vary cur_fml)
+    fml xlist ylist
+
+module Electrum = struct
+  open Fmt
+
+  let _global = "_M"
+
+  let _true fmt = string fmt "{}"
+
+  let _false fmt = string fmt "!{}"
+
+  let rec pp_formula fmt = function
+    | True -> _true fmt
+    | False -> _false fmt
+    | Lit (Pos_app (nexts, p, args)) ->
+        assert (nexts >= 0);
+        pp_app fmt "in" p args nexts
+    | Lit (Neg_app (nexts, p, args)) ->
+        assert (nexts >= 0);
+        pp_app fmt "!in" p args nexts
+    | Lit (Eq (t1, t2)) -> pf fmt "%a = %a" pp_term t1 pp_term t2
+    | Lit (Not_eq (t1, t2)) -> pf fmt "%a != %a" pp_term t1 pp_term t2
+    | And (f1, f2) -> pf fmt "@[<1>(%a@ &&@ %a)@]" pp_formula f1 pp_formula f2
+    | Or (f1, f2) -> pf fmt "@[<1>(%a@ ||@ %a)@]" pp_formula f1 pp_formula f2
+    | Exists ({ var_name; var_sort }, f) ->
+        pp_quantified fmt "some" var_name var_sort f
+    | All ({ var_name; var_sort }, f) ->
+        pp_quantified fmt "all" var_name var_sort f
+    | F f -> pf fmt "@[<1>eventually@ %a@]" pp_formula f
+    | G f -> pf fmt "@[<1>always@ %a@]" pp_formula f
+
+  and pp_app fmt rel p args nexts =
+    pf fmt "%a %s %a%s" pp_terms args rel pp_relation p
+      (String.repeat "'" nexts)
+
+  and pp_quantified fmt q x s f =
+    pf fmt "@[<hov2>%s %a: %a {@ %a@,}@]" q Name.pp x Name.pp s pp_formula f
+
+  and pp_relation fmt { rel_name; _ } = pf fmt "%s.%a" _global Name.pp rel_name
+
+  and pp_terms fmt terms =
+    pf fmt "%a" (list ~sep:(const string "->") pp_term) terms
+
+  and pp_term fmt = function
+    | Var { var_name = n; _ } | Cst { cst_name = n; _ } -> Name.pp fmt n
+
+  let rec pp fmt { model; check } =
+    pf fmt "@[<v>%a@,%a@]@." pp_model model pp_check check
+
+  and pp_model fmt { sorts; relations; constants; axioms; _ } =
+    pf fmt "@[<v>%a@,%a@,%a@,%a@]"
+      (vbox @@ list pp_sort)
+      sorts
+      (vbox @@ list pp_constant)
+      constants pp_relations relations
+      (vbox @@ list pp_axiom)
+      axioms
+
+  and pp_sort fmt sort = pf fmt "sig %a {}" Name.pp sort
+
+  and pp_constant fmt { cst_name; cst_sort } =
+    pf fmt "one sig %a in %a {}" Name.pp cst_name Name.pp cst_sort
+
+  and pp_relations fmt relations =
+    pf fmt "@[<v2>one sig %s {@ %a@]@,}" _global (list pp_relation_decl)
+      relations
+
+  and pp_relation_decl fmt { rel_name; rel_profile } =
+    pf fmt "@[<h>var %a : %a,@]" Name.pp rel_name
+      (list ~sep:(const string " -> ") Name.pp)
+      rel_profile
+
+  and pp_axiom fmt f = pf fmt "@[<hov2>fact {@ %a@,}@]" pp_formula f
+
+  and pp_check fmt { chk_name; chk_assuming; chk_body; _ } =
+    pf fmt "@[<hov2>fact /* assuming */ {@ %a@ @]}@\n" pp_formula chk_assuming;
+    pf fmt "@[<hov2>check %a {@ %a@ @]}" Name.pp chk_name pp_formula chk_body
+end
