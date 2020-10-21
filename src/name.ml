@@ -21,6 +21,8 @@ let positions = L.positions
 
 let of_ident (id : Ident.t) = make (Ident.content id) (Ident.positions id)
 
+let content = L.content
+
 module Set = CCSet.Make (struct
   type nonrec t = t
 

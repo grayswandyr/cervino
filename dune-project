@@ -18,7 +18,8 @@
   (ocaml (>= 4.11.0))
   dune
   cmdliner
-  (containers (>= 3.0)) 
+  (containers (>= 3.0))
+  containers-data
   dune-build-info
   fmt
   hashcons
