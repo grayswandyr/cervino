@@ -316,7 +316,7 @@ module Electrum = struct
 
 
   and pp_quantified fmt q x s f =
-    pf fmt "%s %a: %a {@ %a }" q Name.pp x Name.pp s pp_formula f
+    pf fmt "(%s %a: %a |@ %a)" q Name.pp x Name.pp s pp_formula f
 
 
   and pp_relation fmt { rel_name; _ } = pf fmt "%s.%a" _global Name.pp rel_name
