@@ -16,9 +16,7 @@ let create_var s i =
 let create_vars_up_to_k s k =
   assert (k > 0);
   let rec walk s k =
-    if k = 1
-    then [ create_var s 1 ]
-    else create_var s k :: walk s (k - 1)
+    if k = 1 then [ create_var s 1 ] else create_var s k :: walk s (k - 1)
   in
   List.rev @@ walk s k
 
