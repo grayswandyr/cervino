@@ -18,9 +18,9 @@ let create_vars_up_to_k s k =
   let rec walk s k =
     if k = 1
     then [ create_var s 1 ]
-    else List.rev (create_var s k :: walk s (k - 1))
+    else create_var s k :: walk s (k - 1)
   in
-  walk s k
+  List.rev @@ walk s k
 
 
 let nb_occ list elt = List.count (fun x -> equal_sort (fst x) elt) list
@@ -29,10 +29,10 @@ let occ_list_from_sortlist sortlist =
   let rec walk acc sortlist =
     match sortlist with
     | [] ->
-        acc
+        List.rev acc
     | hd :: tl ->
         let n = nb_occ acc hd in
-        walk (List.rev ((hd, n + 1) :: acc)) tl
+        walk ((hd, n + 1) :: acc) tl
   in
   walk [] sortlist
 
