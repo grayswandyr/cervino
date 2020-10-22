@@ -5,7 +5,7 @@ Require Import String.
 
 Require Import api.
 Require Import api2coq.
-Require Import foltl.
+Require foltl.
 Require Import set.
 Require Import finite.
 Require abstraction.
@@ -14,21 +14,21 @@ Require Import coq2ml.
 Require Import mlUtils.
 
 Section Transfo.
-  Variable mdl: mlModel.
+  Variable mdl: model.
   
-  Definition mlConj l := List.fold_right (fun a r => MLAnd a r) MLFTrue l.
+  Definition mlConj l := List.fold_right (fun a r => And a r) api.True l.
 
-  Definition mlDisj l := List.fold_right (fun a r => MLOr a r) MLFFalse l.
+  Definition mlDisj l := List.fold_right (fun a r => Or a r) api.False l.
 
-  Definition mlArgs2Ex l f := List.fold_right (fun v r => MLEx v r) f l.
+  Definition mlArgs2Ex l f := List.fold_right (fun v r => Exists v r) f l.
    
   Definition mlEvtSem e :=
-    mlArgs2Ex (mlEvArgs e) (mlEvBody e).
+    mlArgs2Ex (ev_args e) (ev_body e).
 
-  Definition mlAxmSem (m: mlModel) := mlConj (mlAxioms m).
+  Definition mlAxmSem (m: model) := mlConj (axioms m).
 
-  Lemma mlDisjIds: forall l F, (forall f, List.In f l -> List.incl (mlFormulaIds f) F)
-    -> List.incl (mlFormulaIds (mlDisj l)) F.
+  Lemma mlDisjIds: forall l F, (forall f, List.In f l -> List.incl (formulaIds f) F)
+    -> List.incl (formulaIds (mlDisj l)) F.
   Proof.
     induction l; simpl; intros; auto.
     repeat intro.
@@ -39,8 +39,8 @@ Section Transfo.
     apply H; tauto.
   Qed.
 
-  Lemma mlConjIds: forall l F, (forall f, List.In f l -> List.incl (mlFormulaIds f) F)
-    -> List.incl (mlFormulaIds (mlConj l)) F.
+  Lemma mlConjIds: forall l F, (forall f, List.In f l -> List.incl (formulaIds f) F)
+    -> List.incl (formulaIds (mlConj l)) F.
   Proof.
     induction l; simpl; intros; auto.
     repeat intro.
@@ -52,7 +52,7 @@ Section Transfo.
   Qed.
 
   Lemma mlArgs2ExIds: forall l f,
-    List.incl (mlFormulaIds (mlArgs2Ex l f)) (List.map (fun a => MLS (mlVarSort a)) l ++ List.map MLV l ++ mlFormulaIds f).
+    List.incl (formulaIds (mlArgs2Ex l f)) (List.map (fun a => MLS (var_sort a)) l ++ List.map MLV l ++ formulaIds f).
   Proof.
     induction l; simpl; intros; auto.
     apply incl_refl.
@@ -61,32 +61,32 @@ Section Transfo.
     right.
     rewrite in_app_iff; right; simpl; tauto.
     specialize IHl with f.
-    apply incl_tran with (map (fun a : mlVariable => MLS (mlVarSort a)) l ++
-         map MLV l ++ mlFormulaIds f); auto; clear IHl.
-    change (MLS (mlVarSort a)
-       :: map (fun a0 : mlVariable => MLS (mlVarSort a0)) l ++
-      MLV a :: map MLV l ++ mlFormulaIds f) with
-      ((MLS (mlVarSort a)::nil)++
-       (map (fun a0 : mlVariable => MLS (mlVarSort a0)) l) ++
-      MLV a :: map MLV l ++ mlFormulaIds f).
+    apply incl_tran with (map (fun a : variable => MLS (var_sort a)) l ++
+         map MLV l ++ formulaIds f); auto; clear IHl.
+    change (MLS (var_sort a)
+       :: map (fun a0 : variable => MLS (var_sort a0)) l ++
+      MLV a :: map MLV l ++ formulaIds f) with
+      ((MLS (var_sort a)::nil)++
+       (map (fun a0 : variable => MLS (var_sort a0)) l) ++
+      MLV a :: map MLV l ++ formulaIds f).
     apply incl_appr.
     apply incl_app_app.
     apply incl_refl.
-    change (MLV a :: map MLV l ++ mlFormulaIds f) with
-      ((MLV a :: nil) ++ map MLV l ++ mlFormulaIds f).
+    change (MLV a :: map MLV l ++ formulaIds f) with
+      ((MLV a :: nil) ++ map MLV l ++ formulaIds f).
     apply incl_appr.
     apply incl_refl.
   Qed.
 
   Lemma mlFormOfDisj_incl:
     incl 
-      (mlFormulaIds (mlDisj (List.map mlEvtSem (mlEvents mdl))))
-      (mlModelIds mdl).
+      (formulaIds (mlDisj (List.map mlEvtSem (events mdl))))
+      (modelIds mdl).
   Proof.
     apply mlDisjIds; intros.
     apply List.in_map_iff in H.
     destruct H as [x [h1 h2]].
-    unfold mlModelIds.
+    unfold modelIds.
     apply List.incl_appr.
     apply List.incl_appl.
     apply utils.in_fnth in h2.
@@ -95,14 +95,14 @@ Section Transfo.
     exists i.
     subst f; subst x.
     unfold mlEvtSem.
-    generalize (utils.fnth (mlEvents mdl) i); intro f.
-    generalize (mlArgs2ExIds (mlEvArgs f) (mlEvBody f)); intro.
+    generalize (utils.fnth (events mdl) i); intro f.
+    generalize (mlArgs2ExIds (ev_args f) (ev_body f)); intro.
     apply incl_tran with
-      (map (fun a : mlVariable => MLS (mlVarSort a)) (mlEvArgs f) ++
-        map MLV (mlEvArgs f) ++ mlFormulaIds (mlEvBody f)); auto.
+      (map (fun a : variable => MLS (var_sort a)) (ev_args f) ++
+        map MLV (ev_args f) ++ formulaIds (ev_body f)); auto.
     clear H.
     rewrite <-map_map.
-    unfold mlEventIds.
+    unfold eventIds.
     apply incl_app.
     apply List.incl_appr.
     apply List.incl_appl; apply List.incl_refl.
@@ -114,14 +114,14 @@ Section Transfo.
 
   Lemma mlAxmBdy_incl:
     List.incl
-      (mlFormulaIds (mlAxmSem mdl) ++ mlFormulaIds (mlChkBody (mlCheckWith mdl)))
-     (mlModelIds mdl).
+      (formulaIds (mlAxmSem mdl) ++ formulaIds (chk_body (checkWith mdl)))
+     (modelIds mdl).
   Proof.
-    unfold mlModelIds.
+    unfold modelIds.
     apply incl_app.
     apply incl_appl.
     unfold mlAxmSem.
-    apply (mlConjIds (mlAxioms mdl)); intros.
+    apply (mlConjIds (axioms mdl)); intros.
     apply utils.in_concat_map_intro.
     apply utils.in_fnth in H; destruct H as [i H]; subst f.
     exists i; apply incl_refl.
@@ -130,23 +130,23 @@ Section Transfo.
     apply in_app_iff; right.
     apply in_app_iff; right.
     apply in_app_iff; right.
-    unfold mlCheckIds.
+    unfold checkIds.
     apply in_app_iff; left; now auto.
   Qed.
 
-  Program Definition applyTEA: option mlFormula :=
-    let chk := mlCheckWith mdl in
-    let f := mlDisj (List.map mlEvtSem (mlEvents mdl)) in
-    let cf := mlFormula2formula mdl f mlFormOfDisj_incl in
+  Program Definition applyTEA: option formula :=
+    let chk := checkWith mdl in
+    let f := mlDisj (List.map mlEvtSem (events mdl)) in
+    let cf := formula2formula mdl f mlFormOfDisj_incl in
     let fv s := vars.free (coqSig mdl) cf s in 
-    let g := MLAnd (mlAxmSem mdl) (mlChkBody chk) in
-    let cg := mlFormula2formula mdl g mlAxmBdy_incl in
-    match isExAll_dec (coqSig mdl) cf with
+    let g := And (mlAxmSem mdl) (chk_body chk) in
+    let cg := formula2formula mdl g mlAxmBdy_incl in
+    match foltl.isExAll_dec (coqSig mdl) cf with
       left exAll => 
         match all_dec (fun s => SV.emptyDec (fv s)) with
           inl ise => 
             let res := abstraction.abstract_G_EAf_and_g (coqSig mdl) cf cg exAll ise in
-            Some (fm2ml _ (fun s => proj1_sig s) (fun _ v => mlVarName _) (fun _ c => (mlCstName _)) (fun r => _) res)
+            Some (fm2ml _ (fun s => proj1_sig s) (fun _ v => var_name _) (fun _ c => (cst_name _)) (fun r => _) res)
         | inr _ => None
         end
     | right _ => None
@@ -163,68 +163,68 @@ Section Transfo.
     destruct r.
     destruct p.
     destruct x.
-    exact mlRelName.
+    exact rel_name.
     destruct v.
     destruct x.
-    exact (String.append ("E"%string)  mlVarName).
+    exact (String.append ("E"%string)  var_name).
   Defined.
 
   Definition applyTEA_Sg :=
     abstraction.dstSig (coqSig mdl)
        (quantifiers.getExF
-         (mlFormula2formula mdl
-           (mlDisj (map mlEvtSem (mlEvents mdl)))
+         (formula2formula mdl
+           (mlDisj (map mlEvtSem (events mdl)))
            mlFormOfDisj_incl)).
 
-  Program Definition applyTTC (r: mlRelation) hr (v: mlVariable) hv (P: mlFormula) hP:
-    option mlFormula :=
-    let cr := mlRelation2Pred mdl r hr in
-    let cls := mlClosures mdl in
+  Program Definition applyTTC (r: relation) hr (v: variable) hv (P: formula) hP:
+    option formula :=
+    let cr := relation2Pred mdl r hr in
+    let cls := closures mdl in
     let lp := utils.imap cls (fun p h => 
-      (mlRelation2Pred mdl (mlBase p) _, mlRelation2Pred mdl (mlTC p) _)) in 
+      (relation2Pred mdl (base p) _, relation2Pred mdl (tc p) _)) in 
     match dec.assoc cr lp with
       None => None
     | Some r' =>
-      let cf: formula (coqSig mdl) := mlFormula2formula mdl P hP in
+      let cf: foltl.formula (coqSig mdl) := formula2formula mdl P hP in
       let cv := mlVar2Var mdl v hv in
       match closure.ClosureSpec_dec (srcSg := coqSig mdl) cr r' cf cv with
         left cs => 
           let res := closure.absClosure cs in
-          Some (fm2ml _ (fun s => proj1_sig s) (fun _ v => _) (fun _ c => mlCstName _) (fun r => mlRelName (proj1_sig r)) res)
+          Some (fm2ml _ (fun s => proj1_sig s) (fun _ v => _) (fun _ c => cst_name _) (fun r => rel_name (proj1_sig r)) res)
       | right _ => None
       end
     end.
   Next Obligation.
     clear r hr v hv P hP.
-    unfold mlRelations.
-    apply (utils.imap_filter_In_intro _ _ isMLRelDec (mlModelIds mdl)
-      (fun (v : mlIdent) (h1 : isMLRel v) (_ : In v (mlModelIds mdl)) =>
-      getMLRel v h1) (MLR (mlBase p)) I ).
-    unfold mlModelIds.
+    unfold relations.
+    apply (utils.imap_filter_In_intro _ _ isMLRelDec (modelIds mdl)
+      (fun (v : mlIdent) (h1 : isMLRel v) (_ : In v (modelIds mdl)) =>
+      getMLRel v h1) (MLR (base p)) I ).
+    unfold modelIds.
     apply in_app_iff; right.
     apply in_app_iff; right.
     apply in_app_iff; left.
     apply in_concat.
-    exists (mlPathIds p); split.
+    exists (pathIds p); split.
     apply in_map_iff; exists p; split; now auto.
-    unfold mlPathIds; simpl.
+    unfold pathIds; simpl.
     right.
     apply in_app_iff; right.
     unfold mlRelIds; simpl; tauto.
   Qed.
   Next Obligation.
-    unfold mlRelations.
-    apply (utils.imap_filter_In_intro _ _ isMLRelDec (mlModelIds mdl)
-      (fun (v : mlIdent) (h1 : isMLRel v) (_ : In v (mlModelIds mdl)) =>
-      getMLRel v h1) (MLR (mlTC p)) I ).
-    unfold mlModelIds.
+    unfold relations.
+    apply (utils.imap_filter_In_intro _ _ isMLRelDec (modelIds mdl)
+      (fun (v : mlIdent) (h1 : isMLRel v) (_ : In v (modelIds mdl)) =>
+      getMLRel v h1) (MLR (tc p)) I ).
+    unfold modelIds.
     apply in_app_iff; right.
     apply in_app_iff; right.
     apply in_app_iff; left.
     apply in_concat.
-    exists (mlPathIds p); split.
+    exists (pathIds p); split.
     apply in_map_iff; exists p; tauto.
-    unfold mlPathIds.
+    unfold pathIds.
     apply in_app_iff; left.
     unfold mlRelIds; left; now auto.
   Qed.
@@ -240,9 +240,9 @@ Section Transfo.
       exact "_Z1"%string.
       exact "_Z2"%string.
     destruct e0 as [v _].
-    exact (mlVarName v).
+    exact (var_name v).
     destruct v as [v _].
-    exact (mlVarName v).
+    exact (var_name v).
   Defined.
   Next Obligation.
     apply proj1_sig in c.
@@ -250,55 +250,55 @@ Section Transfo.
   Defined.
   
   Lemma TTC_r_In_rels: forall {r v P}, 
-    TTC r v P = mlChkUsing (mlCheckWith mdl) -> In r (mlRelations mdl).
+    TTC r v P = chk_using (checkWith mdl) -> In r (relations mdl).
   Proof.
     intros.
-    assert (In (MLR r) (mlModelIds mdl)).
-    unfold mlModelIds.
+    assert (In (MLR r) (modelIds mdl)).
+    unfold modelIds.
       rewrite in_app_iff; right.
       rewrite in_app_iff; right.
       rewrite in_app_iff; right.
-      unfold mlCheckIds.
+      unfold checkIds.
       rewrite in_app_iff; right.
       rewrite in_app_iff; right.
       rewrite <-H; simpl; tauto.
-    unfold mlRelations.
-    apply (utils.imap_filter_In_intro _ _ isMLRelDec (mlModelIds mdl) 
+    unfold relations.
+    apply (utils.imap_filter_In_intro _ _ isMLRelDec (modelIds mdl) 
       (fun (v0 : mlIdent) (h1 : isMLRel v0)
-        (_ : In v0 (mlModelIds mdl)) => getMLRel v0 h1) (MLR r) I H0); intro.
+        (_ : In v0 (modelIds mdl)) => getMLRel v0 h1) (MLR r) I H0); intro.
   Qed.
   
   Lemma TTC_v_In_vars: forall {r v P},
-    TTC r v P = mlChkUsing (mlCheckWith mdl) -> In v (mlAllVariables mdl).
+    TTC r v P = chk_using (checkWith mdl) -> In v (mlAllVariables mdl).
   Proof.
     intros.
-    assert (In (MLV v) (mlModelIds mdl)).
-    unfold mlModelIds.
+    assert (In (MLV v) (modelIds mdl)).
+    unfold modelIds.
       rewrite in_app_iff; right.
       rewrite in_app_iff; right.
       rewrite in_app_iff; right.
-      unfold mlCheckIds.
+      unfold checkIds.
       rewrite in_app_iff; right.
       rewrite in_app_iff; right.
       rewrite <-H; simpl; auto.
       right.
       apply in_app_iff; right; simpl; now auto.
     unfold mlAllVariables.
-    apply (utils.imap_filter_In_intro _ _ isMLVarDec (mlModelIds mdl) 
-      (fun (v0 : mlIdent) (h1 : isMLVar v0)
-        (_ : In v0 (mlModelIds mdl)) => getMLVar v0 h1) (MLV v) I H0).
+    apply (utils.imap_filter_In_intro _ _ isVarDec (modelIds mdl) 
+      (fun (v0 : mlIdent) (h1 : isVar v0)
+        (_ : In v0 (modelIds mdl)) => getVar v0 h1) (MLV v) I H0).
   Qed.
   
   Lemma TTC_P_In_fms: forall {r v P},
-     TTC r v P = mlChkUsing (mlCheckWith mdl) -> incl (mlFormulaIds P) (mlModelIds mdl).
+     TTC r v P = chk_using (checkWith mdl) -> incl (formulaIds P) (modelIds mdl).
   Proof.
     intros.
     intros id H0.
-    unfold mlModelIds.
+    unfold modelIds.
     rewrite in_app_iff; right.
     rewrite in_app_iff; right.
     rewrite in_app_iff; right.
-    unfold mlCheckIds.
+    unfold checkIds.
     rewrite in_app_iff; right.
     rewrite in_app_iff; right.
     rewrite <-H; simpl; auto.
@@ -306,9 +306,9 @@ Section Transfo.
     apply in_app_iff; right; simpl; tauto.
   Qed.
   
-  Definition mlTransform : option mlFormula :=
-    let chk := mlCheckWith mdl in
-    match mlChkUsing chk as t return t = mlChkUsing chk -> _ with
+  Definition mlTransform : option formula :=
+    let chk := checkWith mdl in
+    match chk_using chk as t return t = chk_using chk -> _ with
       TEA => fun e => applyTEA
     | TTC r v P => fun e => applyTTC r (TTC_r_In_rels e) v (TTC_v_In_vars e) P (TTC_P_In_fms e)
     | _ => fun e => None

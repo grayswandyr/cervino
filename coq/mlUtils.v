@@ -5,95 +5,92 @@ Require Import utils.
 
 Require Import api.
 
-Definition mlVarIds v := MLV v :: MLS (mlVarSort v) :: nil.
+Definition mlVarIds v := MLV v :: MLS (var_sort v) :: nil.
 
-Definition mlCstIds c := MLC c :: MLS (mlCstSort c) :: nil.
+Definition mlCstIds c := MLC c :: MLS (cst_sort c) :: nil.
 
-Definition mlRelIds r := MLR r :: (List.map MLS (mlRelArity r)).
+Definition mlRelIds r := MLR r :: (List.map MLS (rel_profile r)).
 
-Definition mlTermIds tm: list mlIdent :=
+Definition termIds tm: list mlIdent :=
   match tm with
-   MLVar v => mlVarIds v
-  | MLCst c => mlCstIds c
+   Var v => mlVarIds v
+  | Cst c => mlCstIds c
   end.
 
-Definition mlLitIds l : list mlIdent :=
-  match l with
-    MLPApp nx r args => 
-      mlRelIds {| mlRelName := r; mlRelArity := List.map mlTermSort args |} ++
-        List.concat (List.map mlTermIds args)
-  end.
+Definition mlLitIds r args : list mlIdent :=
+  mlRelIds {| rel_name := r; rel_profile := List.map termSort args |} ++
+        List.concat (List.map termIds args).
 
 Definition mlAtomIds a : list mlIdent :=
   match a with
-  | MLLiteral l => mlLitIds l
-  | MLNLiteral l => mlLitIds l
-  | MLEq t1 t2 => mlTermIds t1 ++ mlTermIds t2
-  | MLNEq t1 t2 => mlTermIds t1 ++ mlTermIds t2
+  | Pos_app nx r args => mlLitIds r args 
+  | Neg_app nx r args => mlLitIds r args 
+  | Eq t1 t2 => termIds t1 ++ termIds t2
+  | Not_eq t1 t2 => termIds t1 ++ termIds t2
   end.
 
-Fixpoint mlFormulaIds f :=
+Fixpoint formulaIds f :=
   match f with
-    MLFTrue | MLFFalse => nil
-  | MLAtom a => mlAtomIds a
-  | MLAnd f1 f2 | MLOr f1 f2 => mlFormulaIds f1 ++ mlFormulaIds f2
-  | MLEx v f' | MLAll v f' => MLS (mlVarSort v) :: MLV v :: mlFormulaIds f'
-  | MLF f' | MLG f' => mlFormulaIds f'
+    True | False => nil
+  | Lit a => mlAtomIds a
+  | And f1 f2 | Or f1 f2 => formulaIds f1 ++ formulaIds f2
+  | Exists v f' | All v f' => MLS (var_sort v) :: MLV v :: formulaIds f'
+  | F f' | G f' => formulaIds f'
   end.
 
-Definition mlEventIds ev :=
-  List.map MLV (mlEvArgs ev) ++ 
-  List.map MLS (List.map mlVarSort (mlEvArgs ev)) ++
-  mlFormulaIds (mlEvBody ev).
+Definition eventIds ev :=
+  List.map MLV (ev_args ev) ++ 
+  List.map MLS (List.map var_sort (ev_args ev)) ++
+  formulaIds (ev_body ev).
 
-Definition mlPathIds p := mlRelIds (mlTC p) ++ mlRelIds (mlBase p).
+Definition pathIds p := mlRelIds (tc p) ++ mlRelIds (base p).
 
 Definition mlUsingIds u evts :=
   match u with
     TEA => nil
-  | TTC r v f => (mlRelIds r) ++ (mlVarIds v) ++ (mlFormulaIds f)
-  | TFC ef => List.concat (List.map (fun e => mlFormulaIds (ef e)) evts) 
+  | TTC r v f => (mlRelIds r) ++ (mlVarIds v) ++ (formulaIds f)
+  | TFC ef => List.concat (List.map (fun e => formulaIds (ef e)) evts) 
   end.
 
-Definition mlCheckIds chk evts :=
-  mlFormulaIds (mlChkBody chk) ++
-  mlFormulaIds (mlChkAssumes chk) ++
-  mlUsingIds (mlChkUsing chk) evts.
+Definition checkIds chk evts :=
+  formulaIds (chk_body chk) ++
+  formulaIds (chk_assuming chk) ++
+  mlUsingIds (chk_using chk) evts.
 
-Definition mlModelIds m :=
-  List.concat (List.map mlFormulaIds (mlAxioms m)) ++
-  List.concat (List.map mlEventIds (mlEvents m)) ++
-  List.concat (List.map mlPathIds (mlClosures m)) ++
-  (mlCheckIds (mlCheckWith m) (mlEvents m)).
+Definition modelIds m :=
+  List.concat (List.map formulaIds (axioms m)) ++
+  List.concat (List.map eventIds (events m)) ++
+  List.concat (List.map pathIds (closures m)) ++
+  (checkIds (checkWith m) (events m)).
 
 Definition mlSorts m := 
   imap_filter isMLSortDec
-    (mlModelIds m)
+    (modelIds m)
     (fun v h1 h2 => getMLSort v h1).
 
-Definition mlAllVariables m: list mlVariable :=
-  imap_filter isMLVarDec
-    (mlModelIds m)
-    (fun v h1 h2 => getMLVar v h1).
+Definition mlAllVariables m: list variable :=
+  imap_filter isVarDec
+    (modelIds m)
+    (fun v h1 h2 => getVar v h1).
 
-Definition mlVariables m s :=
-  List.filter (fun v => if string_dec (mlVarSort v) s then true else false) (mlAllVariables m).
+Definition variables m s :=
+  List.filter (fun v => if string_dec (var_sort v) s then true else false) (mlAllVariables m).
 
-Definition mlAllConstants m: list mlConstant :=
-  imap_filter isMLCstDec
-    (mlModelIds m)
-    (fun v h1 h2 => getMLCst v h1).
+Definition mlAllConstants m: list constant :=
+  imap_filter isCstDec
+    (modelIds m)
+    (fun v h1 h2 => getCst v h1).
 
-Definition mlConstants m s :=
-  List.filter (fun v => if string_dec (mlCstSort v) s then true else false) (mlAllConstants m).
+Definition constants m s :=
+  List.filter (fun v => if string_dec (cst_sort v) s then true else false) (mlAllConstants m).
 
-Definition mlRelations m: list mlRelation :=
+Definition relations m: list relation :=
   imap_filter isMLRelDec
-    (mlModelIds m)
+    (modelIds m)
     (fun v h1 h2 => getMLRel v h1).
 
 Lemma mlSortOfTermVarIn:
- forall v tm, In (MLV v) (mlTermIds tm) -> In (MLS (mlVarSort v)) (mlTermIds tm).
+ forall v tm, In (MLV v) (termIds tm) -> In (MLS (var_sort v)) (termIds tm).
 Proof.
   intros.
   destruct tm; simpl in *.
@@ -106,7 +103,7 @@ Proof.
 Qed.
 
 Lemma mlSortOfTermCstIn:
- forall c tm, In (MLC c) (mlTermIds tm) -> In (MLS (mlCstSort c)) (mlTermIds tm).
+ forall c tm, In (MLC c) (termIds tm) -> In (MLS (cst_sort c)) (termIds tm).
 Proof.
   intros.
   destruct tm; simpl in *.
@@ -119,31 +116,31 @@ Proof.
 Qed.
 
 Lemma mlSortOfLitVarIn:
- forall v lt, In (MLV v) (mlLitIds lt) -> In (MLS (mlVarSort v)) (mlLitIds lt).
+ forall v r a, In (MLV v) (mlLitIds r a) -> In (MLS (var_sort v)) (mlLitIds r a).
 Proof.
-  intros; destruct lt; simpl in *; intros; auto.
+  intros; simpl in *; intros; auto.
   destruct H; [left | right]; auto; try discriminate.
   revert H; apply In_app_imp_In_app; intros.
-  exfalso; revert H; generalize (map mlTermSort args); simpl; intros; auto.
+  exfalso; revert H; generalize (map termSort a); simpl; intros; auto.
   apply in_map_iff in H; destruct H as [x [h1 h2]]; subst; auto; discriminate.
   revert H; apply In_cmap_In_cmap.
   apply mlSortOfTermVarIn.
 Qed.
 
 Lemma mlSortOfLitCstIn:
- forall c lt, In (MLC c) (mlLitIds lt) -> In (MLS (mlCstSort c)) (mlLitIds lt).
+ forall c r a, In (MLC c) (mlLitIds r a) -> In (MLS (cst_sort c)) (mlLitIds r a).
 Proof.
-  intros; destruct lt; simpl in *; intros; auto.
+  simpl in *; intros; auto.
   destruct H; [left | right]; auto; try discriminate.
   revert H; apply In_app_imp_In_app; intros.
-  exfalso; revert H; generalize (map mlTermSort args); simpl; intros; auto.
+  exfalso; revert H; generalize (map termSort a); simpl; intros; auto.
   apply in_map_iff in H; destruct H as [x [h1 h2]]; subst; auto; discriminate.
   revert H; apply In_cmap_In_cmap.
   apply mlSortOfTermCstIn.
 Qed.
 
 Lemma mlSortOfAtmVarIn:
- forall v a, In (MLV v) (mlAtomIds a) -> In (MLS (mlVarSort v)) (mlAtomIds a).
+ forall v a, In (MLV v) (mlAtomIds a) -> In (MLS (var_sort v)) (mlAtomIds a).
 Proof.
   intros v a; destruct a; simpl; intros.
   revert H; apply mlSortOfLitVarIn.
@@ -153,7 +150,7 @@ Proof.
 Qed.
 
 Lemma mlSortOfAtmCstIn:
- forall c a, In (MLC c) (mlAtomIds a) -> In (MLS (mlCstSort c)) (mlAtomIds a).
+ forall c a, In (MLC c) (mlAtomIds a) -> In (MLS (cst_sort c)) (mlAtomIds a).
 Proof.
   intros v a; destruct a; simpl; intros.
   revert H; apply mlSortOfLitCstIn.
@@ -163,7 +160,7 @@ Proof.
 Qed.
 
 Lemma mlSortOfFormVarIn:
- forall v f, In (MLV v) (mlFormulaIds f) -> In (MLS (mlVarSort v)) (mlFormulaIds f).
+ forall v f, In (MLV v) (formulaIds f) -> In (MLS (var_sort v)) (formulaIds f).
 Proof.
   induction f; simpl; intros; auto.
   revert H; apply mlSortOfAtmVarIn.
@@ -172,17 +169,17 @@ Proof.
 
   destruct H; try discriminate.
   destruct H.
-  injection H; intros; subst m; tauto.
+  injection H; intros; subst v0; tauto.
   right; right; now auto.
 
   destruct H; try discriminate.
   destruct H.
-  injection H; intros; subst m; tauto.
+  injection H; intros; subst v0; tauto.
   right; right; now auto.  
 Qed.
 
 Lemma mlSortOfFormCstIn:
- forall c f, In (MLC c) (mlFormulaIds f) -> In (MLS (mlCstSort c)) (mlFormulaIds f).
+ forall c f, In (MLC c) (formulaIds f) -> In (MLS (cst_sort c)) (formulaIds f).
 Proof.
   induction f; simpl; intros; auto.
   revert H; apply mlSortOfAtmCstIn.
@@ -199,7 +196,7 @@ Proof.
 Qed.
 
 Lemma mlSortOfTermRelIn: forall tm r s,
-  In s (mlRelArity r) -> In (MLR r) (mlTermIds tm) -> In (MLS s) (mlTermIds tm).
+  In s (rel_profile r) -> In (MLR r) (termIds tm) -> In (MLS s) (termIds tm).
 Proof.
   intros.
   destruct tm; simpl in *.
@@ -210,7 +207,7 @@ Proof.
 Qed.
 
 Lemma mlSortOfRelRelIn: forall r1 r2 s,
-  In s (mlRelArity r1) -> In (MLR r1) (mlRelIds r2) -> In (MLS s) (mlRelIds r2).
+  In s (rel_profile r1) -> In (MLR r1) (mlRelIds r2) -> In (MLS s) (mlRelIds r2).
 Proof.
   intros.
   unfold mlRelIds in *.
@@ -221,11 +218,10 @@ Proof.
   destruct H0 as [s' [H0 _]]; discriminate.
 Qed.
 
-Lemma mlSortOfLitRelIn: forall lt r s,
-  In s (mlRelArity r) -> In (MLR r) (mlLitIds lt) -> In (MLS s) (mlLitIds lt).
+Lemma mlSortOfLitRelIn: forall a r p s,
+  In s (rel_profile r) -> In (MLR r) (mlLitIds p a) -> In (MLS s) (mlLitIds p a).
 Proof.
-  intros.
-  destruct lt; simpl in *.
+  intros; simpl in *.
   destruct H0.
   injection H0; clear H0; intros; subst r; simpl in *.
   right.
@@ -234,7 +230,7 @@ Proof.
   apply in_map_iff in H.
   destruct H as [x [h1 h2]]; subst.
   apply in_map_iff.
-  exists (mlTermSort x); split; auto.
+  exists (termSort x); split; auto.
   apply in_map_iff.
   exists x; split; auto.
   
@@ -254,18 +250,18 @@ Proof.
 Qed.
 
 Lemma mlSortOfAtmRelIn: forall a r s,
-  In s (mlRelArity r) -> In (MLR r) (mlAtomIds a) -> In (MLS s) (mlAtomIds a).
+  In s (rel_profile r) -> In (MLR r) (mlAtomIds a) -> In (MLS s) (mlAtomIds a).
 Proof.
   intros.
-  destruct a; simpl in *; intros; auto.
+  destruct a; simpl in *.
   revert H H0; apply mlSortOfLitRelIn.
   revert H H0; apply mlSortOfLitRelIn.
-  revert H0; apply In_app_imp_In_app; apply mlSortOfTermRelIn; auto.
-  revert H0; apply In_app_imp_In_app; apply mlSortOfTermRelIn; auto.
+  revert H0; apply In_app_imp_In_app; apply mlSortOfTermRelIn; now auto.
+  revert H0; apply In_app_imp_In_app; apply mlSortOfTermRelIn; now auto.
 Qed.
 
 Lemma mlSortOfFormRelIn: forall f r s,
-  In s (mlRelArity r) -> In (MLR r) (mlFormulaIds f) -> In (MLS s) (mlFormulaIds f).
+  In s (rel_profile r) -> In (MLR r) (formulaIds f) -> In (MLS s) (formulaIds f).
 Proof.
   intros.
   induction f; simpl in *; intros; auto.
@@ -277,9 +273,9 @@ Proof.
 Qed.
 
 Lemma mlSortOfEvtVarIn:
-  forall v e, In (MLV v) (mlEventIds e) -> In (MLS (mlVarSort v)) (mlEventIds e).
+  forall v e, In (MLV v) (eventIds e) -> In (MLS (var_sort v)) (eventIds e).
 Proof.
-  unfold mlEventIds; intros.
+  unfold eventIds; intros.
   apply in_app_iff in H; destruct H.
   apply in_map_iff in H.
   destruct H as [x [h1 h2]].
@@ -287,7 +283,7 @@ Proof.
   apply in_app_iff; right.
   apply in_app_iff; left.
   apply in_map_iff.
-  exists (mlVarSort v); split; auto.
+  exists (var_sort v); split; auto.
   apply in_map_iff; exists v; now auto.
   
   apply in_app_iff in H; destruct H.
@@ -302,9 +298,9 @@ Proof.
 Qed.
 
 Lemma mlSortOfEvtCstIn:
-  forall c e, In (MLC c) (mlEventIds e) -> In (MLS (mlCstSort c)) (mlEventIds e).
+  forall c e, In (MLC c) (eventIds e) -> In (MLS (cst_sort c)) (eventIds e).
 Proof.
-  unfold mlEventIds; intros.
+  unfold eventIds; intros.
   apply in_app_iff in H; destruct H.
   apply in_map_iff in H.
   destruct H as [x [H _]]; discriminate.
@@ -318,9 +314,9 @@ Proof.
 Qed.
 
 Lemma mlSortOfPathVarIn:
-  forall v p, In (MLV v) (mlPathIds p) -> In (MLS (mlVarSort v)) (mlPathIds p).
+  forall v p, In (MLV v) (pathIds p) -> In (MLS (var_sort v)) (pathIds p).
 Proof.
-  unfold mlPathIds; intros.
+  unfold pathIds; intros.
   revert H; apply In_app_imp_In_app; intros.
   unfold mlRelIds in H.
   destruct H; try discriminate.
@@ -334,9 +330,9 @@ Proof.
 Qed.
 
 Lemma mlSortOfPathCstIn:
-  forall c p, In (MLC c) (mlPathIds p) -> In (MLS (mlCstSort c)) (mlPathIds p).
+  forall c p, In (MLC c) (pathIds p) -> In (MLS (cst_sort c)) (pathIds p).
 Proof.
-  unfold mlPathIds; intros.
+  unfold pathIds; intros.
   revert H; apply In_app_imp_In_app; intros.
   unfold mlRelIds in H.
   destruct H; try discriminate.
@@ -350,15 +346,15 @@ Proof.
 Qed.
 
 Lemma mlSortOfChkVarIn: forall v m,
-  In (MLV v) (mlCheckIds (mlCheckWith m) (mlEvents m)) ->
-  In (MLS (mlVarSort v)) (mlCheckIds (mlCheckWith m) (mlEvents m)).
+  In (MLV v) (checkIds (checkWith m) (events m)) ->
+  In (MLS (var_sort v)) (checkIds (checkWith m) (events m)).
 Proof.
-  unfold mlCheckIds; intros.
+  unfold checkIds; intros.
   revert H; apply In_app_imp_In_app.
   apply mlSortOfFormVarIn.
   apply In_app_imp_In_app.
   apply mlSortOfFormVarIn.
-  generalize (mlChkUsing (mlCheckWith m)); intro u.
+  generalize (chk_using (checkWith m)); intro u.
   unfold mlUsingIds.
   destruct u; simpl in *; intros; auto.
   destruct H; try discriminate.
@@ -369,7 +365,7 @@ Proof.
   destruct H as [x [H _]]; discriminate.
   intro.
   destruct H.
-  injection H; clear H; intros; subst m1; simpl; tauto.
+  injection H; clear H; intros; subst v0; simpl; tauto.
   destruct H; try discriminate.
   right; right; revert H; apply mlSortOfFormVarIn.
   revert H; apply In_cmap_In_cmap.
@@ -377,15 +373,15 @@ Proof.
 Qed.
 
 Lemma mlSortOfChkCstIn: forall c m,
-  In (MLC c) (mlCheckIds (mlCheckWith m) (mlEvents m)) ->
-  In (MLS (mlCstSort c)) (mlCheckIds (mlCheckWith m) (mlEvents m)).
+  In (MLC c) (checkIds (checkWith m) (events m)) ->
+  In (MLS (cst_sort c)) (checkIds (checkWith m) (events m)).
 Proof.
-  unfold mlCheckIds; intros.
+  unfold checkIds; intros.
   revert H; apply In_app_imp_In_app.
   apply mlSortOfFormCstIn.
   apply In_app_imp_In_app.
   apply mlSortOfFormCstIn.
-  generalize (mlChkUsing (mlCheckWith m)); intro u.
+  generalize (chk_using (checkWith m)); intro u.
   unfold mlUsingIds.
   destruct u; simpl in *; intros; auto.
   destruct H; try discriminate.
@@ -403,10 +399,10 @@ Proof.
 Qed.
 
 Lemma mlSortOfVarIn: forall m v,
-  In (MLV v) (mlModelIds m) -> In (MLS (mlVarSort v)) (mlModelIds m).
+  In (MLV v) (modelIds m) -> In (MLS (var_sort v)) (modelIds m).
 Proof.
   intros.
-  unfold mlModelIds in *.
+  unfold modelIds in *.
   revert H.
   apply utils.In_app_imp_In_app.
   apply In_cmap_In_cmap.
@@ -424,10 +420,10 @@ Proof.
 Qed.
 
 Lemma mlSortOfCstIn: forall m c,
-  In (MLC c) (mlModelIds m) -> In (MLS (mlCstSort c)) (mlModelIds m).
+  In (MLC c) (modelIds m) -> In (MLS (cst_sort c)) (modelIds m).
 Proof.
   intros.
-  unfold mlModelIds in *.
+  unfold modelIds in *.
   revert H.
   apply utils.In_app_imp_In_app.
   apply In_cmap_In_cmap.
@@ -445,10 +441,10 @@ Proof.
 Qed.
 
 Lemma mlSortOfEvtArityIn: forall e r s, 
-  In s (mlRelArity r) -> In (MLR r) (mlEventIds e) -> In (MLS s) (mlEventIds e).
+  In s (rel_profile r) -> In (MLR r) (eventIds e) -> In (MLS s) (eventIds e).
 Proof.
   intros.
-  unfold mlEventIds in *.
+  unfold eventIds in *.
   revert H0; apply In_app_imp_In_app.
   intros.
   apply in_map_iff in H0.
@@ -461,10 +457,10 @@ Proof.
 Qed.
 
 Lemma mlSortOfPathArityIn: forall p r s,
-  In s (mlRelArity r) -> In (MLR r) (mlPathIds p) -> In (MLS s) (mlPathIds p).
+  In s (rel_profile r) -> In (MLR r) (pathIds p) -> In (MLS s) (pathIds p).
 Proof.
   intros.
-  unfold mlPathIds in *.
+  unfold pathIds in *.
   revert H0; apply In_app_imp_In_app; simpl; intros.
   destruct H0.
   injection H0; clear H0; intros; subst.
@@ -482,8 +478,8 @@ Proof.
 Qed.
 
 Lemma mlSortOfRelUsingArityIn: forall m u r s,
-  In s (mlRelArity r) -> In (MLR r) (mlUsingIds u (mlEvents m)) ->
-    In (MLS s) (mlUsingIds u (mlEvents m)).
+  In s (rel_profile r) -> In (MLR r) (mlUsingIds u (events m)) ->
+    In (MLS s) (mlUsingIds u (events m)).
 Proof.
   intros.
   unfold mlUsingIds in *.
@@ -502,11 +498,11 @@ Proof.
 Qed.
 
 Lemma mlSortOfRelChkArityIn: forall m r s,
-  In s (mlRelArity r) -> In (MLR r) (mlCheckIds (mlCheckWith m) (mlEvents m))
-   -> In (MLS s) (mlCheckIds (mlCheckWith m) (mlEvents m)).
+  In s (rel_profile r) -> In (MLR r) (checkIds (checkWith m) (events m))
+   -> In (MLS s) (checkIds (checkWith m) (events m)).
 Proof.
   intros.
-  unfold mlCheckIds in *.
+  unfold checkIds in *.
   revert H0.
   apply In_app_imp_In_app.
   apply mlSortOfFormRelIn; now auto.
@@ -516,9 +512,9 @@ Proof.
 Qed.
 
 Lemma mlSortOfRelArityIn: forall m r s,
-  In (MLR r) (mlModelIds m) -> In s (mlRelArity r) -> In (MLS s) (mlModelIds m).
+  In (MLR r) (modelIds m) -> In s (rel_profile r) -> In (MLS s) (modelIds m).
 Proof.
-  unfold mlModelIds; intros.
+  unfold modelIds; intros.
   revert H.
   apply utils.In_app_imp_In_app.
   apply In_cmap_In_cmap.
@@ -535,43 +531,43 @@ Proof.
 Qed.
 
 Lemma mlSortOfVarsIn: forall m v,
-  In v (mlAllVariables m) -> In (mlVarSort v) (mlSorts m).
+  In v (mlAllVariables m) -> In (var_sort v) (mlSorts m).
 Proof.
   intros.
   unfold mlAllVariables in H; unfold mlSorts.
   apply imap_filiter_in_elim in H.
   destruct H as [u [h1 [h2 h3]]]; subst v.
   destruct u; simpl in *; try tauto.
-  apply (imap_filter_In_intro _ _ isMLSortDec (mlModelIds m)
-    (fun (v0 : mlIdent) (h0 : isMLSort v0) (_ : In v0 (mlModelIds m))
-      => getMLSort v0 h0) (MLS (mlVarSort v)) I).
+  apply (imap_filter_In_intro _ _ isMLSortDec (modelIds m)
+    (fun (v0 : mlIdent) (h0 : isMLSort v0) (_ : In v0 (modelIds m))
+      => getMLSort v0 h0) (MLS (var_sort v)) I).
   apply mlSortOfVarIn; auto.
 Qed.
 
 Lemma mlSortOfCstsIn: forall m c,
-  In c (mlAllConstants m) -> In (mlCstSort c) (mlSorts m).
+  In c (mlAllConstants m) -> In (cst_sort c) (mlSorts m).
 Proof.
   intros.
   unfold mlAllConstants in H; unfold mlSorts.
   apply imap_filiter_in_elim in H.
   destruct H as [u [h1 [h2 h3]]]; subst c.
   destruct u; simpl in *; try tauto.
-  apply (imap_filter_In_intro _ _ isMLSortDec (mlModelIds m)
-    (fun (v0 : mlIdent) (h0 : isMLSort v0) (_ : In v0 (mlModelIds m))
-      => getMLSort v0 h0) (MLS (mlCstSort c)) I).
+  apply (imap_filter_In_intro _ _ isMLSortDec (modelIds m)
+    (fun (v0 : mlIdent) (h0 : isMLSort v0) (_ : In v0 (modelIds m))
+      => getMLSort v0 h0) (MLS (cst_sort c)) I).
   apply mlSortOfCstIn; auto.
 Qed.
 
 Lemma mlSortOfRelAritiesIn: forall m r,
-  In r (mlRelations m) -> forall s, In s (mlRelArity r) -> In s (mlSorts m).
+  In r (relations m) -> forall s, In s (rel_profile r) -> In s (mlSorts m).
 Proof.
   intros.
-  unfold mlRelations in H; unfold mlSorts.
+  unfold relations in H; unfold mlSorts.
   apply imap_filiter_in_elim in H.
   destruct H as [u [h1 [h2 h3]]]; subst r.
   destruct u; simpl in *; try tauto.
-  apply (imap_filter_In_intro _ _ isMLSortDec (mlModelIds m)
-    (fun (v0 : mlIdent) (h0 : isMLSort v0) (_ : In v0 (mlModelIds m))
+  apply (imap_filter_In_intro _ _ isMLSortDec (modelIds m)
+    (fun (v0 : mlIdent) (h0 : isMLSort v0) (_ : In v0 (modelIds m))
       => getMLSort v0 h0) (MLS s) I).
   revert H0; apply mlSortOfRelArityIn; auto.
 Qed.
