@@ -37,10 +37,11 @@ let closure_axiom m rel x vars fml =
       all fresh_x
         ( all fresh_y
         @@ List.fold_right all vars
-             (implies (and_ propagate (lit @@ pos_app 0 tc_rel [ var fresh_x; var fresh_y ]))
+             (implies
+                (and_ propagate
+                   (lit @@ pos_app 0 tc_rel [ var fresh_x; var fresh_y ]))
                 ( always
-                @@ implies
-                     (substitute x fresh_x fml)                       
+                @@ implies (substitute x fresh_x fml)
                      (eventually @@ substitute x fresh_y fml) )) )
 
 let convert m_with_check =
