@@ -9,7 +9,7 @@ end)
 
 let create_var s i =
   make_variable
-    ~var_name:(Name.make_unloc ("_sem_ev" ^ Name.content s ^ string_of_int i))
+    ~var_name:(Name.make_unloc ("_s" ^ Name.content s ^ string_of_int i))
     ~var_sort:s
 
 
