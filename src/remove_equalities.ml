@@ -123,7 +123,7 @@ let equality_axiom_for_rel_at_i rel i =
   let right_tuple = List.insert_at_idx i term_y (List.map var vars_except_i) in
   let left_atom = lit @@ pos_app 0 rel left_tuple in
   let right_atom = lit @@ pos_app 0 rel right_tuple in
-       (List.fold_right all vars_except_i (iff left_atom right_atom))
+  List.fold_right all vars_except_i (iff left_atom right_atom)
 
 
 let equality_axiom_for_rel_and_s rel s =
@@ -147,14 +147,14 @@ let equality_axiom_for_rel_list_and_s rel_list s =
   let var_y = make_variable ~var_name:varname_y ~var_sort:s in
   let term_y = var var_y in
   let x_equals_y =
-    lit @@ pos_app 0 (build_pred_eq_from_sort s) [ term_x; term_y ] in
+    lit @@ pos_app 0 (build_pred_eq_from_sort s) [ term_x; term_y ]
+  in
   always
   @@ all var_x
   @@ all var_y
-  @@implies
-  x_equals_y
-  @@ conj @@
-  List.flat_map (fun rel -> equality_axiom_for_rel_and_s rel s) rel_list
+  @@ implies x_equals_y
+  @@ conj
+  @@ List.flat_map (fun rel -> equality_axiom_for_rel_and_s rel s) rel_list
 
 
 let convert m =

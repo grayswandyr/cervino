@@ -1,11 +1,6 @@
 open Ast
-module SortBag = CCMultiSet.Make (Name)
-
-module VarMap = Map.Make (struct
-  type t = sort
-
-  let compare = compare_sort
-end)
+module SortBag = Name.Bag
+module VarMap = Name.Map
 
 let create_var s i =
   make_variable

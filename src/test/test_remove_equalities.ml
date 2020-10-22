@@ -19,8 +19,11 @@ relation q in S
 relation r in S * S * S
 relation u in S * S * T
 sort T
+relation v in T
 constant b in T
 axiom { some x, y : S | x = y && q(x) }
+axiom { some x, y : S | x = y && q(x) }
+axiom { some x, y : T | x = y && v(x) }
 check prop {} using TEA
 |};
       [%expect
@@ -32,8 +35,11 @@ check prop {} using TEA
         relation r in S * S * S
         relation u in S * S * T
         sort T
+        relation v in T
         constant b in T
         axiom { some x, y : S | x = y && q(x) }
+        axiom { some x, y : S | x = y && q(x) }
+        axiom { some x, y : T | x = y && v(x) }
         check prop {} using TEA
 
         -->
@@ -46,14 +52,29 @@ check prop {} using TEA
           var q : S,
           var r : S -> S -> S,
           var u : S -> S -> T,
+          var v : T,
+          var _eq_T : T -> T,
           var _eq_S : S -> S,
         }
+        fact {
+          always (all _x: T | (all _y: T | (all _z: T |
+           (_x->_y in _M._eq_T &&
+            ((_x->_y !in _M._eq_T || _y->_x in _M._eq_T) &&
+             ((_x->_y !in _M._eq_T || _y->_z !in _M._eq_T) || _x->_z in _M._eq_T))))))
+          }
         fact {
           always (all _x: S | (all _y: S | (all _z: S |
            (_x->_y in _M._eq_S &&
             ((_x->_y !in _M._eq_S || _y->_x in _M._eq_S) &&
              ((_x->_y !in _M._eq_S || _y->_z !in _M._eq_S) || _x->_z in _M._eq_S))))))
           }
+        fact {
+          always (all _x: T | (all _y: T |
+           (_x->_y !in _M._eq_T ||
+            ((all _e0: S | (all _e1: S |
+             ((_e0->_e1->_x !in _M.u || _e0->_e1->_y in _M.u) &&
+              (_e0->_e1->_y !in _M.u || _e0->_e1->_x in _M.u))))
+             && ((_x !in _M.v || _y in _M.v) && (_y !in _M.v || _x in _M.v)))))) }
         fact {
           always (all _x: S | (all _y: S |
            (_x->_y !in _M._eq_S ||
@@ -84,6 +105,8 @@ check prop {} using TEA
                    && (all _e0: S | (all _e1: T |
                    ((_x->_e0->_e1 !in _M.u || _y->_e0->_e1 in _M.u) &&
                     (_y->_e0->_e1 !in _M.u || _x->_e0->_e1 in _M.u)))))))))))))) }
+        fact { (some x: T | (some y: T | (x->y in _M._eq_T && x in _M.v))) }
+        fact { (some x: S | (some y: S | (x->y in _M._eq_S && x in _M.q))) }
         fact { (some x: S | (some y: S | (x->y in _M._eq_S && x in _M.q))) }
         fact /* assuming */ { {} }
         check prop { {} } |}]
