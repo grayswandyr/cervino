@@ -3,7 +3,15 @@ module L = Location
 
 type t = string L.t [@@deriving eq, ord, sexp_of]
 
+let content = L.content
+
 let equal_with_location = equal
+
+let compare_with_location = compare
+
+let equal x y = String.equal (content x) (content y)
+
+let compare x y = String.compare (content x) (content y)
 
 let make s loc = L.make s loc
 
@@ -15,16 +23,16 @@ let create_from_name_and_prefix pref n =
 
 let pp fmt L.{ content; _ } = Fmt.string fmt content
 
-let equal c1 c2 = L.equal_content String.equal c1 c2
-
 let positions = L.positions
 
 let of_ident (id : Ident.t) = make (Ident.content id) (Ident.positions id)
 
-let content = L.content
-
-module Set = CCSet.Make (struct
+module Elt = struct
   type nonrec t = t
 
   let compare = compare
-end)
+end
+
+module Set = Set.Make (Elt)
+module Bag = CCMultiSet.Make (Elt)
+module Map = Map.Make (Elt)

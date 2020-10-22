@@ -26,7 +26,7 @@ let pp_header ppf (l, h) =
         Fmt.pf ppf "[%a] " Fmt.(styled app_style string) h )
   | Error | Warning | Info | Debug ->
       pp_h ppf (Msg.style l)
-      @@ CCOpt.map_or ~default:(keyword l) (fun s -> short l ^ s) h
+      @@ Option.map_or ~default:(keyword l) (fun s -> short l ^ s) h
 
 
 let main verbosity property input output =

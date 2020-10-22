@@ -1,15 +1,10 @@
 open Ast
-module SortBag = CCMultiSet.Make (Name)
-
-module VarMap = Map.Make (struct
-  type t = sort
-
-  let compare = compare_sort
-end)
+module SortBag = Name.Bag
+module VarMap = Name.Map
 
 let create_var s i =
   make_variable
-    ~var_name:(Name.make_unloc ("_sem_ev" ^ Name.content s ^ string_of_int i))
+    ~var_name:(Name.make_unloc ("_s" ^ Name.content s ^ string_of_int i))
     ~var_sort:s
 
 

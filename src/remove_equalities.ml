@@ -27,35 +27,19 @@ let equivalence_axioms_for_rel rel =
     && equal_sort (List.hd rel.rel_profile) (List.nth rel.rel_profile 1) );
   let p = rel.rel_profile in
   let var_sort = List.hd p in
-  let varx =
-    make_variable ~var_name:(Name.make_unloc "_equiv_axioms_x") ~var_sort
-  in
+  let varx = make_variable ~var_name:(Name.make_unloc "_x") ~var_sort in
   let tx = var varx in
-  let vary =
-    make_variable ~var_name:(Name.make_unloc "_equiv_axioms_y") ~var_sort
-  in
+  let vary = make_variable ~var_name:(Name.make_unloc "_y") ~var_sort in
   let ty = var vary in
-  let varz =
-    make_variable ~var_name:(Name.make_unloc "_equiv_axioms_z") ~var_sort
-  in
+  let varz = make_variable ~var_name:(Name.make_unloc "_z") ~var_sort in
   let tz = var varz in
   let app terms = lit @@ pos_app 0 rel terms in
-  let reflexivity = all varx @@ always (app [ tx; tx ]) in
-  let symmetry =
-    all varx (all vary @@ always (implies (app [ tx; ty ]) (app [ ty; tx ])))
+  let refl = app [ tx; ty ] in
+  let symm = implies (app [ tx; ty ]) (app [ ty; tx ]) in
+  let tran =
+    implies (and_ (app [ tx; ty ]) (app [ ty; tz ])) (app [ tx; tz ])
   in
-  let transitivity =
-    all
-      varx
-      (all
-         vary
-         ( all varz
-         @@ always
-              (implies
-                 (and_ (app [ tx; ty ]) (app [ ty; tz ]))
-                 (app [ tx; tz ])) ))
-  in
-  conj [ reflexivity; symmetry; transitivity ]
+  always @@ all varx @@ all vary @@ all varz @@ conj [ refl; symm; tran ]
 
 
 let rec remove_eq_fml = function
@@ -121,7 +105,7 @@ let equality_axiom_for_rel_at_i rel i =
       (fun list_acc i cur_sort ->
         let var =
           make_variable
-            ~var_name:(Name.make_unloc ("_eq_var_" ^ string_of_int i))
+            ~var_name:(Name.make_unloc ("_e" ^ string_of_int i))
             ~var_sort:cur_sort
         in
         var :: list_acc)
@@ -129,29 +113,17 @@ let equality_axiom_for_rel_at_i rel i =
       restricted_prof
   in
   let vars_except_i = List.rev aux_vars in
-  let varname_x = Name.make_unloc "_eq_var_x" in
+  let varname_x = Name.make_unloc "_x" in
   let var_x = make_variable ~var_name:varname_x ~var_sort:s in
   let term_x = var var_x in
-  let varname_y = Name.make_unloc "_eq_var_y" in
+  let varname_y = Name.make_unloc "_y" in
   let var_y = make_variable ~var_name:varname_y ~var_sort:s in
   let term_y = var var_y in
   let left_tuple = List.insert_at_idx i term_x (List.map var vars_except_i) in
   let right_tuple = List.insert_at_idx i term_y (List.map var vars_except_i) in
   let left_atom = lit @@ pos_app 0 rel left_tuple in
   let right_atom = lit @@ pos_app 0 rel right_tuple in
-  let x_equals_y =
-    lit @@ pos_app 0 (build_pred_eq_from_sort s) [ term_x; term_y ]
-  in
-  all
-    var_x
-    (all
-       var_y
-       (implies
-          x_equals_y
-          (List.fold_right
-             all
-             vars_except_i
-             (always (iff left_atom right_atom)))))
+  List.fold_right all vars_except_i (iff left_atom right_atom)
 
 
 let equality_axiom_for_rel_and_s rel s =
@@ -168,7 +140,21 @@ let equality_axiom_for_rel_and_s rel s =
 
 
 let equality_axiom_for_rel_list_and_s rel_list s =
-  List.flat_map (fun rel -> equality_axiom_for_rel_and_s rel s) rel_list
+  let varname_x = Name.make_unloc "_x" in
+  let var_x = make_variable ~var_name:varname_x ~var_sort:s in
+  let varname_y = Name.make_unloc "_y" in
+  let term_x = var var_x in
+  let var_y = make_variable ~var_name:varname_y ~var_sort:s in
+  let term_y = var var_y in
+  let x_equals_y =
+    lit @@ pos_app 0 (build_pred_eq_from_sort s) [ term_x; term_y ]
+  in
+  always
+  @@ all var_x
+  @@ all var_y
+  @@ implies x_equals_y
+  @@ conj
+  @@ List.flat_map (fun rel -> equality_axiom_for_rel_and_s rel s) rel_list
 
 
 let convert m =
@@ -196,7 +182,7 @@ let convert m =
   let equality_axioms =
     Sorts.fold
       (fun s cur_fmls ->
-        equality_axiom_for_rel_list_and_s m.model.relations s @ cur_fmls)
+        equality_axiom_for_rel_list_and_s m.model.relations s :: cur_fmls)
       eq_sorts
       []
   in
