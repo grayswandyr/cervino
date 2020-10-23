@@ -264,6 +264,18 @@ let substitute_list xlist ylist fml =
     xlist
     ylist
 
+    (* Returns true if the formula includes an eventually operator or a disjunction of formulas including either always or littrelas not referring to the same exact instant. *)
+    (* Used to determine whether a universal quantifier is instantiate for this formula. *)
+(*let rec is_temporal fml =
+  | Lit _ -> True
+| And (f1, f2) -> not_temporal f1 && not_temporal f2
+| Or (f1, f2) -> match nb_next Or (f1, f2) with
+        | (a,b) -> a
+| G f -> not_temporal f
+| X f -> not_temporal f
+| F f -> False
+
+*)
 
 module Electrum = struct
   open Fmt
