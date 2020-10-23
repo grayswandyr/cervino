@@ -35,8 +35,7 @@ let find_fresh_vars_from_occ_list map occlist =
   (* let+ s, i occlist in E  === List.map (fun (s,i) -> E) occlist *)
   let+ s, i = occlist in
   assert (i > 0);
-  let vars = VarMap.get s map in
-  match vars with
+  match VarMap.get s map with
   | None ->
       Msg.err (fun m -> m "[%s] sort not found: %a" __LOC__ Name.pp s)
   | Some vl ->
@@ -44,8 +43,12 @@ let find_fresh_vars_from_occ_list map occlist =
       List.nth vl i
 
 
-(* Creates a formula (always [quantifier] x : s,y :s | ev1[x] or ev2[y]). 
-Also returns the list of variables bound by the said quantifier. *)
+(* Creates a formula (always [quantifier] x : s,y :s | ev1[x] or ev2[y]). Also returns the list of
+variables bound by the said quantifier. 
+
+This is a bit more than strictly necessary for the semantics, but it is also used for the abstract
+semantics implemented by TEA.
+*)
 let quantify_events quantifier events =
   let sorts_exists_quantif = Ast.sort_bag_of_events events in
   (* maps each sort of an event argument to a list of fresh variables *)
