@@ -21,6 +21,7 @@ let get_transformation (using : Ast.transfo) : (module S) =
   match using with
   | TTC _ ->
       (module Transfo_TTC)
+  | TFC _ -> (module Transfo_TFC)
   | _ ->
       Msg.warn (fun m ->
           m "Unimplemented transformation: %s" (Name.of_using using));
