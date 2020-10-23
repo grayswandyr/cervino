@@ -52,7 +52,7 @@ let main verbosity property input output =
     let ast = Cst_to_ast.convert model property in
     Msg.info (fun m -> m "Conversion to AST done.");
     Msg.debug (fun m -> m "AST:@.%a" Ast.pp ast);
-    let result = Transfo.process ast in
+    let result = Transfo.convert ast in
     match output with
     | None ->
         Ast.Electrum.pp Fmt.stdout result
