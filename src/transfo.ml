@@ -19,6 +19,8 @@ end
 
 let get_transformation (using : Ast.transfo) : (module S) =
   match using with
+  | TEA ->
+      (module Transfo_tea)
   | TTC _ ->
       (module Transfo_TTC)
   | TFC _ -> (module Transfo_TFC)
