@@ -9,7 +9,7 @@ let%test_module _ =
       Fmt.pr "%s@.-->@.%a" src Ast.Electrum.pp ast'
 
 
-    let%expect_test "sorts, relations and constants" =
+    let%expect_test _ =
       check
         {|
 constant a in T 

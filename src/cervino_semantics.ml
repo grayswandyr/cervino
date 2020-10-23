@@ -32,6 +32,7 @@ let occ_list_from_sortlist sortlist =
 
 let find_fresh_vars_from_occ_list map occlist =
   let open List.Infix in
+  (* let+ s, i occlist in E  === List.map (fun (s,i) -> E) occlist *)
   let+ s, i = occlist in
   assert (i > 0);
   let vars = VarMap.get s map in
@@ -39,28 +40,14 @@ let find_fresh_vars_from_occ_list map occlist =
   | None ->
       Msg.err (fun m -> m "[%s] sort not found: %a" __LOC__ Name.pp s)
   | Some vl ->
+      assert (i < List.length vl);
       List.nth vl i
 
 
-(* List.map
-   (fun (s, i) ->
-     let vars = VarMap.get s map in
-     match vars with
-     | None ->
-         Msg.err (fun m -> m "%s: Sort not found: %a" __LOC__ Name.pp s)
-     | Some vl ->
-         List.nth vl i)
-   occlist *)
-
-let semantics_of_events m =
-  let sorts_exists_quantif =
-    List.fold_left
-      (fun cur_vars cur_ev ->
-        let vars = SortBag.of_list @@ List.map sort_of_var cur_ev.ev_args in
-        SortBag.meet vars cur_vars)
-      SortBag.empty
-      m.events
-  in
+(* Creates a formula (always [quantifier] x : s,y :s | ev1[x] or ev2[y]). 
+Also returns the list of variables bound by the said quantifier. *)
+let quantify_events quantifier events =
+  let sorts_exists_quantif = Ast.sort_bag_of_events events in
   (* maps each sort of an event argument to a list of fresh variables *)
   (* the map is used to generate each fresh variable only once *)
   let map_sort_fresh_vars =
@@ -75,18 +62,21 @@ let semantics_of_events m =
           @@ occ_list_from_sortlist (List.map sort_of_var ev.ev_args)
         in
         substitute_list newvars ev.ev_args ev.ev_body)
-      m.events
+      events
   in
   let vars_exists_quantif =
     List.flat_map snd (VarMap.to_list map_sort_fresh_vars)
   in
-  always (List.fold_right exists vars_exists_quantif (disj fml_events))
+  ( always (List.fold_right quantifier vars_exists_quantif (disj fml_events)),
+    vars_exists_quantif )
 
+
+let semantics_of_events events = fst @@ quantify_events exists events
 
 (* Put the formula of the semantics of events (always some x,y | ev1[x] or ev2[y]) in axioms. *)
 (* Removes events. Does not handle modifies fields. *)
 let cervino_semantics_model m =
-  let updated_axioms = semantics_of_events m :: m.axioms in
+  let updated_axioms = semantics_of_events m.events :: m.axioms in
   make_model
     ~sorts:m.sorts
     ~relations:m.relations

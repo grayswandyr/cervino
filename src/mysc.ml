@@ -1,10 +1,10 @@
 module List = struct
   (* checks that a list has no duplicates *)
-  let rec has_no_dups ~eq = function
+  let rec all_different ~eq = function
     | [] ->
         true
     | hd :: tl ->
-        (not @@ List.mem ~eq hd tl) && has_no_dups ~eq tl
+        (not @@ List.mem ~eq hd tl) && all_different ~eq tl
 
 
   (* a guard function for monads *)

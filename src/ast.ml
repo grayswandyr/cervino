@@ -110,13 +110,15 @@ let sort_of_term = function Var v -> sort_of_var v | Cst c -> sort_of_cst c
 
 let pos_app nexts p args =
   assert (nexts >= 0);
-  assert (List.length args > 0);
+  let ar = List.length p.rel_profile in
+  assert (List.length args = ar);
   Pos_app (nexts, p, args)
 
 
 let neg_app nexts p args =
   assert (nexts >= 0);
-  assert (List.length args > 0);
+  let ar = List.length p.rel_profile in
+  assert (List.length args = ar);
   Neg_app (nexts, p, args)
 
 
@@ -212,6 +214,8 @@ let rec next = function
       always (next f)
 
 
+let pp_formula fmt model = Sexplib.Sexp.pp_hum fmt (sexp_of_formula model)
+
 let pp fmt model = Sexplib.Sexp.pp_hum fmt (sexp_of_t model)
 
 let eq_term_list tl1 tl2 =
@@ -258,11 +262,26 @@ let rec substitute x y fml =
 
 
 let substitute_list xlist ylist fml =
+  assert (List.(length xlist = length ylist));
+  assert (Mysc.List.all_different ~eq:equal_variable ylist);
   List.fold_left2
     (fun cur_fml varx vary -> substitute varx vary cur_fml)
     fml
     xlist
     ylist
+
+
+let sort_bag_of_event { ev_args; _ } =
+  Name.Bag.of_list @@ List.map sort_of_var ev_args
+
+
+let sort_bag_of_events events =
+  List.fold_left
+    (fun cur_vars cur_ev ->
+      let vars = sort_bag_of_event cur_ev in
+      Name.Bag.meet vars cur_vars)
+    Name.Bag.empty
+    events
 
 
 module Electrum = struct
