@@ -5,6 +5,8 @@ type t = string L.t [@@deriving eq, ord, sexp_of]
 
 let content = L.content
 
+let hash id = String.hash (content id)
+
 let equal_with_location = equal
 
 let compare_with_location = compare

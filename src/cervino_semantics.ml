@@ -4,7 +4,7 @@ module VarMap = Name.Map
 
 let create_var s i =
   make_variable
-    ~var_name:(Name.make_unloc ("_s" ^ Name.content s ^ string_of_int i))
+    ~var_name:(Name.make_unloc ("_s_" ^ Name.content s ^ string_of_int i))
     ~var_sort:s
 
 
@@ -39,9 +39,14 @@ let find_fresh_vars_from_occ_list map occlist =
   | None ->
       Msg.err (fun m -> m "[%s] sort not found: %a" __LOC__ Name.pp s)
   | Some vl ->
-      Msg.debug (fun m -> m "Try to access elt number %d of map occ list for sort %a" i Name.pp s);
-      assert (i-1 < List.length vl);
-      List.nth vl (i-1)
+      Msg.debug (fun m ->
+          m
+            "Try to access elt number %d of map occ list for sort %a"
+            i
+            Name.pp
+            s);
+      assert (i - 1 < List.length vl);
+      List.nth vl (i - 1)
 
 
 (* Creates a formula (always [quantifier] x : s,y :s | ev1[x] or ev2[y]). Also returns the list of

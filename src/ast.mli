@@ -174,4 +174,6 @@ val sort_bag_of_events : event list -> Name.Bag.t
 module Electrum : sig
   val pp : t Fmt.t
   (** does not print the events and closures fields, they must have been handled by prior transformations  *)
+
+  val pp_formula : Format.formatter -> formula -> unit
 end

@@ -66,10 +66,12 @@ let rec abstract_formula (vrs : (term, relation) List.Assoc.t) f : formula =
       or_ (abstract_formula vrs f1) (abstract_formula vrs f2)
   | All (x, f) ->
       all x (abstract_formula vrs f)
-  | F _ | G _ | Exists _ ->
-      (* forbidden cases *)
-      Msg.err (fun m ->
-          m "[%s] forbidden subformula in an event: %a" __LOC__ pp_formula f)
+  | Exists (x, f) ->
+      exists x (abstract_formula vrs f)
+  | G f ->
+      always (abstract_formula vrs f)
+  | F f ->
+      always (abstract_formula vrs f)
 
 
 (* Creates a formula (always all x : s,y :s | ev1[x] or ev2[y]). 
@@ -83,7 +85,7 @@ let abstract_events (events : event list) : relation list * formula =
 
 (* creates the formula `G (/\ all x,y :s | E(x) && E(y) => x = y) for any `E` predicate (with sort
 `s`) *)
-let make_e_preds_axiom (e_preds : relation list) : formula =
+let _make_e_preds_axiom (e_preds : relation list) : formula =
   let open List.Infix in
   let make_x var_sort =
     make_variable ~var_name:(Name.make_unloc "_x") ~var_sort
@@ -112,6 +114,55 @@ let make_e_preds_axiom (e_preds : relation list) : formula =
         all x
         @@ all y
         @@ implies (and_ e_pred_x e_pred_y) (lit @@ eq term_x term_y)
+  in
+  always @@ conj formulas
+
+
+let make_e_preds_axiom (e_preds : relation list) : formula =
+  let open List.Infix in
+  let make_x var_sort =
+    make_variable ~var_name:(Name.make_unloc "_x") ~var_sort
+  in
+  let make_y var_sort =
+    make_variable ~var_name:(Name.make_unloc "_y") ~var_sort
+  in
+  let e_preds_by_sort =
+    let hash { rel_profile; rel_name } =
+      match rel_profile with
+      | [ s ] ->
+          Name.hash s
+      | [] | _ :: _ :: _ ->
+          Msg.err (fun m ->
+              m
+                "[%s] %a has arity %d"
+                __LOC__
+                Name.pp
+                rel_name
+                (List.length rel_profile))
+    in
+    let eq r1 r2 = List.equal Name.equal r1.rel_profile r2.rel_profile in
+    List.group_by ~hash ~eq e_preds
+  in
+  let formulas =
+    let* e_preds_for_one_sort = e_preds_by_sort in
+    let the_sort =
+      match e_preds_for_one_sort with
+      | { rel_profile = [ s ]; _ } :: _ ->
+          s
+      | _ ->
+          assert false
+    in
+    let x = make_x the_sort in
+    let y = make_y the_sort in
+    let term_x = var x in
+    let term_y = var y in
+    let formula_for_one_sort =
+      let* e_pred = e_preds_for_one_sort in
+      let e_pred_x = lit @@ pos_app 0 e_pred [ term_x ] in
+      let e_pred_y = lit @@ pos_app 0 e_pred [ term_y ] in
+      List.return @@ implies (and_ e_pred_x e_pred_y) (lit @@ eq term_x term_y)
+    in
+    List.return @@ all x @@ all y @@ conj formula_for_one_sort
   in
   always @@ conj formulas
 

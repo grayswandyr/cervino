@@ -6,7 +6,7 @@ let%test_module _ =
       let cst = Parsing.parse_string src in
       let ast = Cst_to_ast.convert cst "prop" in
       let ast' = Remove_equalities.convert ast in
-      Fmt.pr "%s@.-->@.%a" src Ast.Electrum.pp ast'
+      Fmt.pr "%a@." Ast.Electrum.pp ast'
 
 
     let%expect_test _ =
@@ -28,21 +28,6 @@ check prop {} using TEA
 |};
       [%expect
         {|
-        constant a in T
-        sort S
-        relation p in S * S
-        relation q in S
-        relation r in S * S * S
-        relation u in S * S * T
-        sort T
-        relation v in T
-        constant b in T
-        axiom { some x, y : S | x = y && q(x) }
-        axiom { some x, y : S | x = y && q(x) }
-        axiom { some x, y : T | x = y && v(x) }
-        check prop {} using TEA
-
-        -->
         sig S {}
         sig T {}
         one sig a in T {}
