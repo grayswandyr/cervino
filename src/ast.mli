@@ -157,15 +157,23 @@ val eq_term_list : term list -> term list -> formula
 
 val neq_term_list : term list -> term list -> formula
 
+val pp_formula : Format.formatter -> formula -> unit
+
 val pp : Format.formatter -> t -> unit
 
 val subst_in_term : variable -> variable -> term -> term
 
-val substitute : variable -> variable -> formula -> formula
+val substitute : variable -> by:variable -> formula -> formula
 
-val substitute_list : variable list -> variable list -> formula -> formula
+val substitute_list : variable list -> by:variable list -> formula -> formula
+
+val sort_bag_of_event : event -> Name.Bag.t
+
+val sort_bag_of_events : event list -> Name.Bag.t
 
 module Electrum : sig
   val pp : t Fmt.t
   (** does not print the events and closures fields, they must have been handled by prior transformations  *)
+
+  val pp_formula : Format.formatter -> formula -> unit
 end

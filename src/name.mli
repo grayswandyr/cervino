@@ -2,6 +2,8 @@ module L = Location
 
 type t [@@deriving eq, ord, sexp_of]
 
+val hash : t -> int
+
 val equal_with_location : t -> t -> bool
 
 val compare_with_location : t -> t -> int

@@ -6,10 +6,10 @@ let%test_module _ =
       let cst = Parsing.parse_string src in
       let ast = Cst_to_ast.convert cst "prop" in
       let ast' = Remove_equalities.convert ast in
-      Fmt.pr "%s@.-->@.%a" src Ast.Electrum.pp ast'
+      Fmt.pr "%a@." Ast.Electrum.pp ast'
 
 
-    let%expect_test "sorts, relations and constants" =
+    let%expect_test _ =
       check
         {|
 constant a in T 
@@ -28,31 +28,16 @@ check prop {} using TEA
 |};
       [%expect
         {|
-        constant a in T
-        sort S
-        relation p in S * S
-        relation q in S
-        relation r in S * S * S
-        relation u in S * S * T
-        sort T
-        relation v in T
-        constant b in T
-        axiom { some x, y : S | x = y && q(x) }
-        axiom { some x, y : S | x = y && q(x) }
-        axiom { some x, y : T | x = y && v(x) }
-        check prop {} using TEA
-
-        -->
         sig S {}
         sig T {}
         one sig a in T {}
         one sig b in T {}
         one sig _M {
           var p : S -> S,
-          var q : S,
+          var q : set S,
           var r : S -> S -> S,
           var u : S -> S -> T,
-          var v : T,
+          var v : set T,
           var _eq_T : T -> T,
           var _eq_S : S -> S,
         }
@@ -108,8 +93,8 @@ check prop {} using TEA
         fact { (some x: T | (some y: T | (x->y in _M._eq_T && x in _M.v))) }
         fact { (some x: S | (some y: S | (x->y in _M._eq_S && x in _M.q))) }
         fact { (some x: S | (some y: S | (x->y in _M._eq_S && x in _M.q))) }
-        fact /* assuming */ { {} }
-        check prop { {} } |}]
+        fact /* assuming */ { (no none) }
+        check prop { (no none) } |}]
 
     (*  *)
   end )

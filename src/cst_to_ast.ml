@@ -363,7 +363,7 @@ let convert_modifies env relations Cst.{ mod_field; mod_modifications } =
 
 let convert_event env relations Cst.{ e_name; e_args; e_modifies; e_body } =
   if not
-     @@ Mysc.List.has_no_dups
+     @@ Mysc.List.all_different
           ~eq:(fun f1 f2 -> Ident.equal f1.Cst.mod_field f2.Cst.mod_field)
           e_modifies
   then
@@ -423,7 +423,7 @@ let convert_using env = function
       let open List.Infix in
       let events = Env.get_events env in
       if not
-         @@ Mysc.List.has_no_dups
+         @@ Mysc.List.all_different
               ~eq:(fun e1 e2 -> Ident.equal e1.Cst.e_name e2.Cst.e_name)
               events
       then Msg.err (fun m -> m "Non-unique event names in TFC parameters")

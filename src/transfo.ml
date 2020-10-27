@@ -1,6 +1,4 @@
-module type S = sig
-  val convert : Ast.t -> Ast.t
-end
+type t = Ast.t -> Ast.t
 
 module Name = struct
   let tea = "TEA"
@@ -17,17 +15,24 @@ module Id = struct
   let convert ast = ast
 end
 
-let get_transformation (using : Ast.transfo) : (module S) =
-  match using with
-  | TTC _ ->
-      (module Transfo_TTC)
-  | TFC _ -> (module Transfo_TFC)
-  | _ ->
-      Msg.warn (fun m ->
-          m "Unimplemented transformation: %s" (Name.of_using using));
-      (module Id)
+(* apply ast->ast transformations from left to right *)
+let compose (transfos : t list) ast =
+  List.fold_left (fun ast convert -> convert ast) ast transfos
 
 
-let process Ast.({ check = { chk_using; _ }; _ } as ast) =
-  let module T = (val get_transformation chk_using) in
-  T.convert ast
+let apply_transformation (using : Ast.transfo) : t =
+  (* applied from left to right *)
+  let steps : t list =
+    match using with
+    | TEA ->
+        [ Expand_modifies.convert; Transfo_TEA.convert ]
+    | TTC _ ->
+        [ Transfo_TTC.convert ]
+    | TFC _ ->
+        [ Transfo_TFC.convert ]
+  in
+  compose steps
+
+
+let convert Ast.({ check = { chk_using; _ }; _ } as ast) =
+  apply_transformation chk_using ast

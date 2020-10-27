@@ -110,13 +110,15 @@ let sort_of_term = function Var v -> sort_of_var v | Cst c -> sort_of_cst c
 
 let pos_app nexts p args =
   assert (nexts >= 0);
-  assert (List.length args > 0);
+  let ar = List.length p.rel_profile in
+  assert (List.length args = ar);
   Pos_app (nexts, p, args)
 
 
 let neg_app nexts p args =
   assert (nexts >= 0);
-  assert (List.length args > 0);
+  let ar = List.length p.rel_profile in
+  assert (List.length args = ar);
   Neg_app (nexts, p, args)
 
 
@@ -212,6 +214,8 @@ let rec next = function
       always (next f)
 
 
+let pp_formula fmt model = Sexplib.Sexp.pp_hum fmt (sexp_of_formula model)
+
 let pp fmt model = Sexplib.Sexp.pp_hum fmt (sexp_of_t model)
 
 let eq_term_list tl1 tl2 =
@@ -227,42 +231,57 @@ let subst_in_term x y t =
 
 
 (* substitute variable x by variable y in fml*)
-let rec substitute x y fml =
+let rec substitute x ~by fml =
   match fml with
   | True ->
       true_
   | False ->
       false_
   | Lit (Pos_app (nexts, p, args)) ->
-      let new_args = List.map (subst_in_term x y) args in
+      let new_args = List.map (subst_in_term x by) args in
       lit (pos_app nexts p new_args)
   | Lit (Neg_app (nexts, p, args)) ->
-      let new_args = List.map (subst_in_term x y) args in
+      let new_args = List.map (subst_in_term x by) args in
       lit (neg_app nexts p new_args)
   | Lit (Eq (t1, t2)) ->
-      lit (eq (subst_in_term x y t1) (subst_in_term x y t2))
+      lit (eq (subst_in_term x by t1) (subst_in_term x by t2))
   | Lit (Not_eq (t1, t2)) ->
-      lit (neq (subst_in_term x y t1) (subst_in_term x y t2))
+      lit (neq (subst_in_term x by t1) (subst_in_term x by t2))
   | And (f1, f2) ->
-      and_ (substitute x y f1) (substitute x y f2)
+      and_ (substitute x ~by f1) (substitute x ~by f2)
   | Or (f1, f2) ->
-      or_ (substitute x y f1) (substitute x y f2)
+      or_ (substitute x ~by f1) (substitute x ~by f2)
   | Exists (varx, f) ->
-      exists varx (substitute x y f)
+      exists varx (substitute x ~by f)
   | All (varx, f) ->
-      all varx (substitute x y f)
+      all varx (substitute x ~by f)
   | F f ->
-      eventually (substitute x y f)
+      eventually (substitute x ~by f)
   | G f ->
-      always (substitute x y f)
+      always (substitute x ~by f)
 
 
-let substitute_list xlist ylist fml =
+let substitute_list xlist ~by fml =
+  assert (List.(length xlist = length by));
+  assert (Mysc.List.all_different ~eq:equal_variable by);
   List.fold_left2
-    (fun cur_fml varx vary -> substitute varx vary cur_fml)
+    (fun cur_fml varx vary -> substitute varx ~by:vary cur_fml)
     fml
     xlist
-    ylist
+    by
+
+
+let sort_bag_of_event { ev_args; _ } =
+  Name.Bag.of_list @@ List.map sort_of_var ev_args
+
+
+let sort_bag_of_events events =
+  List.fold_left
+    (fun cur_vars cur_ev ->
+      let vars = sort_bag_of_event cur_ev in
+      Name.Bag.meet vars cur_vars)
+    Name.Bag.empty
+    events
 
     (* Returns true if the formula includes an eventually operator or a disjunction of formulas including either always or littrelas not referring to the same exact instant. *)
     (* Used to determine whether a universal quantifier is instantiate for this formula. *)
@@ -282,9 +301,9 @@ module Electrum = struct
 
   let _global = "_M"
 
-  let _true fmt = string fmt "{}"
+  let _true fmt = string fmt "(no none)"
 
-  let _false fmt = string fmt "!{}"
+  let _false fmt = string fmt "(some none)"
 
   let rec pp_formula fmt = function
     | True ->
@@ -378,9 +397,10 @@ module Electrum = struct
   and pp_relation_decl fmt { rel_name; rel_profile } =
     pf
       fmt
-      "@[<h>var %a : %a,@]"
+      "@[<h>var %a : %s%a,@]"
       Name.pp
       rel_name
+      (if List.length rel_profile = 1 then "set " else "")
       (list ~sep:(const string " -> ") Name.pp)
       rel_profile
 
