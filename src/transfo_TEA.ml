@@ -66,58 +66,25 @@ let rec abstract_formula (vrs : (term, relation) List.Assoc.t) f : formula =
       or_ (abstract_formula vrs f1) (abstract_formula vrs f2)
   | All (x, f) ->
       all x (abstract_formula vrs f)
-  | Exists (x, f) ->
-      exists x (abstract_formula vrs f)
-  | G f ->
-      always (abstract_formula vrs f)
-  | F f ->
-      always (abstract_formula vrs f)
+  | F _ | G _ | Exists _ ->
+      (* forbidden cases *)
+      Msg.err (fun m ->
+          m "[%s] forbidden subformula in an event: %a" __LOC__ pp_formula f)
 
 
 (* Creates a formula (always all x : s,y :s | ev1[x] or ev2[y]). 
 Also returns the list of variables bound by the said quantifier. *)
 let abstract_events (events : event list) : relation list * formula =
+  (* notice `f` does not contain a leading `always`, see def. of `quantify_events` *)
   let f, vars = Cervino_semantics.quantify_events Ast.all events in
   let vars_e_preds = make_e_preds vars in
-  let f' = abstract_formula vars_e_preds f in
+  (* add missing `always` after abstracting (as abstraction fails on F/G/exists) *)
+  let f' = always @@ abstract_formula vars_e_preds f in
   (List.map snd vars_e_preds, f')
 
 
 (* creates the formula `G (/\ all x,y :s | E(x) && E(y) => x = y) for any `E` predicate (with sort
-`s`) *)
-let _make_e_preds_axiom (e_preds : relation list) : formula =
-  let open List.Infix in
-  let make_x var_sort =
-    make_variable ~var_name:(Name.make_unloc "_x") ~var_sort
-  in
-  let make_y var_sort =
-    make_variable ~var_name:(Name.make_unloc "_y") ~var_sort
-  in
-  let formulas =
-    let+ ({ rel_name; rel_profile } as e_pred) = e_preds in
-    match rel_profile with
-    | [] | _ :: _ :: _ ->
-        Msg.err (fun m ->
-            m
-              "[%s] %a has arity %d"
-              __LOC__
-              Name.pp
-              rel_name
-              (List.length rel_profile))
-    | [ s ] ->
-        let x = make_x s in
-        let y = make_y s in
-        let term_x = var x in
-        let term_y = var y in
-        let e_pred_x = lit @@ pos_app 0 e_pred [ term_x ] in
-        let e_pred_y = lit @@ pos_app 0 e_pred [ term_y ] in
-        all x
-        @@ all y
-        @@ implies (and_ e_pred_x e_pred_y) (lit @@ eq term_x term_y)
-  in
-  always @@ conj formulas
-
-
+`s`) (technically, it's made sort by sort, to avoid repeating the same quantification. *)
 let make_e_preds_axiom (e_preds : relation list) : formula =
   let open List.Infix in
   let make_x var_sort =

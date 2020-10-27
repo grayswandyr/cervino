@@ -73,22 +73,23 @@ using TEA
         }
         fact {
           always (some _s_index1: index | (some _s_Process1: Process |
-           ((last in _M.last_list &&
-             (p !in _M.is_in_list &&
-              (last->p in _M.list' && (all i: index |
-               ((i !in _M.last_list' || i->last in _M.prev_index) &&
-                (i->last !in _M.prev_index || i in _M.last_list'))))))
+           ((_s_index1 in _M.last_list &&
+             (_s_Process1 !in _M.is_in_list &&
+              (_s_index1->_s_Process1 in _M.list' && (all i: index |
+               ((i !in _M.last_list' || i->_s_index1 in _M.prev_index) &&
+                (i->_s_index1 !in _M.prev_index || i in _M.last_list'))))))
             ||
-            (zero->p in _M.list &&
-             (p !in _M.is_in_list' &&
+            (zero->_s_Process1 in _M.list &&
+             (_s_Process1 !in _M.is_in_list' &&
               ((all i: index | (all last: index |
                (last !in _M.last_list ||
                 ((i !in _M.last_list' || last->i in _M.prev_index) &&
                  (last->i !in _M.prev_index || i in _M.last_list')))))
                && (all i: index | (all i2: index | (all p: Process |
                (i->i2 !in _M.prev_index ||
-                ((i->p !in _M.list || i2->p in _M.list') &&
-                 (i2->p !in _M.list' || i->p in _M.list)))))))))))) }
+                ((i->_s_Process1 !in _M.list || i2->_s_Process1 in _M.list') &&
+                 (i2->_s_Process1 !in _M.list' || i->_s_Process1 in _M.list))))))))))))
+          }
         fact {
           always (all i1: index | (all i2: index | (all i3: index |
            (zero->i1 !in _M.prev_index &&

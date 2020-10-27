@@ -1,6 +1,4 @@
-module type S = sig
-  val convert : Ast.t -> Ast.t
-end
+type t = Ast.t -> Ast.t
 
 module Name = struct
   let tea = "TEA"
@@ -18,19 +16,20 @@ module Id = struct
 end
 
 (* apply ast->ast transformations from left to right *)
-let compose (transfos : (module S) list) ast =
-  List.fold_left (fun ast (module T : S) -> T.convert ast) ast transfos
+let compose (transfos : t list) ast =
+  List.fold_left (fun ast convert -> convert ast) ast transfos
 
 
-let apply_transformation (using : Ast.transfo) : Ast.t -> Ast.t =
-  let steps : (module S) list =
+let apply_transformation (using : Ast.transfo) : t =
+  (* applied from left to right *)
+  let steps : t list =
     match using with
     | TEA ->
-        [ (module Expand_modifies); (module Transfo_TEA) ]
+        [ Expand_modifies.convert; Transfo_TEA.convert ]
     | TTC _ ->
-        [ (module Transfo_TTC) ]
+        [ Transfo_TTC.convert ]
     | TFC _ ->
-        [ (module Transfo_TFC) ]
+        [ Transfo_TFC.convert ]
   in
   compose steps
 

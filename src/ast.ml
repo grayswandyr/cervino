@@ -231,44 +231,44 @@ let subst_in_term x y t =
 
 
 (* substitute variable x by variable y in fml*)
-let rec substitute x y fml =
+let rec substitute x ~by fml =
   match fml with
   | True ->
       true_
   | False ->
       false_
   | Lit (Pos_app (nexts, p, args)) ->
-      let new_args = List.map (subst_in_term x y) args in
+      let new_args = List.map (subst_in_term x by) args in
       lit (pos_app nexts p new_args)
   | Lit (Neg_app (nexts, p, args)) ->
-      let new_args = List.map (subst_in_term x y) args in
+      let new_args = List.map (subst_in_term x by) args in
       lit (neg_app nexts p new_args)
   | Lit (Eq (t1, t2)) ->
-      lit (eq (subst_in_term x y t1) (subst_in_term x y t2))
+      lit (eq (subst_in_term x by t1) (subst_in_term x by t2))
   | Lit (Not_eq (t1, t2)) ->
-      lit (neq (subst_in_term x y t1) (subst_in_term x y t2))
+      lit (neq (subst_in_term x by t1) (subst_in_term x by t2))
   | And (f1, f2) ->
-      and_ (substitute x y f1) (substitute x y f2)
+      and_ (substitute x ~by f1) (substitute x ~by f2)
   | Or (f1, f2) ->
-      or_ (substitute x y f1) (substitute x y f2)
+      or_ (substitute x ~by f1) (substitute x ~by f2)
   | Exists (varx, f) ->
-      exists varx (substitute x y f)
+      exists varx (substitute x ~by f)
   | All (varx, f) ->
-      all varx (substitute x y f)
+      all varx (substitute x ~by f)
   | F f ->
-      eventually (substitute x y f)
+      eventually (substitute x ~by f)
   | G f ->
-      always (substitute x y f)
+      always (substitute x ~by f)
 
 
-let substitute_list xlist ylist fml =
-  assert (List.(length xlist = length ylist));
-  assert (Mysc.List.all_different ~eq:equal_variable ylist);
+let substitute_list xlist ~by fml =
+  assert (List.(length xlist = length by));
+  assert (Mysc.List.all_different ~eq:equal_variable by);
   List.fold_left2
-    (fun cur_fml varx vary -> substitute varx vary cur_fml)
+    (fun cur_fml varx vary -> substitute varx ~by:vary cur_fml)
     fml
     xlist
-    ylist
+    by
 
 
 let sort_bag_of_event { ev_args; _ } =

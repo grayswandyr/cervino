@@ -10,10 +10,10 @@ let create_var s i =
 
 let create_vars_up_to_k s k =
   assert (k > 0);
-  let rec walk s k =
-    if k = 1 then [ create_var s 1 ] else create_var s k :: walk s (k - 1)
+  let rec walk vars i =
+    if i <= 0 then vars else walk (create_var s i :: vars) (i - 1)
   in
-  List.rev @@ walk s k
+  walk [] k
 
 
 let nb_occ list elt = List.count (fun x -> equal_sort (fst x) elt) list
@@ -49,18 +49,18 @@ let find_fresh_vars_from_occ_list map occlist =
       List.nth vl (i - 1)
 
 
-(* Creates a formula (always [quantifier] x : s,y :s | ev1[x] or ev2[y]). Also returns the list of
-variables bound by the said quantifier. 
+(* Creates a formula ([quantifier] x : s,y :s | ev1[x] or ev2[y]) (NOTICE the *absence* of a leading
+`always`, see `semantics_of_events` below). Also returns the list of variables bound by the said quantifier. 
 
 This is a bit more than strictly necessary for the semantics, but it is also used for the abstract
-semantics implemented by TEA.
+semantics implemented by TEA. This is also why we don't add an `always` in front, here.
 *)
 let quantify_events quantifier events =
-  let sorts_exists_quantif = Ast.sort_bag_of_events events in
+  let quantified_sorts = Ast.sort_bag_of_events events in
   (* maps each sort of an event argument to a list of fresh variables *)
   (* the map is used to generate each fresh variable only once *)
   let map_sort_fresh_vars =
-    SortBag.fold sorts_exists_quantif VarMap.empty (fun cur_map cur_i cur_s ->
+    SortBag.fold quantified_sorts VarMap.empty (fun cur_map cur_i cur_s ->
         VarMap.add cur_s (create_vars_up_to_k cur_s cur_i) cur_map)
   in
   let fml_events =
@@ -70,17 +70,16 @@ let quantify_events quantifier events =
           find_fresh_vars_from_occ_list map_sort_fresh_vars
           @@ occ_list_from_sortlist (List.map sort_of_var ev.ev_args)
         in
-        substitute_list newvars ev.ev_args ev.ev_body)
+        substitute_list ev.ev_args ~by:newvars ev.ev_body)
       events
   in
-  let vars_exists_quantif =
+  let quantified_vars =
     List.flat_map snd (VarMap.to_list map_sort_fresh_vars)
   in
-  ( always (List.fold_right quantifier vars_exists_quantif (disj fml_events)),
-    vars_exists_quantif )
+  (List.fold_right quantifier quantified_vars (disj fml_events), quantified_vars)
 
 
-let semantics_of_events events = fst @@ quantify_events exists events
+let semantics_of_events events = always @@ fst @@ quantify_events exists events
 
 (* Put the formula of the semantics of events (always some x,y | ev1[x] or ev2[y]) in axioms. *)
 (* Removes events. Does not handle modifies fields. *)
