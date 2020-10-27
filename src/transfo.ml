@@ -25,7 +25,7 @@ let apply_transformation (using : Ast.transfo) : t =
   let steps : t list =
     match using with
     | TEA ->
-        [ Expand_modifies.convert; Transfo_TEA.convert ]
+        [ Transfo_TEA.convert]
     | TTC _ ->
         [ Transfo_TTC.convert ]
     | TFC _ ->
