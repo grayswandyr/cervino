@@ -34,10 +34,10 @@ check prop {} using TEA
         one sig b in T {}
         one sig _M {
           var p : S -> S,
-          var q : S,
+          var q : set S,
           var r : S -> S -> S,
           var u : S -> S -> T,
-          var v : T,
+          var v : set T,
           var _eq_T : T -> T,
           var _eq_S : S -> S,
         }
@@ -93,8 +93,8 @@ check prop {} using TEA
         fact { (some x: T | (some y: T | (x->y in _M._eq_T && x in _M.v))) }
         fact { (some x: S | (some y: S | (x->y in _M._eq_S && x in _M.q))) }
         fact { (some x: S | (some y: S | (x->y in _M._eq_S && x in _M.q))) }
-        fact /* assuming */ { {} }
-        check prop { {} } |}]
+        fact /* assuming */ { (no none) }
+        check prop { (no none) } |}]
 
     (*  *)
   end )

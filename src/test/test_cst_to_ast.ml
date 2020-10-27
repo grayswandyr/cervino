@@ -27,11 +27,11 @@ check prop {} using TEA
         one sig b in T {}
         one sig _M {
           var p : S -> S,
-          var q : T,
+          var q : set T,
         }
 
-        fact /* assuming */ { {} }
-        check prop { {} } |}]
+        fact /* assuming */ { (no none) }
+        check prop { (no none) } |}]
 
     let%expect_test "not not not" =
       check
@@ -49,11 +49,11 @@ check prop {} using TEA
               sig S {}
 
               one sig _M {
-                var p : S,
+                var p : set S,
               }
               fact { (all x: S | (x in _M.p && (x !in _M.p && x !in _M.p))) }
-              fact /* assuming */ { {} }
-              check prop { {} } |}]
+              fact /* assuming */ { (no none) }
+              check prop { (no none) } |}]
 
     let%expect_test "implies, iff" =
       check
@@ -80,8 +80,8 @@ check prop {} using TEA
            ((x->y !in _M.p || z->t in _M.q) &&
             ((x->y !in _M.p || z->t in _M.q) && (z->t !in _M.q || x->y in _M.p))))))))
           }
-        fact /* assuming */ { {} }
-        check prop { {} } |}]
+        fact /* assuming */ { (no none) }
+        check prop { (no none) } |}]
 
     let%expect_test "next" =
       check
@@ -100,12 +100,12 @@ check prop {} using TEA
         sig S {}
 
         one sig _M {
-          var p : S,
+          var p : set S,
         }
         fact { (all x: S |
           (x in _M.p'' && (always x in _M.p'' && eventually x in _M.p''))) }
-        fact /* assuming */ { {} }
-        check prop { {} } |}]
+        fact /* assuming */ { (no none) }
+        check prop { (no none) } |}]
 
     (*  *)
   end )

@@ -68,8 +68,8 @@ using TEA
           var prev_index : index -> index,
           var prev_tc : index -> index,
           var list : index -> Process,
-          var is_in_list : Process,
-          var last_list : index,
+          var is_in_list : set Process,
+          var last_list : set index,
         }
         fact {
           always (some _s_index1: index | (some _s_Process1: Process |
@@ -99,7 +99,7 @@ using TEA
         fact {
           ((all i: index | (all p: Process | i->p !in _M.list)) && (all i: index |
            ((i !in _M.last_list || i = zero) && (i != zero || i in _M.last_list)))) }
-        fact /* assuming */ { {} }
+        fact /* assuming */ { (no none) }
         check prop { (all p: Process |
           always (p !in _M.is_in_list || eventually p !in _M.is_in_list)) } |}]
 

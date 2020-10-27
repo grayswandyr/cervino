@@ -50,15 +50,15 @@ using TEA
         sig index {}
         one sig zero in index {}
         one sig _M {
-          var _E_s_index1 : index,
-          var _E_s_Process1 : Process,
-          var _E_s_Process2 : Process,
-          var _E_s_Process3 : Process,
+          var _E_s_index1 : set index,
+          var _E_s_Process1 : set Process,
+          var _E_s_Process2 : set Process,
+          var _E_s_Process3 : set Process,
           var prev_index : index -> index,
           var prev_tc : index -> index,
           var list : index -> Process,
-          var is_in_list : Process,
-          var last_list : index,
+          var is_in_list : set Process,
+          var last_list : set index,
         }
         fact {
           always (all _s_index1: index | (all _s_Process1: Process |
@@ -97,7 +97,7 @@ using TEA
              (((_x !in _M._E_s_Process2 || _y !in _M._E_s_Process2) || _x = _y) &&
               ((_x !in _M._E_s_Process1 || _y !in _M._E_s_Process1) || _x = _y))))))
           }
-        fact /* assuming */ { {} }
+        fact /* assuming */ { (no none) }
         check prop { (all p: Process |
           always (p !in _M.is_in_list || eventually p !in _M.is_in_list)) } |}]
 

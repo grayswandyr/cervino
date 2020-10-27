@@ -385,9 +385,10 @@ module Electrum = struct
   and pp_relation_decl fmt { rel_name; rel_profile } =
     pf
       fmt
-      "@[<h>var %a : %a,@]"
+      "@[<h>var %a : %s%a,@]"
       Name.pp
       rel_name
+      (if List.length rel_profile = 1 then "set " else "")
       (list ~sep:(const string " -> ") Name.pp)
       rel_profile
 
