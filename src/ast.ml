@@ -289,9 +289,9 @@ module Electrum = struct
 
   let _global = "_M"
 
-  let _true fmt = string fmt "{}"
+  let _true fmt = string fmt "(no none)"
 
-  let _false fmt = string fmt "!{}"
+  let _false fmt = string fmt "(some none)"
 
   let rec pp_formula fmt = function
     | True ->
