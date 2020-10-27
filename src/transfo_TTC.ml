@@ -25,8 +25,8 @@ let closure_axiom m rel x vars fml =
             (lit @@ pos_app 0 rel [ var x_propag; var y_propag ])
             ( always
             @@ implies
-                 (substitute x ~by:x_propag fml)
-                 (eventually @@ substitute x ~by:y_propag fml) )))
+                 (substitute x ~by:(var x_propag) fml)
+                 (eventually @@ substitute x ~by:(var y_propag) fml) )))
   in
   let fresh_x =
     make_variable ~var_name:(Name.make_unloc "_ttc_x") ~var_sort:s
@@ -50,8 +50,8 @@ let closure_axiom m rel x vars fml =
                    (lit @@ pos_app 0 tc_rel [ var fresh_x; var fresh_y ]))
                 ( always
                 @@ implies
-                     (substitute x ~by:fresh_x fml)
-                     (eventually @@ substitute x ~by:fresh_y fml) )) )
+                     (substitute x ~by:(var fresh_x) fml)
+                     (eventually @@ substitute x ~by:(var fresh_y) fml) )) )
 
 
 let convert m_with_check =

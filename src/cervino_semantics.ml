@@ -70,7 +70,7 @@ let quantify_events quantifier events =
           find_fresh_vars_from_occ_list map_sort_fresh_vars
           @@ occ_list_from_sortlist (List.map sort_of_var ev.ev_args)
         in
-        substitute_list ev.ev_args ~by:newvars ev.ev_body)
+        substitute_list ev.ev_args ~by:(List.map var newvars) ev.ev_body)
       events
   in
   let quantified_vars =

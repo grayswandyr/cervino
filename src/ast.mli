@@ -161,15 +161,19 @@ val pp_formula : Format.formatter -> formula -> unit
 
 val pp : Format.formatter -> t -> unit
 
-val subst_in_term : variable -> variable -> term -> term
+val subst_in_term : variable -> term -> term -> term
 
-val substitute : variable -> by:variable -> formula -> formula
+val substitute : variable -> by:term -> formula -> formula
 
-val substitute_list : variable list -> by:variable list -> formula -> formula
+val substitute_list : variable list -> by:term list -> formula -> formula
 
 val sort_bag_of_event : event -> Name.Bag.t
 
 val sort_bag_of_events : event list -> Name.Bag.t
+
+val nb_next : formula -> bool * int
+
+val is_temporal : formula -> bool
 
 module Electrum : sig
   val pp : t Fmt.t
