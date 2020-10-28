@@ -30,8 +30,8 @@ check prop {} using TEA
           var q : set T,
         }
 
-        fact /* assuming */ { (no none) }
-        check prop { (no none) } |}]
+        fact /* assuming */ { no none }
+        check prop { no none } |}]
 
     let%expect_test "not not not" =
       check
@@ -52,8 +52,8 @@ check prop {} using TEA
                 var p : set S,
               }
               fact { (all x: S | (x in _M.p && (x !in _M.p && x !in _M.p))) }
-              fact /* assuming */ { (no none) }
-              check prop { (no none) } |}]
+              fact /* assuming */ { no none }
+              check prop { no none } |}]
 
     let%expect_test "implies, iff" =
       check
@@ -80,8 +80,8 @@ check prop {} using TEA
            ((x->y !in _M.p || z->t in _M.q) &&
             ((x->y !in _M.p || z->t in _M.q) && (z->t !in _M.q || x->y in _M.p))))))))
           }
-        fact /* assuming */ { (no none) }
-        check prop { (no none) } |}]
+        fact /* assuming */ { no none }
+        check prop { no none } |}]
 
     let%expect_test "next" =
       check
@@ -104,8 +104,8 @@ check prop {} using TEA
         }
         fact { (all x: S |
           (x in _M.p'' && (always x in _M.p'' && eventually x in _M.p''))) }
-        fact /* assuming */ { (no none) }
-        check prop { (no none) } |}]
+        fact /* assuming */ { no none }
+        check prop { no none } |}]
 
     (*  *)
   end )

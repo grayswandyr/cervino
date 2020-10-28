@@ -123,7 +123,7 @@ let equality_axiom_for_rel_at_i rel i =
   let right_tuple = List.insert_at_idx i term_y (List.map var vars_except_i) in
   let left_atom = lit @@ pos_app 0 rel left_tuple in
   let right_atom = lit @@ pos_app 0 rel right_tuple in
-  List.fold_right all vars_except_i (iff left_atom right_atom)
+  all_many vars_except_i (iff left_atom right_atom)
 
 
 let equality_axiom_for_rel_and_s rel s =
@@ -164,14 +164,12 @@ let convert m =
     remove_eq_fml m.check.chk_assuming
   in
   let updated_check =
-{m.check with 
-chk_body = updated_chk_fml;
-chk_assuming = updated_assuming;}
-(*    make_check
-      ~chk_name:m.check.chk_name
-      ~chk_body:updated_chk_fml
-      ~chk_assuming:updated_assuming
-      ~chk_using:m.check.chk_using*)
+    { m.check with chk_body = updated_chk_fml; chk_assuming = updated_assuming }
+    (* make_check
+       ~chk_name:m.check.chk_name
+       ~chk_body:updated_chk_fml
+       ~chk_assuming:updated_assuming
+       ~chk_using:m.check.chk_using*)
   in
   let eq_sorts =
     Sorts.union eq_sorts_axioms (Sorts.union eq_sorts_chk_fml eq_sorts_assuming)

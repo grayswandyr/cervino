@@ -99,7 +99,7 @@ using TEA
         fact {
           ((all i: index | (all p: Process | i->p !in _M.list)) && (all i: index |
            ((i !in _M.last_list || i = zero) && (i != zero || i in _M.last_list)))) }
-        fact /* assuming */ { (no none) }
+        fact /* assuming */ { no none }
         check prop { (all p: Process |
           always (p !in _M.is_in_list || eventually p !in _M.is_in_list)) } |}]
 
