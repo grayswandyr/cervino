@@ -31,6 +31,7 @@ let skolemize_list_fml fml_list =
       (List.append c cur_csts, skfml :: cur_axioms))
     fml_list ([], [])
 
+    (* Does not handle check body formula because it is to be negated. *)
 let convert ast =
   let ast_mod = ast.model in
   let csts_from_axioms, updated_axioms = skolemize_list_fml ast_mod.axioms in
