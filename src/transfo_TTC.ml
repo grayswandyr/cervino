@@ -58,7 +58,7 @@ let convert m_with_check =
   let m = m_with_check.model in
   let check = m_with_check.check in
   match check.chk_using with
-  | TTC (r, x, varlist, fml) ->
+  | Some (TTC (r, x, varlist, fml)) ->
       let updated_axioms = closure_axiom m r x varlist fml :: m.axioms in
       let updated_model =
         make_model

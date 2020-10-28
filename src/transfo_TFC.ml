@@ -15,7 +15,7 @@ let transform_event_tfc f ev =
 let convert ({ check = { chk_using; _ }; model } as ast) =
   let updated_events =
     match chk_using with
-    | TFC f ->
+    | Some (TFC f) ->
         List.map (transform_event_tfc f) model.events
     | _ ->
         failwith

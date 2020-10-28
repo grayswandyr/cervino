@@ -64,11 +64,11 @@ type transfo = private
   | TFC of (Name.t -> formula option)
 [@@deriving sexp_of]
 
-type check = private
+type check = 
   { chk_name : Name.t;
     chk_body : formula;
     chk_assuming : formula;
-    chk_using : transfo
+    chk_using : transfo option
   }
 [@@deriving make, sexp_of]
 

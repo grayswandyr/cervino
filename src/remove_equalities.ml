@@ -164,11 +164,14 @@ let convert m =
     remove_eq_fml m.check.chk_assuming
   in
   let updated_check =
-    make_check
+{m.check with 
+chk_body = updated_chk_fml;
+chk_assuming = updated_assuming;}
+(*    make_check
       ~chk_name:m.check.chk_name
       ~chk_body:updated_chk_fml
       ~chk_assuming:updated_assuming
-      ~chk_using:m.check.chk_using
+      ~chk_using:m.check.chk_using*)
   in
   let eq_sorts =
     Sorts.union eq_sorts_axioms (Sorts.union eq_sorts_chk_fml eq_sorts_assuming)

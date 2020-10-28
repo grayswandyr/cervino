@@ -157,8 +157,8 @@ modified_field:
 
 check: 
   CHECK check_name = ident check_body = block 
-  check_assuming = loption(preceded(ASSUMING, block)) check_using = using 
-  { make_check ~check_name ~check_body ~check_assuming ~check_using }
+  check_assuming = loption(preceded(ASSUMING, block)) check_using = option(using) 
+  { make_check ~check_name ~check_body ~check_assuming ?check_using ()}
 
 using:
   USING TEA { TEA }

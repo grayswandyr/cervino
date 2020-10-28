@@ -20,16 +20,18 @@ let compose (transfos : t list) ast =
   List.fold_left (fun ast convert -> convert ast) ast transfos
 
 
-let apply_transformation (using : Ast.transfo) : t =
+let apply_transformation (using : Ast.transfo option) : t =
   (* applied from left to right *)
   let steps : t list =
     match using with
-    | TEA ->
+    | Some TEA ->
         [ Transfo_TEA.convert]
-    | TTC _ ->
+    | Some (TTC _) ->
         [ Transfo_TTC.convert ]
-    | TFC _ ->
+    | Some (TFC _) ->
         [ Transfo_TFC.convert ]
+    | None ->
+        [ Cervino_semantics.convert ]
   in
   compose steps
 

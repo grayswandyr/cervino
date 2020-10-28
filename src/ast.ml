@@ -62,7 +62,7 @@ type check = {
   chk_name : Name.t;
   chk_body : formula;
   chk_assuming : formula;
-  chk_using : transfo;
+  chk_using : transfo option;
 }
 [@@deriving make, sexp_of]
 

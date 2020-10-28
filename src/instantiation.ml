@@ -23,7 +23,7 @@ let convert ast =
   let const = List.map cst ast.model.constants in
   let updated_axioms = List.map (instantiate const) ast.model.axioms in
   (*let updated_chkbody = instantiate const ast.check.chk_body in*)
-  let updated_chkbody = ast.check.chk_body in
+  (* let updated_chkbody = ast.check.chk_body in *)
   let updated_assuming = instantiate const ast.check.chk_assuming in
   let updated_model =
     make_model ~sorts:ast.model.sorts ~relations:ast.model.relations
@@ -31,7 +31,11 @@ let convert ast =
       ~axioms:updated_axioms ~events:ast.model.events ()
   in
   let updated_check =
-    make_check ~chk_name:ast.check.chk_name ~chk_body:updated_chkbody
+    {ast.check with
+    chk_assuming = updated_assuming;
+      }
+(*    make_check ~chk_name:ast.check.chk_name ~chk_body:updated_chkbody
       ~chk_assuming:updated_assuming ~chk_using:ast.check.chk_using
+      *)
   in
   Ast.make ~model:updated_model ~check:updated_check

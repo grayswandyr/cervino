@@ -112,7 +112,7 @@ and check =
   { check_name : Ident.t;
     check_body : block;
     check_assuming : block; [@sexp.omit_nil]
-    check_using : transfo
+    check_using : transfo option
   }
 [@@deriving eq, ord, make, sexp_of]
 
