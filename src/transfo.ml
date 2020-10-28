@@ -30,6 +30,7 @@ let apply_transformation (using : Ast.transfo option) : t =
           Remove_equalities.convert;
           Expand_modifies.convert;
           Remove_equalities.convert;
+          Skolemize.convert;
           Instantiation.convert;
           Cervino_semantics.convert;
         ]
@@ -39,6 +40,7 @@ let apply_transformation (using : Ast.transfo option) : t =
           Remove_equalities.convert;
           Expand_modifies.convert;
           Remove_equalities.convert;
+          Skolemize.convert;
           Instantiation.convert;
           Cervino_semantics.convert;
         ]
