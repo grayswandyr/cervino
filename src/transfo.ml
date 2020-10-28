@@ -16,37 +16,39 @@ module Id = struct
 end
 
 (* apply ast->ast transformations from left to right *)
-let compose (transfos : t list) ast =
-  List.fold_left (fun ast convert -> convert ast) ast transfos
+let compose (transfos : t list) : t =
+ fun ast -> List.fold_left (fun ast convert -> convert ast) ast transfos
+
 
 let apply_transformation (using : Ast.transfo option) : t =
   (* applied from left to right *)
   let steps : t list =
     match using with
-    | Some TEA -> [ Expand_modifies.convert; Transfo_TEA.convert ]
+    | Some TEA ->
+        [ Expand_modifies.convert; Transfo_TEA.convert ]
     | Some (TTC _) ->
-        [
-          Transfo_TTC.convert;
+        [ Transfo_TTC.convert;
           Remove_equalities.convert;
           Expand_modifies.convert;
           Remove_equalities.convert;
           Skolemize.convert;
           Instantiation.convert;
-          Cervino_semantics.convert;
+          Cervino_semantics.convert
         ]
     | Some (TFC _) ->
-        [
-          Transfo_TFC.convert;
+        [ Transfo_TFC.convert;
           Remove_equalities.convert;
           Expand_modifies.convert;
           Remove_equalities.convert;
           Skolemize.convert;
           Instantiation.convert;
-          Cervino_semantics.convert;
+          Cervino_semantics.convert
         ]
-    | None -> [ Cervino_semantics.convert ]
+    | None ->
+        [ Cervino_semantics.convert ]
   in
   compose steps
+
 
 let convert Ast.({ check = { chk_using; _ }; _ } as ast) =
   apply_transformation chk_using ast

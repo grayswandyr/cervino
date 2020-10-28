@@ -93,8 +93,8 @@ check prop {} using TEA
         fact { (some x: T | (some y: T | (x->y in _M._eq_T && x in _M.v))) }
         fact { (some x: S | (some y: S | (x->y in _M._eq_S && x in _M.q))) }
         fact { (some x: S | (some y: S | (x->y in _M._eq_S && x in _M.q))) }
-        fact /* assuming */ { (no none) }
-        check prop { (no none) } |}]
+        fact /* assuming */ { no none }
+        check prop { no none } |}]
 
     (*  *)
   end )

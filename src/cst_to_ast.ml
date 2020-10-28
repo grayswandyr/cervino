@@ -459,11 +459,12 @@ let convert_check env chk_id checks =
       let chk_name = Name.of_ident chk_id in
       let chk_body = walk_block env check_body in
       let chk_assuming = walk_block env check_assuming in
-      match check_using with 
-      | None -> make_check  ~chk_name ~chk_body ~chk_assuming ()
-      | Some u -> 
-        let chk_using = convert_using env u in
-        make_check ~chk_name ~chk_body ~chk_assuming ~chk_using ()
+      ( match check_using with
+      | None ->
+          make_check ~chk_name ~chk_body ~chk_assuming ()
+      | Some u ->
+          let chk_using = convert_using env u in
+          make_check ~chk_name ~chk_body ~chk_assuming ~chk_using () )
 
 
 let convert (cst : Cst.t) (check : string) =

@@ -64,7 +64,7 @@ type transfo = private
   | TFC of (Name.t -> formula option)
 [@@deriving sexp_of]
 
-type check = 
+type check =
   { chk_name : Name.t;
     chk_body : formula;
     chk_assuming : formula;
@@ -139,6 +139,12 @@ val conj : formula list -> formula
 
 val disj : formula list -> formula
 
+val all_many : variable list -> formula -> formula
+(** quantification maintains the order of variables *)
+
+val exists_many : variable list -> formula -> formula
+(** quantification maintains the order of variables *)
+
 val implies : formula -> formula -> formula
 
 val iff : formula -> formula -> formula
@@ -161,7 +167,7 @@ val pp_formula : Format.formatter -> formula -> unit
 
 val pp : Format.formatter -> t -> unit
 
-val subst_in_term : variable -> term -> term -> term
+val subst_in_term : variable -> by:term -> term -> term
 
 val substitute : variable -> by:term -> formula -> formula
 
