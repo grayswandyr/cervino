@@ -171,7 +171,7 @@ val sort_bag_of_event : event -> Name.Bag.t
 
 val sort_bag_of_events : event list -> Name.Bag.t
 
-val nb_next : formula -> bool * int
+val nb_next : formula -> bool * int option
 
 val is_temporal : formula -> bool
 

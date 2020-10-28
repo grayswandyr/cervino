@@ -223,19 +223,22 @@ let sort_bag_of_events events =
 (* Returns (true, _) otherwise. *)
 let rec nb_next fml =
   match fml with
-  | True | False -> (false, 0)
-  | Lit (Pos_app (nexts, _, _)) -> (false, nexts)
-  | Lit (Neg_app (nexts, _, _)) -> (false, nexts)
-  | Lit (Eq (_, _)) -> (false, -1)
-  | Lit (Not_eq (_, _)) -> (false, -1)
+  | True | False -> (false, Some 0)
+  | Lit (Pos_app (nexts, _, _)) -> (false, Some nexts)
+  | Lit (Neg_app (nexts, _, _)) -> (false, Some nexts)
+  | Lit (Eq (_, _)) -> (false, None)
+  | Lit (Not_eq (_, _)) -> (false, None)
   | And (f1, f2) | Or (f1, f2) ->
       let is_tprl1, n1 = nb_next f1 in
       let is_tprl2, n2 = nb_next f2 in
-      if n1 = -1 then (is_tprl2, n2)
-      else if n2 = -1 then (is_tprl1, n1)
-      else (is_tprl1 || is_tprl2, n1 + n2)
+      begin
+        match n1, n2 with
+      | None, _ -> is_tprl2, n2
+      | _, None -> is_tprl1, n1
+      | Some sn1, Some sn2 -> is_tprl1 || is_tprl2, Some (sn1 + sn2)
+      end
   | Exists (_, f) | All (_, f) -> nb_next f
-  | G _ | F _ -> (false, 0)
+  | G _ | F _ -> (true, Some 0)
 
 (* Returns true if the formula includes an eventually operator or a disjunction of formulas including either always or litterals not referring to the same exact instant. *)
 (* Used to determine whether a universal quantifier is instantiate for this formula. *)
