@@ -265,7 +265,9 @@ let rec nb_next fml =
       match (n1, n2) with
       | None, _ -> (is_tprl2, n2)
       | _, None -> (is_tprl1, n1)
-      | Some sn1, Some sn2 -> (is_tprl1 || is_tprl2, Some (sn1 + sn2)) )
+      | Some sn1, Some sn2 ->
+          (is_tprl1 || is_tprl2 || (not @@ Int.equal sn1 sn2), Some (sn1 + sn2))
+      )
   | Exists (_, f) | All (_, f) -> nb_next f
   | G _ | F _ -> (true, Some 0)
 
