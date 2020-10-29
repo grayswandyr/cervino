@@ -167,7 +167,7 @@ val pp_formula : Format.formatter -> formula -> unit
 
 val pp : Format.formatter -> t -> unit
 
-val subst_in_term : variable -> by:term -> term -> term
+val subst_in_term : variable list -> variable -> by:term -> term -> term
 
 val substitute : variable -> by:term -> formula -> formula
 
