@@ -22,6 +22,8 @@ val pp : Format.formatter -> t -> unit
 
 val positions : t -> L.position * L.position
 
+val fresh : string -> t
+
 module Set : Set.S with type elt = t
 
 module Bag : CCMultiSet.S with type elt = t

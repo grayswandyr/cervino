@@ -29,6 +29,13 @@ let positions = L.positions
 
 let of_ident (id : Ident.t) = make (Ident.content id) (Ident.positions id)
 
+let fresh =
+  let c = ref 0 in
+  fun prefix ->
+    assert (!c < max_int);
+    let res = make_unloc @@ prefix ^ "_"^ string_of_int !c in
+    incr c;
+    res
 module Elt = struct
   type nonrec t = t
 

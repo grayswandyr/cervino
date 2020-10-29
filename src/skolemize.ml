@@ -2,7 +2,7 @@ open Ast
 
 let constant_from_var var_x =
   let xname = var_x.var_name in
-  let n = Name.make ("_sk_" ^ Name.content xname) (Name.positions xname) in
+  let n = Name.fresh ("_sk_" ^ Name.content xname) in
   make_constant ~cst_name:n ~cst_sort:var_x.var_sort
 
 
@@ -25,7 +25,8 @@ let rec skolemize fml =
   | All _ ->
       ([], fml)
   | F f ->
-      skolemize f
+      let csts_f, skfml = skolemize f in
+      csts_f, eventually skfml 
   | G f ->
       ([], always f)
 
