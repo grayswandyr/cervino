@@ -89,6 +89,8 @@ let sort_of_cst { cst_sort; _ } = cst_sort
 
 let sort_of_term = function Var v -> sort_of_var v | Cst c -> sort_of_cst c
 
+(*let name_of_term = function Var v -> v.var_name | Cst c -> c.cst_name*)
+
 let pos_app nexts p args =
   assert (nexts >= 0);
   let ar = List.length p.rel_profile in
@@ -185,44 +187,49 @@ let subst_in_term bound_vars x ~by t =
   match t with
   | Cst _ -> t
   | Var v ->
-      if equal_variable x v && (not @@ List.mem x bound_vars) then by else t
+      if equal_variable x v && (not @@ List.mem ~eq:equal_variable x bound_vars)
+      then by
+      else t
 
 (* substitute variable x by variable y in fml*)
 let substitute x ~by fml =
-  let rec subst_except_bound_vars boud_vars x ~by fml =
+  (*Msg.debug (fun m ->
+      m "Try to substitute %a by %a" Name.pp x.var_name Name.pp
+        (name_of_term by));*)
+  let rec subst_except_bound_vars bound_vars x ~by fml =
     match fml with
     | True -> true_
     | False -> false_
     | Lit (Pos_app (nexts, p, args)) ->
-        let new_args = List.map (subst_in_term boud_vars x ~by) args in
+        let new_args = List.map (subst_in_term bound_vars x ~by) args in
         lit (pos_app nexts p new_args)
     | Lit (Neg_app (nexts, p, args)) ->
-        let new_args = List.map (subst_in_term boud_vars x ~by) args in
+        let new_args = List.map (subst_in_term bound_vars x ~by) args in
         lit (neg_app nexts p new_args)
     | Lit (Eq (t1, t2)) ->
         lit
           (eq
-             (subst_in_term boud_vars x ~by t1)
-             (subst_in_term boud_vars x ~by t2))
+             (subst_in_term bound_vars x ~by t1)
+             (subst_in_term bound_vars x ~by t2))
     | Lit (Not_eq (t1, t2)) ->
         lit
           (neq
-             (subst_in_term boud_vars x ~by t1)
-             (subst_in_term boud_vars x ~by t2))
+             (subst_in_term bound_vars x ~by t1)
+             (subst_in_term bound_vars x ~by t2))
     | And (f1, f2) ->
         and_
-          (subst_except_bound_vars boud_vars x ~by f1)
-          (subst_except_bound_vars boud_vars x ~by f2)
+          (subst_except_bound_vars bound_vars x ~by f1)
+          (subst_except_bound_vars bound_vars x ~by f2)
     | Or (f1, f2) ->
         or_
-          (subst_except_bound_vars boud_vars x ~by f1)
-          (subst_except_bound_vars boud_vars x ~by f2)
+          (subst_except_bound_vars bound_vars x ~by f1)
+          (subst_except_bound_vars bound_vars x ~by f2)
     | Exists (varx, f) ->
-        exists varx (subst_except_bound_vars (varx :: boud_vars) x ~by f)
+        exists varx (subst_except_bound_vars (varx :: bound_vars) x ~by f)
     | All (varx, f) ->
-        all varx (subst_except_bound_vars (varx :: boud_vars) x ~by f)
-    | F f -> eventually (subst_except_bound_vars boud_vars x ~by f)
-    | G f -> always (subst_except_bound_vars boud_vars x ~by f)
+        all varx (subst_except_bound_vars (varx :: bound_vars) x ~by f)
+    | F f -> eventually (subst_except_bound_vars bound_vars x ~by f)
+    | G f -> always (subst_except_bound_vars bound_vars x ~by f)
   in
   subst_except_bound_vars [] x ~by fml
 
