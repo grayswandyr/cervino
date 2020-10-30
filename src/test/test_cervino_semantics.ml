@@ -87,9 +87,8 @@ using TEA
                  (last->i !in _M.prev_index || i in _M.last_list')))))
                && (all i: index | (all i2: index | (all p: Process |
                (i->i2 !in _M.prev_index ||
-                ((i->_s_Process1 !in _M.list || i2->_s_Process1 in _M.list') &&
-                 (i2->_s_Process1 !in _M.list' || i->_s_Process1 in _M.list))))))))))))
-          }
+                ((i->p !in _M.list || i2->p in _M.list') &&
+                 (i2->p !in _M.list' || i->p in _M.list)))))))))))) }
         fact {
           always (all i1: index | (all i2: index | (all i3: index |
            (zero->i1 !in _M.prev_index &&

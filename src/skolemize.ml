@@ -26,7 +26,7 @@ let rec skolemize fml =
       ([], fml)
   | F f ->
       let csts_f, skfml = skolemize f in
-      csts_f, eventually skfml 
+      (csts_f, eventually skfml)
   | G f ->
       ([], always f)
 

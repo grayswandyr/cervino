@@ -22,6 +22,7 @@ let make_unloc s = L.make s (Lexing.dummy_pos, Lexing.dummy_pos)
 let create_from_name_and_prefix pref n =
   L.make (pref ^ L.content n) (n.startpos, n.endpos)
 
+
 let pp fmt L.{ content; _ } = Fmt.string fmt content
 
 let positions = L.positions
@@ -35,6 +36,7 @@ let fresh =
     let res = make_unloc @@ prefix ^ "_" ^ string_of_int !c in
     incr c;
     res
+
 
 module Elt = struct
   type nonrec t = t

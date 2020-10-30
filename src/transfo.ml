@@ -25,7 +25,7 @@ let apply_transformation (using : Ast.transfo option) : t =
   let steps : t list =
     match using with
     | Some TEA ->
-        [ (*Expand_modifies.convert; Transfo_TEA.convert*) Instantiation.convert ]
+        [ Expand_modifies.convert; Transfo_TEA.convert ]
     | Some (TTC _) ->
         [ Transfo_TTC.convert;
           Remove_equalities.convert;
