@@ -54,9 +54,32 @@ let closure_axiom m rel x vars fml =
                      (eventually @@ substitute x ~by:(var fresh_y) fml) )) )
 
 
-let convert m_with_check =
-  let m = m_with_check.model in
-  let check = m_with_check.check in
+let convert_instantiated_TC_axiom ast = 
+  let m = ast.model in
+  let check = ast.check in
+  let const = List.map cst ast.model.constants in
+  match check.chk_using with
+  | Some (TTC (r, x, varlist, fml)) ->
+      let tc_axiom = closure_axiom m r x varlist fml  in
+      let inst_tc_axiom = Instantiation.instantiate_ae const tc_axiom in
+      let updated_axioms = inst_tc_axiom :: m.axioms in
+      let updated_model =
+        make_model
+          ~sorts:m.sorts
+          ~relations:m.relations
+          ~constants:m.constants
+          ~closures:m.closures
+          ~axioms:updated_axioms
+          ~events:m.events
+          ()
+      in
+      Ast.make ~model:updated_model ~check
+  | _ ->
+      assert false
+
+let convert ast =
+  let m = ast.model in
+  let check = ast.check in
   match check.chk_using with
   | Some (TTC (r, x, varlist, fml)) ->
       let updated_axioms = closure_axiom m r x varlist fml :: m.axioms in

@@ -181,6 +181,7 @@ val nb_next : formula -> bool * int option
 
 val is_temporal : formula -> bool
 
+val includes_exists : formula -> bool
 module Electrum : sig
   val pp : t Fmt.t
   (** does not print the events and closures fields, they must have been handled by prior transformations  *)
