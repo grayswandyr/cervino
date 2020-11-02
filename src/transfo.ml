@@ -45,7 +45,7 @@ let apply_transformation (using : Ast.transfo option) : t =
           Cervino_semantics.convert
         ]
     | None ->
-        [ Cervino_semantics.convert ]
+        [ Expand_modifies.convert; Cervino_semantics.convert ]
   in
   compose steps
 

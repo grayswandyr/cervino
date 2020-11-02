@@ -6,7 +6,7 @@ let expand_evt_modifies { mod_rel; mod_mods } =
       (fun acc_list i cur_sort ->
         let var =
           make_variable
-            ~var_name:(Name.make_unloc ("_m" ^ string_of_int i))
+            ~var_name:(Name.make_unloc ("_em" ^ string_of_int i))
             ~var_sort:cur_sort
         in
         var :: acc_list)

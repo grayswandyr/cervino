@@ -3,6 +3,8 @@
 
 (using menhir 2.1)
 
+(cram enable)
+
 (allow_approximate_merlin)
 
 (generate_opam_files true)

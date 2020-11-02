@@ -88,10 +88,10 @@ let abstract_events (events : event list) : relation list * formula =
 let make_e_preds_axiom (e_preds : relation list) : formula =
   let open List.Infix in
   let make_x var_sort =
-    make_variable ~var_name:(Name.make_unloc "_x") ~var_sort
+    make_variable ~var_name:(Name.make_unloc "_eax") ~var_sort
   in
   let make_y var_sort =
-    make_variable ~var_name:(Name.make_unloc "_y") ~var_sort
+    make_variable ~var_name:(Name.make_unloc "_eay") ~var_sort
   in
   let e_preds_by_sort =
     let hash { rel_profile; rel_name } =

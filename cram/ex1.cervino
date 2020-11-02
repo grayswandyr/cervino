@@ -1,0 +1,28 @@
+sort Process
+sort index
+
+constant zero in index
+relation prev_index in index*index
+relation prev_tc in index*index
+
+relation list in index*Process
+relation is_in_list in Process
+relation last_list in index
+
+paths[prev_index, prev_tc]
+
+event enter_list[p:Process, last:index] modifies last_list, list at {(last,p)}, is_in_list at {p}{
+	last_list(last)
+	!is_in_list(p)
+
+	list'(last, p)
+}
+
+event exit_list[p:Process] modifies last_list, list, is_in_list at {p}{
+	list(zero,p)
+	
+	{all i,i2:index, p:Process | prev_index(i,i2) => (list(i,p) <=> list'(i2,p))}
+}
+
+check sem {} 
+

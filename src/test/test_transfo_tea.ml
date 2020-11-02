@@ -86,13 +86,17 @@ using TEA
                  (i2->p !in _M.list' || i->p in _M.list)))))))))))))) }
         fact {
           always
-           ((all _x: index | (all _y: index |
-            ((_x !in _M._E_s_index1 || _y !in _M._E_s_index1) || _x = _y))) &&
-            (all _x: Process | (all _y: Process |
-            (((_x !in _M._E_s_Process3 || _y !in _M._E_s_Process3) || _x = _y) &&
-             (((_x !in _M._E_s_Process2 || _y !in _M._E_s_Process2) || _x = _y) &&
-              ((_x !in _M._E_s_Process1 || _y !in _M._E_s_Process1) || _x = _y))))))
-          }
+           ((all _eax: index | (all _eay: index |
+            ((_eax !in _M._E_s_index1 || _eay !in _M._E_s_index1) || _eax = _eay)))
+            && (all _eax: Process | (all _eay: Process |
+            (((_eax !in _M._E_s_Process3 || _eay !in _M._E_s_Process3) ||
+              _eax = _eay)
+             &&
+             (((_eax !in _M._E_s_Process2 || _eay !in _M._E_s_Process2) ||
+               _eax = _eay)
+              &&
+              ((_eax !in _M._E_s_Process1 || _eay !in _M._E_s_Process1) ||
+               _eax = _eay)))))) }
         fact /* assuming */ { no none }
         check prop { (all p: Process |
           always (p !in _M.is_in_list || eventually p !in _M.is_in_list)) } |}]

@@ -39,16 +39,17 @@ let%test_module _ =
         fact {
           always (all _s_Process1: Process |
            ((_s_Process1 in _M.List' || _s_Process1 !in _M._E_s_Process1) &&
-            ((all _m0: Process |
-             (_m0 in _M._E_s_Process1 ||
-              ((_m0 !in _M.List || _m0 in _M.List') &&
-               (_m0 !in _M.List' || _m0 in _M.List))))
-             && (all _m0: Node | (all _m1: Process |
-             ((_m0->_m1 !in _M.Lock || _m0->_m1 in _M.Lock') &&
-              (_m0->_m1 !in _M.Lock' || _m0->_m1 in _M.Lock))))))) }
+            ((all _em0: Process |
+             (_em0 in _M._E_s_Process1 ||
+              ((_em0 !in _M.List || _em0 in _M.List') &&
+               (_em0 !in _M.List' || _em0 in _M.List))))
+             && (all _em0: Node | (all _em1: Process |
+             ((_em0->_em1 !in _M.Lock || _em0->_em1 in _M.Lock') &&
+              (_em0->_em1 !in _M.Lock' || _em0->_em1 in _M.Lock))))))) }
         fact {
-          always (all _x: Process | (all _y: Process |
-           ((_x !in _M._E_s_Process1 || _y !in _M._E_s_Process1) || _x = _y))) }
+          always (all _eax: Process | (all _eay: Process |
+           ((_eax !in _M._E_s_Process1 || _eay !in _M._E_s_Process1) || _eax = _eay)))
+          }
         fact /* assuming */ { no none }
         check Safety { no none } |}]
   end )

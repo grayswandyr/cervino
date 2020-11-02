@@ -1,5 +1,6 @@
 (executable
  (name cervino)
+ (public_name cervino)
  (promote
   (until-clean)
   (into ..))

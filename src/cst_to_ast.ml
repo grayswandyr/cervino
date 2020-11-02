@@ -454,7 +454,13 @@ let convert_using env = function
 let convert_check env chk_id checks =
   match List.find_opt (fun c -> Ident.equal c.Cst.check_name chk_id) checks with
   | None ->
-      Msg.err (fun m -> m "No check named %a" Ident.pp chk_id)
+      Msg.err (fun m ->
+          m
+            "No check named: %a@\nExisting check(s): %a"
+            Ident.pp
+            chk_id
+            (Fmt.(list ~sep:sp) Ident.pp)
+            (List.map (fun Cst.{ check_name; _ } -> check_name) checks))
   | Some Cst.{ check_body; check_assuming; check_using; _ } ->
       let chk_name = Name.of_ident chk_id in
       let chk_body = walk_block env check_body in
