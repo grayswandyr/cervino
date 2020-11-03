@@ -36,13 +36,15 @@ let closure_axiom m rel x vars fml =
   | None ->
       true_
   | Some tc_rel ->
-      all_many (fresh_x :: fresh_y :: vars)
-      @@ implies
-           (and_ propagate (lit @@ pos_app 0 tc_rel [ term_x; term_y ]))
-           ( always
-           @@ implies
-                (substitute x ~by:term_x fml)
-                (eventually @@ substitute x ~by:term_y fml) )
+      all_many
+        vars
+        ( all_many [ fresh_x; fresh_y ]
+        @@ implies
+             (and_ propagate (lit @@ pos_app 0 tc_rel [ term_x; term_y ]))
+             ( always
+             @@ implies
+                  (substitute x ~by:term_x fml)
+                  (eventually @@ substitute x ~by:term_y fml) ) )
 
 
 (* Adds the TC axiom to the model axioms. Same as convert except that in the
