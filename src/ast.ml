@@ -108,7 +108,7 @@ let sort_of_cst { cst_sort; _ } = cst_sort
 
 let sort_of_term = function Var v -> sort_of_var v | Cst c -> sort_of_cst c
 
-(*let name_of_term = function Var v -> v.var_name | Cst c -> c.cst_name*)
+let name_of_term = function Var v -> v.var_name | Cst c -> c.cst_name
 
 let pos_app nexts p args =
   assert (nexts >= 0);
@@ -233,13 +233,24 @@ let neq_term_list tl1 tl2 =
 
 
 let subst_in_term bound_vars x ~by t =
-  match t with
-  | Cst _ ->
-      t
-  | Var v ->
-      if equal_variable x v && (not @@ List.mem ~eq:equal_variable x bound_vars)
-      then by
-      else t
+  if not @@ equal_sort x.var_sort (sort_of_term by)
+  then
+    Msg.err (fun m ->
+        m
+          "Try to substitute %a by %a whereas sorts are not the same."
+          Name.pp
+          x.var_name
+          Name.pp
+          (name_of_term by))
+  else
+    match t with
+    | Cst _ ->
+        t
+    | Var v ->
+        if equal_variable x v
+           && (not @@ List.mem ~eq:equal_variable x bound_vars)
+        then by
+        else t
 
 
 (* substitute variable x by variable y in fml*)

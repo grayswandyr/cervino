@@ -16,8 +16,9 @@ let rec instantiate_tprl constlist fml =
       if is_temporal f
       then
         conj
-        @@ List.map
-             (fun cur_const -> substitute v ~by:cur_const subfml)
+        @@ List.map (fun cur_const -> substitute v ~by:cur_const subfml)
+        @@ List.filter
+             (fun c -> equal_sort v.var_sort (sort_of_term c))
              constlist
       else all v subfml
   | F f ->
@@ -41,8 +42,9 @@ let rec instantiate_ae constlist fml =
       if includes_exists f
       then
         conj
-        @@ List.map
-             (fun cur_const -> substitute v ~by:cur_const subfml)
+        @@ List.map (fun cur_const -> substitute v ~by:cur_const subfml)
+        @@ List.filter
+             (fun c -> equal_sort v.var_sort (sort_of_term c))
              constlist
       else all v subfml
   | F f ->
