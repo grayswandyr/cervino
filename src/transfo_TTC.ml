@@ -30,25 +30,19 @@ let closure_axiom m rel x vars fml =
   in
   let fresh_x = make_variable ~var_name:(Name.make_unloc "_tcx") ~var_sort:s in
   let fresh_y = make_variable ~var_name:(Name.make_unloc "_tcy") ~var_sort:s in
+  let term_x = var fresh_x in
+  let term_y = var fresh_y in
   match find_transitive_closure m rel with
   | None ->
       true_
   | Some tc_rel ->
-      List.fold_right
-        all
-        vars
-        ( implies propagate
-        @@ all
-             fresh_x
-             (all
-                fresh_y
-                (implies
-                   (lit @@ pos_app 0 tc_rel [ var fresh_x; var fresh_y ])
-                   ( always
-                   @@ implies
-                        (substitute x ~by:(var fresh_x) fml)
-                        (eventually @@ substitute x ~by:(var fresh_y) fml) )))
-        )
+      all_many (fresh_x :: fresh_y :: vars)
+      @@ implies
+           (and_ propagate (lit @@ pos_app 0 tc_rel [ term_x; term_y ]))
+           ( always
+           @@ implies
+                (substitute x ~by:term_x fml)
+                (eventually @@ substitute x ~by:term_y fml) )
 
 
 (* Adds the TC axiom to the model axioms. Same as convert except that in the
