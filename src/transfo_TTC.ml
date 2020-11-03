@@ -34,20 +34,21 @@ let closure_axiom m rel x vars fml =
   | None ->
       true_
   | Some tc_rel ->
-      all
-        fresh_x
-        ( all fresh_y
-        @@ List.fold_right
-             all
-             vars
-             (implies
-                (and_
-                   propagate
-                   (lit @@ pos_app 0 tc_rel [ var fresh_x; var fresh_y ]))
-                ( always
-                @@ implies
-                     (substitute x ~by:(var fresh_x) fml)
-                     (eventually @@ substitute x ~by:(var fresh_y) fml) )) )
+      List.fold_right
+        all
+        vars
+        ( implies propagate
+        @@ all
+             fresh_x
+             (all
+                fresh_y
+                (implies
+                   (lit @@ pos_app 0 tc_rel [ var fresh_x; var fresh_y ])
+                   ( always
+                   @@ implies
+                        (substitute x ~by:(var fresh_x) fml)
+                        (eventually @@ substitute x ~by:(var fresh_y) fml) )))
+        )
 
 
 (* Adds the TC axiom to the model axioms. Same as convert except that in the
