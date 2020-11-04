@@ -10,6 +10,7 @@ Tests the TTC Transformation.
   one sig _M {
     var prev_index : index -> index,
     var prev_tc : index -> index,
+    var list : index -> Process,
     var _eq_Process : Process -> Process,
   }
   fact {
