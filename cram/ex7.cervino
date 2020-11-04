@@ -1,0 +1,19 @@
+sort Id
+
+relation succ in Id * Id
+relation succ_tc in Id * Id
+
+constant imax in Id
+
+paths[succ, succ_tc]
+
+axiom order { 
+	imax =imax
+} 
+
+event skip {}
+
+check ttc {}
+using TTC[succ,[i,Id],[i2:Id],{succ(i,i2)}]
+
+

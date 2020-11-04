@@ -1,0 +1,18 @@
+sort Process
+sort index
+
+constant zero in index
+constant cst in Process
+relation prev_index in index*index
+relation prev_tc in index*index
+
+relation list in index*Process
+
+paths[prev_index, prev_tc]
+
+event enter_list[p:Process,i:index] modifies list at {(i,p)}{
+list'(i,p)
+}
+
+check ttc {} 
+using TTC[prev_index,[i,index],[x:Process],{list(i,x)}]
