@@ -50,7 +50,7 @@ type ev_modify = private
   }
 [@@deriving make, eq, ord, sexp_of]
 
-type event = private
+type event =
   { ev_name : Name.t;
     ev_args : variable list; [@sexp.omit_nil]
     ev_body : formula;

@@ -22,13 +22,11 @@ let expand_evt_modifies { mod_rel; mod_mods } =
       (lit @@ pos_app 0 mod_rel terms_expand)
       (lit @@ pos_app 1 mod_rel terms_expand)
   in
-  let unchanged_formula =
-    (* don't issue LHS if empty, for prettier printing *)
-    if List.is_empty unchanged_conditions
-    then same
-    else implies (conj unchanged_conditions) same
-  in
-  all_many vars_expand unchanged_formula
+  let unchanged_formula = implies (conj unchanged_conditions) same in
+  (*if mod_mods is empty, meaning there is "modifies r" without "at t1, t2" then do not add any frame condition for r*)
+  if List.is_empty mod_mods
+  then true_
+  else all_many vars_expand unchanged_formula
 
 
 let expand_modifies_full_event relations evt =

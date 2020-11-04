@@ -34,7 +34,7 @@ let equivalence_axioms_for_rel rel =
   let varz = make_variable ~var_name:(Name.make_unloc "_z") ~var_sort in
   let tz = var varz in
   let app terms = lit @@ pos_app 0 rel terms in
-  let refl = app [ tx; ty ] in
+  let refl = app [ tx; tx ] in
   let symm = implies (app [ tx; ty ]) (app [ ty; tx ]) in
   let tran =
     implies (and_ (app [ tx; ty ]) (app [ ty; tz ])) (app [ tx; tz ])
@@ -88,6 +88,19 @@ let remove_eq_fml_list =
     (fun (acc_sort_set, acc_fml_list) cur_fml ->
       let new_ss, new_fml = remove_eq_fml cur_fml in
       (Sorts.union acc_sort_set new_ss, new_fml :: acc_fml_list))
+    (Sorts.empty, [])
+
+
+let remove_eq_in_event ev =
+  let ss, updated_body = remove_eq_fml ev.ev_body in
+  (ss, { ev with ev_body = updated_body })
+
+
+let remove_eq_in_event_list =
+  List.fold_left
+    (fun (acc_sort_set, acc_event_list) cur_event ->
+      let new_ss, new_event = remove_eq_in_event cur_event in
+      (Sorts.union acc_sort_set new_ss, new_event :: acc_event_list))
     (Sorts.empty, [])
 
 
@@ -159,6 +172,9 @@ let equality_axiom_for_rel_list_and_s rel_list s =
 
 let convert m =
   let eq_sorts_axioms, updated_axioms = remove_eq_fml_list m.model.axioms in
+  let eq_sorts_events, updated_events =
+    remove_eq_in_event_list m.model.events
+  in
   let eq_sorts_chk_fml, updated_chk_fml = remove_eq_fml m.check.chk_body in
   let eq_sorts_assuming, updated_assuming =
     remove_eq_fml m.check.chk_assuming
@@ -172,7 +188,10 @@ let convert m =
        ~chk_using:m.check.chk_using*)
   in
   let eq_sorts =
-    Sorts.union eq_sorts_axioms (Sorts.union eq_sorts_chk_fml eq_sorts_assuming)
+    Sorts.union eq_sorts_axioms
+    @@ Sorts.union
+         eq_sorts_events
+         (Sorts.union eq_sorts_chk_fml eq_sorts_assuming)
   in
   let relations_eq =
     Sorts.fold
@@ -191,7 +210,8 @@ let convert m =
   let updated_model =
     { m.model with
       relations = m.model.relations @ relations_eq;
-      axioms = equivalence_axs @ equality_axioms @ updated_axioms
+      axioms = equivalence_axs @ equality_axioms @ updated_axioms;
+      events = updated_events
     }
   in
   { model = updated_model; check = updated_check }
