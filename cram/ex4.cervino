@@ -1,0 +1,11 @@
+sort Process
+sort index
+
+relation list in index*Process
+
+event enter_list[p: Process, i:index] modifies list at {(i,p)}{
+list'(i,p)
+}
+
+check tea {} 
+using TEA
