@@ -43,13 +43,13 @@ check prop {} using TEA
         }
         fact {
           always (all _x: T | (all _y: T | (all _z: T |
-           (_x->_y in _M._eq_T &&
+           (_x->_x in _M._eq_T &&
             ((_x->_y !in _M._eq_T || _y->_x in _M._eq_T) &&
              ((_x->_y !in _M._eq_T || _y->_z !in _M._eq_T) || _x->_z in _M._eq_T))))))
           }
         fact {
           always (all _x: S | (all _y: S | (all _z: S |
-           (_x->_y in _M._eq_S &&
+           (_x->_x in _M._eq_S &&
             ((_x->_y !in _M._eq_S || _y->_x in _M._eq_S) &&
              ((_x->_y !in _M._eq_S || _y->_z !in _M._eq_S) || _x->_z in _M._eq_S))))))
           }

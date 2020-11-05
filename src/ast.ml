@@ -161,9 +161,9 @@ and not_ = function
       eventually (not_ f)
 
 
-and and_ f1 f2 = And (f1, f2)
+and and_ f1 f2 = match (f1, f2) with True, f | f, True -> f | _ -> And (f1, f2)
 
-and or_ f1 f2 = Or (f1, f2)
+and or_ f1 f2 = match (f1, f2) with False, f | f, False -> f | _ -> Or (f1, f2)
 
 and all x f = All (x, f)
 

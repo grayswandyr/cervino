@@ -1,6 +1,6 @@
 open Ast
 
-let expand_evt_modifies { mod_rel; mod_mods } =
+let handle_modification ~modified { mod_rel; mod_mods } =
   let vars_expand =
     List.foldi
       (fun acc_list i cur_sort ->
@@ -16,22 +16,27 @@ let expand_evt_modifies { mod_rel; mod_mods } =
     |> List.rev
   in
   let terms_expand = List.map var vars_expand in
-  let unchanged_conditions = List.map (neq_term_list terms_expand) mod_mods in
   let same =
     iff
       (lit @@ pos_app 0 mod_rel terms_expand)
       (lit @@ pos_app 1 mod_rel terms_expand)
   in
-  let unchanged_formula = implies (conj unchanged_conditions) same in
-  (*if mod_mods is empty, meaning there is "modifies r" without "at t1, t2" then do not add any frame condition for r*)
-  if List.is_empty mod_mods
-  then true_
-  else all_many vars_expand unchanged_formula
+  if not modified
+  then
+    (* fully unchanged (did not appear in the "modifies" clause) *)
+    all_many vars_expand same
+  else if List.is_empty mod_mods
+  then (* arbitrarily modified: no frame condition *)
+    true_
+  else
+    (* modified only at some tuples *)
+    let unchanged_conditions = List.map (neq_term_list terms_expand) mod_mods in
+    let unchanged_formula = implies (conj unchanged_conditions) same in
+    all_many vars_expand unchanged_formula
 
 
 let expand_modifies_full_event relations evt =
-  (* non-cited relations must be processed too, by saying they modify nothing *)
-  let non_cited_modifies =
+  let fully_unchanged =
     let open List.Infix in
     let* rel = relations in
     let* () =
@@ -44,7 +49,9 @@ let expand_modifies_full_event relations evt =
     List.return @@ make_ev_modify ~mod_rel:rel ()
   in
   let fml_to_add =
-    conj @@ List.map expand_evt_modifies (evt.ev_modifies @ non_cited_modifies)
+    and_
+      (conj @@ List.map (handle_modification ~modified:true) evt.ev_modifies)
+      (conj @@ List.map (handle_modification ~modified:false) fully_unchanged)
   in
   make_event
     ~ev_name:evt.ev_name
