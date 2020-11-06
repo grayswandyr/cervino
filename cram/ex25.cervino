@@ -1,0 +1,9 @@
+sort Id
+relation succ in Id * Id
+constant c in Id
+
+event e[x,y : Id] {
+}
+
+check prop { (all x : Id | succ(x,x)) && (all x : Id | succ(x,x)) }
+using TEA

@@ -39,12 +39,12 @@ let find_fresh_vars_from_occ_list map occlist =
   | None ->
       Msg.err (fun m -> m "[%s] sort not found: %a" __LOC__ Name.pp s)
   | Some vl ->
-      Msg.debug (fun m ->
+      (* Msg.debug (fun m ->
           m
             "Try to access elt number %d of map occ list for sort %a"
             i
             Name.pp
-            s);
+            s); *)
       assert (i - 1 < List.length vl);
       List.nth vl (i - 1)
 

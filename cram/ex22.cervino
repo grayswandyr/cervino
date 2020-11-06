@@ -1,0 +1,12 @@
+sort Id
+
+relation succ in Id * Id
+
+event e[x,y : Id] {
+	! (some z : Id | succ(x,z))
+}
+
+check prop {}
+using TEA
+
+
