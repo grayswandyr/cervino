@@ -16,7 +16,8 @@ Tests the TTC Transformation.
   fact {
     always (some _s_Process1: Process |
      (_s_Process1->_s_Process1 in _M._eq_Process &&
-      (no none && (no none && (no none && no none))))) }
+      ((cst->cst !in _M._eq_Process || cst->cst in _M._eq_Process') &&
+       (cst->cst !in _M._eq_Process' || cst->cst in _M._eq_Process)))) }
   fact {
     ((_sk__tcPx_0->_sk__tcPy_1 in _M.prev_index &&
       eventually

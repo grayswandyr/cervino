@@ -12,147 +12,138 @@ Tests the TTC Transformation.
   }
   fact {
     always
-     (no none &&
-      (((((imax->imax !in _M.succ || imax->imax in _M.succ') &&
-          (imax->imax !in _M.succ' || imax->imax in _M.succ))
-         &&
-         (((imax->_sk__tcPx_0 !in _M.succ || imax->_sk__tcPx_0 in _M.succ') &&
-           (imax->_sk__tcPx_0 !in _M.succ' || imax->_sk__tcPx_0 in _M.succ))
-          &&
-          ((imax->_sk__tcPy_1 !in _M.succ || imax->_sk__tcPy_1 in _M.succ') &&
-           (imax->_sk__tcPy_1 !in _M.succ' || imax->_sk__tcPy_1 in _M.succ))))
+     (((((imax->imax !in _M.succ || imax->imax in _M.succ') &&
+         (imax->imax !in _M.succ' || imax->imax in _M.succ))
         &&
-        ((((_sk__tcPx_0->imax !in _M.succ || _sk__tcPx_0->imax in _M.succ') &&
-           (_sk__tcPx_0->imax !in _M.succ' || _sk__tcPx_0->imax in _M.succ))
-          &&
-          (((_sk__tcPx_0->_sk__tcPx_0 !in _M.succ ||
-             _sk__tcPx_0->_sk__tcPx_0 in _M.succ')
-            &&
-            (_sk__tcPx_0->_sk__tcPx_0 !in _M.succ' ||
-             _sk__tcPx_0->_sk__tcPx_0 in _M.succ))
-           &&
-           ((_sk__tcPx_0->_sk__tcPy_1 !in _M.succ ||
-             _sk__tcPx_0->_sk__tcPy_1 in _M.succ')
-            &&
-            (_sk__tcPx_0->_sk__tcPy_1 !in _M.succ' ||
-             _sk__tcPx_0->_sk__tcPy_1 in _M.succ))))
+        (((imax->_sk__tcPx_0 !in _M.succ || imax->_sk__tcPx_0 in _M.succ') &&
+          (imax->_sk__tcPx_0 !in _M.succ' || imax->_sk__tcPx_0 in _M.succ))
          &&
-         (((_sk__tcPy_1->imax !in _M.succ || _sk__tcPy_1->imax in _M.succ') &&
-           (_sk__tcPy_1->imax !in _M.succ' || _sk__tcPy_1->imax in _M.succ))
-          &&
-          (((_sk__tcPy_1->_sk__tcPx_0 !in _M.succ ||
-             _sk__tcPy_1->_sk__tcPx_0 in _M.succ')
-            &&
-            (_sk__tcPy_1->_sk__tcPx_0 !in _M.succ' ||
-             _sk__tcPy_1->_sk__tcPx_0 in _M.succ))
-           &&
-           ((_sk__tcPy_1->_sk__tcPy_1 !in _M.succ ||
-             _sk__tcPy_1->_sk__tcPy_1 in _M.succ')
-            &&
-            (_sk__tcPy_1->_sk__tcPy_1 !in _M.succ' ||
-             _sk__tcPy_1->_sk__tcPy_1 in _M.succ))))))
+         ((imax->_sk__tcPy_1 !in _M.succ || imax->_sk__tcPy_1 in _M.succ') &&
+          (imax->_sk__tcPy_1 !in _M.succ' || imax->_sk__tcPy_1 in _M.succ))))
        &&
-       (((((imax->imax !in _M.succ_tc || imax->imax in _M.succ_tc') &&
-           (imax->imax !in _M.succ_tc' || imax->imax in _M.succ_tc))
-          &&
-          (((imax->_sk__tcPx_0 !in _M.succ_tc ||
-             imax->_sk__tcPx_0 in _M.succ_tc')
-            &&
-            (imax->_sk__tcPx_0 !in _M.succ_tc' ||
-             imax->_sk__tcPx_0 in _M.succ_tc))
-           &&
-           ((imax->_sk__tcPy_1 !in _M.succ_tc ||
-             imax->_sk__tcPy_1 in _M.succ_tc')
-            &&
-            (imax->_sk__tcPy_1 !in _M.succ_tc' ||
-             imax->_sk__tcPy_1 in _M.succ_tc))))
+       ((((_sk__tcPx_0->imax !in _M.succ || _sk__tcPx_0->imax in _M.succ') &&
+          (_sk__tcPx_0->imax !in _M.succ' || _sk__tcPx_0->imax in _M.succ))
          &&
-         ((((_sk__tcPx_0->imax !in _M.succ_tc ||
-             _sk__tcPx_0->imax in _M.succ_tc')
-            &&
-            (_sk__tcPx_0->imax !in _M.succ_tc' ||
-             _sk__tcPx_0->imax in _M.succ_tc))
+         (((_sk__tcPx_0->_sk__tcPx_0 !in _M.succ ||
+            _sk__tcPx_0->_sk__tcPx_0 in _M.succ')
            &&
-           (((_sk__tcPx_0->_sk__tcPx_0 !in _M.succ_tc ||
-              _sk__tcPx_0->_sk__tcPx_0 in _M.succ_tc')
-             &&
-             (_sk__tcPx_0->_sk__tcPx_0 !in _M.succ_tc' ||
-              _sk__tcPx_0->_sk__tcPx_0 in _M.succ_tc))
-            &&
-            ((_sk__tcPx_0->_sk__tcPy_1 !in _M.succ_tc ||
-              _sk__tcPx_0->_sk__tcPy_1 in _M.succ_tc')
-             &&
-             (_sk__tcPx_0->_sk__tcPy_1 !in _M.succ_tc' ||
-              _sk__tcPx_0->_sk__tcPy_1 in _M.succ_tc))))
+           (_sk__tcPx_0->_sk__tcPx_0 !in _M.succ' ||
+            _sk__tcPx_0->_sk__tcPx_0 in _M.succ))
           &&
-          (((_sk__tcPy_1->imax !in _M.succ_tc ||
-             _sk__tcPy_1->imax in _M.succ_tc')
-            &&
-            (_sk__tcPy_1->imax !in _M.succ_tc' ||
-             _sk__tcPy_1->imax in _M.succ_tc))
+          ((_sk__tcPx_0->_sk__tcPy_1 !in _M.succ ||
+            _sk__tcPx_0->_sk__tcPy_1 in _M.succ')
            &&
-           (((_sk__tcPy_1->_sk__tcPx_0 !in _M.succ_tc ||
-              _sk__tcPy_1->_sk__tcPx_0 in _M.succ_tc')
-             &&
-             (_sk__tcPy_1->_sk__tcPx_0 !in _M.succ_tc' ||
-              _sk__tcPy_1->_sk__tcPx_0 in _M.succ_tc))
-            &&
-            ((_sk__tcPy_1->_sk__tcPy_1 !in _M.succ_tc ||
-              _sk__tcPy_1->_sk__tcPy_1 in _M.succ_tc')
-             &&
-             (_sk__tcPy_1->_sk__tcPy_1 !in _M.succ_tc' ||
-              _sk__tcPy_1->_sk__tcPy_1 in _M.succ_tc))))))
+           (_sk__tcPx_0->_sk__tcPy_1 !in _M.succ' ||
+            _sk__tcPx_0->_sk__tcPy_1 in _M.succ))))
         &&
-        ((((imax->imax !in _M._eq_Id || imax->imax in _M._eq_Id') &&
-           (imax->imax !in _M._eq_Id' || imax->imax in _M._eq_Id))
-          &&
-          (((imax->_sk__tcPx_0 !in _M._eq_Id ||
-             imax->_sk__tcPx_0 in _M._eq_Id')
-            &&
-            (imax->_sk__tcPx_0 !in _M._eq_Id' ||
-             imax->_sk__tcPx_0 in _M._eq_Id))
-           &&
-           ((imax->_sk__tcPy_1 !in _M._eq_Id ||
-             imax->_sk__tcPy_1 in _M._eq_Id')
-            &&
-            (imax->_sk__tcPy_1 !in _M._eq_Id' ||
-             imax->_sk__tcPy_1 in _M._eq_Id))))
+        (((_sk__tcPy_1->imax !in _M.succ || _sk__tcPy_1->imax in _M.succ') &&
+          (_sk__tcPy_1->imax !in _M.succ' || _sk__tcPy_1->imax in _M.succ))
          &&
-         ((((_sk__tcPx_0->imax !in _M._eq_Id ||
-             _sk__tcPx_0->imax in _M._eq_Id')
-            &&
-            (_sk__tcPx_0->imax !in _M._eq_Id' ||
-             _sk__tcPx_0->imax in _M._eq_Id))
+         (((_sk__tcPy_1->_sk__tcPx_0 !in _M.succ ||
+            _sk__tcPy_1->_sk__tcPx_0 in _M.succ')
            &&
-           (((_sk__tcPx_0->_sk__tcPx_0 !in _M._eq_Id ||
-              _sk__tcPx_0->_sk__tcPx_0 in _M._eq_Id')
-             &&
-             (_sk__tcPx_0->_sk__tcPx_0 !in _M._eq_Id' ||
-              _sk__tcPx_0->_sk__tcPx_0 in _M._eq_Id))
-            &&
-            ((_sk__tcPx_0->_sk__tcPy_1 !in _M._eq_Id ||
-              _sk__tcPx_0->_sk__tcPy_1 in _M._eq_Id')
-             &&
-             (_sk__tcPx_0->_sk__tcPy_1 !in _M._eq_Id' ||
-              _sk__tcPx_0->_sk__tcPy_1 in _M._eq_Id))))
+           (_sk__tcPy_1->_sk__tcPx_0 !in _M.succ' ||
+            _sk__tcPy_1->_sk__tcPx_0 in _M.succ))
           &&
-          (((_sk__tcPy_1->imax !in _M._eq_Id ||
-             _sk__tcPy_1->imax in _M._eq_Id')
-            &&
-            (_sk__tcPy_1->imax !in _M._eq_Id' ||
-             _sk__tcPy_1->imax in _M._eq_Id))
+          ((_sk__tcPy_1->_sk__tcPy_1 !in _M.succ ||
+            _sk__tcPy_1->_sk__tcPy_1 in _M.succ')
            &&
-           (((_sk__tcPy_1->_sk__tcPx_0 !in _M._eq_Id ||
-              _sk__tcPy_1->_sk__tcPx_0 in _M._eq_Id')
-             &&
-             (_sk__tcPy_1->_sk__tcPx_0 !in _M._eq_Id' ||
-              _sk__tcPy_1->_sk__tcPx_0 in _M._eq_Id))
+           (_sk__tcPy_1->_sk__tcPy_1 !in _M.succ' ||
+            _sk__tcPy_1->_sk__tcPy_1 in _M.succ))))))
+      &&
+      (((((imax->imax !in _M.succ_tc || imax->imax in _M.succ_tc') &&
+          (imax->imax !in _M.succ_tc' || imax->imax in _M.succ_tc))
+         &&
+         (((imax->_sk__tcPx_0 !in _M.succ_tc ||
+            imax->_sk__tcPx_0 in _M.succ_tc')
+           &&
+           (imax->_sk__tcPx_0 !in _M.succ_tc' ||
+            imax->_sk__tcPx_0 in _M.succ_tc))
+          &&
+          ((imax->_sk__tcPy_1 !in _M.succ_tc ||
+            imax->_sk__tcPy_1 in _M.succ_tc')
+           &&
+           (imax->_sk__tcPy_1 !in _M.succ_tc' ||
+            imax->_sk__tcPy_1 in _M.succ_tc))))
+        &&
+        ((((_sk__tcPx_0->imax !in _M.succ_tc ||
+            _sk__tcPx_0->imax in _M.succ_tc')
+           &&
+           (_sk__tcPx_0->imax !in _M.succ_tc' ||
+            _sk__tcPx_0->imax in _M.succ_tc))
+          &&
+          (((_sk__tcPx_0->_sk__tcPx_0 !in _M.succ_tc ||
+             _sk__tcPx_0->_sk__tcPx_0 in _M.succ_tc')
             &&
-            ((_sk__tcPy_1->_sk__tcPy_1 !in _M._eq_Id ||
-              _sk__tcPy_1->_sk__tcPy_1 in _M._eq_Id')
-             &&
-             (_sk__tcPy_1->_sk__tcPy_1 !in _M._eq_Id' ||
-              _sk__tcPy_1->_sk__tcPy_1 in _M._eq_Id))))))))) }
+            (_sk__tcPx_0->_sk__tcPx_0 !in _M.succ_tc' ||
+             _sk__tcPx_0->_sk__tcPx_0 in _M.succ_tc))
+           &&
+           ((_sk__tcPx_0->_sk__tcPy_1 !in _M.succ_tc ||
+             _sk__tcPx_0->_sk__tcPy_1 in _M.succ_tc')
+            &&
+            (_sk__tcPx_0->_sk__tcPy_1 !in _M.succ_tc' ||
+             _sk__tcPx_0->_sk__tcPy_1 in _M.succ_tc))))
+         &&
+         (((_sk__tcPy_1->imax !in _M.succ_tc ||
+            _sk__tcPy_1->imax in _M.succ_tc')
+           &&
+           (_sk__tcPy_1->imax !in _M.succ_tc' ||
+            _sk__tcPy_1->imax in _M.succ_tc))
+          &&
+          (((_sk__tcPy_1->_sk__tcPx_0 !in _M.succ_tc ||
+             _sk__tcPy_1->_sk__tcPx_0 in _M.succ_tc')
+            &&
+            (_sk__tcPy_1->_sk__tcPx_0 !in _M.succ_tc' ||
+             _sk__tcPy_1->_sk__tcPx_0 in _M.succ_tc))
+           &&
+           ((_sk__tcPy_1->_sk__tcPy_1 !in _M.succ_tc ||
+             _sk__tcPy_1->_sk__tcPy_1 in _M.succ_tc')
+            &&
+            (_sk__tcPy_1->_sk__tcPy_1 !in _M.succ_tc' ||
+             _sk__tcPy_1->_sk__tcPy_1 in _M.succ_tc))))))
+       &&
+       ((((imax->imax !in _M._eq_Id || imax->imax in _M._eq_Id') &&
+          (imax->imax !in _M._eq_Id' || imax->imax in _M._eq_Id))
+         &&
+         (((imax->_sk__tcPx_0 !in _M._eq_Id || imax->_sk__tcPx_0 in _M._eq_Id')
+           &&
+           (imax->_sk__tcPx_0 !in _M._eq_Id' || imax->_sk__tcPx_0 in _M._eq_Id))
+          &&
+          ((imax->_sk__tcPy_1 !in _M._eq_Id || imax->_sk__tcPy_1 in _M._eq_Id')
+           &&
+           (imax->_sk__tcPy_1 !in _M._eq_Id' || imax->_sk__tcPy_1 in _M._eq_Id))))
+        &&
+        ((((_sk__tcPx_0->imax !in _M._eq_Id || _sk__tcPx_0->imax in _M._eq_Id')
+           &&
+           (_sk__tcPx_0->imax !in _M._eq_Id' || _sk__tcPx_0->imax in _M._eq_Id))
+          &&
+          (((_sk__tcPx_0->_sk__tcPx_0 !in _M._eq_Id ||
+             _sk__tcPx_0->_sk__tcPx_0 in _M._eq_Id')
+            &&
+            (_sk__tcPx_0->_sk__tcPx_0 !in _M._eq_Id' ||
+             _sk__tcPx_0->_sk__tcPx_0 in _M._eq_Id))
+           &&
+           ((_sk__tcPx_0->_sk__tcPy_1 !in _M._eq_Id ||
+             _sk__tcPx_0->_sk__tcPy_1 in _M._eq_Id')
+            &&
+            (_sk__tcPx_0->_sk__tcPy_1 !in _M._eq_Id' ||
+             _sk__tcPx_0->_sk__tcPy_1 in _M._eq_Id))))
+         &&
+         (((_sk__tcPy_1->imax !in _M._eq_Id || _sk__tcPy_1->imax in _M._eq_Id')
+           &&
+           (_sk__tcPy_1->imax !in _M._eq_Id' || _sk__tcPy_1->imax in _M._eq_Id))
+          &&
+          (((_sk__tcPy_1->_sk__tcPx_0 !in _M._eq_Id ||
+             _sk__tcPy_1->_sk__tcPx_0 in _M._eq_Id')
+            &&
+            (_sk__tcPy_1->_sk__tcPx_0 !in _M._eq_Id' ||
+             _sk__tcPy_1->_sk__tcPx_0 in _M._eq_Id))
+           &&
+           ((_sk__tcPy_1->_sk__tcPy_1 !in _M._eq_Id ||
+             _sk__tcPy_1->_sk__tcPy_1 in _M._eq_Id')
+            &&
+            (_sk__tcPy_1->_sk__tcPy_1 !in _M._eq_Id' ||
+             _sk__tcPy_1->_sk__tcPy_1 in _M._eq_Id)))))))) }
   fact {
     ((_sk__tcPx_0->_sk__tcPy_1 in _M.succ &&
       eventually

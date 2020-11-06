@@ -14,118 +14,116 @@ Tests the TTC Transformation.
   }
   fact {
     always
-     (no none &&
-      (((((zero->zero !in _M.prev_index || zero->zero in _M.prev_index') &&
-          (zero->zero !in _M.prev_index' || zero->zero in _M.prev_index))
-         &&
-         (((zero->_sk__tcPx_0 !in _M.prev_index ||
-            zero->_sk__tcPx_0 in _M.prev_index')
-           &&
-           (zero->_sk__tcPx_0 !in _M.prev_index' ||
-            zero->_sk__tcPx_0 in _M.prev_index))
-          &&
-          ((zero->_sk__tcPy_1 !in _M.prev_index ||
-            zero->_sk__tcPy_1 in _M.prev_index')
-           &&
-           (zero->_sk__tcPy_1 !in _M.prev_index' ||
-            zero->_sk__tcPy_1 in _M.prev_index))))
+     (((((zero->zero !in _M.prev_index || zero->zero in _M.prev_index') &&
+         (zero->zero !in _M.prev_index' || zero->zero in _M.prev_index))
         &&
-        ((((_sk__tcPx_0->zero !in _M.prev_index ||
-            _sk__tcPx_0->zero in _M.prev_index')
-           &&
-           (_sk__tcPx_0->zero !in _M.prev_index' ||
-            _sk__tcPx_0->zero in _M.prev_index))
+        (((zero->_sk__tcPx_0 !in _M.prev_index ||
+           zero->_sk__tcPx_0 in _M.prev_index')
           &&
-          (((_sk__tcPx_0->_sk__tcPx_0 !in _M.prev_index ||
-             _sk__tcPx_0->_sk__tcPx_0 in _M.prev_index')
-            &&
-            (_sk__tcPx_0->_sk__tcPx_0 !in _M.prev_index' ||
-             _sk__tcPx_0->_sk__tcPx_0 in _M.prev_index))
-           &&
-           ((_sk__tcPx_0->_sk__tcPy_1 !in _M.prev_index ||
-             _sk__tcPx_0->_sk__tcPy_1 in _M.prev_index')
-            &&
-            (_sk__tcPx_0->_sk__tcPy_1 !in _M.prev_index' ||
-             _sk__tcPx_0->_sk__tcPy_1 in _M.prev_index))))
+          (zero->_sk__tcPx_0 !in _M.prev_index' ||
+           zero->_sk__tcPx_0 in _M.prev_index))
          &&
-         (((_sk__tcPy_1->zero !in _M.prev_index ||
-            _sk__tcPy_1->zero in _M.prev_index')
-           &&
-           (_sk__tcPy_1->zero !in _M.prev_index' ||
-            _sk__tcPy_1->zero in _M.prev_index))
+         ((zero->_sk__tcPy_1 !in _M.prev_index ||
+           zero->_sk__tcPy_1 in _M.prev_index')
           &&
-          (((_sk__tcPy_1->_sk__tcPx_0 !in _M.prev_index ||
-             _sk__tcPy_1->_sk__tcPx_0 in _M.prev_index')
-            &&
-            (_sk__tcPy_1->_sk__tcPx_0 !in _M.prev_index' ||
-             _sk__tcPy_1->_sk__tcPx_0 in _M.prev_index))
-           &&
-           ((_sk__tcPy_1->_sk__tcPy_1 !in _M.prev_index ||
-             _sk__tcPy_1->_sk__tcPy_1 in _M.prev_index')
-            &&
-            (_sk__tcPy_1->_sk__tcPy_1 !in _M.prev_index' ||
-             _sk__tcPy_1->_sk__tcPy_1 in _M.prev_index))))))
+          (zero->_sk__tcPy_1 !in _M.prev_index' ||
+           zero->_sk__tcPy_1 in _M.prev_index))))
        &&
-       (((((zero->zero !in _M.prev_tc || zero->zero in _M.prev_tc') &&
-           (zero->zero !in _M.prev_tc' || zero->zero in _M.prev_tc))
+       ((((_sk__tcPx_0->zero !in _M.prev_index ||
+           _sk__tcPx_0->zero in _M.prev_index')
           &&
-          (((zero->_sk__tcPx_0 !in _M.prev_tc ||
-             zero->_sk__tcPx_0 in _M.prev_tc')
-            &&
-            (zero->_sk__tcPx_0 !in _M.prev_tc' ||
-             zero->_sk__tcPx_0 in _M.prev_tc))
-           &&
-           ((zero->_sk__tcPy_1 !in _M.prev_tc ||
-             zero->_sk__tcPy_1 in _M.prev_tc')
-            &&
-            (zero->_sk__tcPy_1 !in _M.prev_tc' ||
-             zero->_sk__tcPy_1 in _M.prev_tc))))
+          (_sk__tcPx_0->zero !in _M.prev_index' ||
+           _sk__tcPx_0->zero in _M.prev_index))
          &&
-         ((((_sk__tcPx_0->zero !in _M.prev_tc ||
-             _sk__tcPx_0->zero in _M.prev_tc')
-            &&
-            (_sk__tcPx_0->zero !in _M.prev_tc' ||
-             _sk__tcPx_0->zero in _M.prev_tc))
+         (((_sk__tcPx_0->_sk__tcPx_0 !in _M.prev_index ||
+            _sk__tcPx_0->_sk__tcPx_0 in _M.prev_index')
            &&
-           (((_sk__tcPx_0->_sk__tcPx_0 !in _M.prev_tc ||
-              _sk__tcPx_0->_sk__tcPx_0 in _M.prev_tc')
-             &&
-             (_sk__tcPx_0->_sk__tcPx_0 !in _M.prev_tc' ||
-              _sk__tcPx_0->_sk__tcPx_0 in _M.prev_tc))
-            &&
-            ((_sk__tcPx_0->_sk__tcPy_1 !in _M.prev_tc ||
-              _sk__tcPx_0->_sk__tcPy_1 in _M.prev_tc')
-             &&
-             (_sk__tcPx_0->_sk__tcPy_1 !in _M.prev_tc' ||
-              _sk__tcPx_0->_sk__tcPy_1 in _M.prev_tc))))
+           (_sk__tcPx_0->_sk__tcPx_0 !in _M.prev_index' ||
+            _sk__tcPx_0->_sk__tcPx_0 in _M.prev_index))
           &&
-          (((_sk__tcPy_1->zero !in _M.prev_tc ||
-             _sk__tcPy_1->zero in _M.prev_tc')
-            &&
-            (_sk__tcPy_1->zero !in _M.prev_tc' ||
-             _sk__tcPy_1->zero in _M.prev_tc))
+          ((_sk__tcPx_0->_sk__tcPy_1 !in _M.prev_index ||
+            _sk__tcPx_0->_sk__tcPy_1 in _M.prev_index')
            &&
-           (((_sk__tcPy_1->_sk__tcPx_0 !in _M.prev_tc ||
-              _sk__tcPy_1->_sk__tcPx_0 in _M.prev_tc')
-             &&
-             (_sk__tcPy_1->_sk__tcPx_0 !in _M.prev_tc' ||
-              _sk__tcPy_1->_sk__tcPx_0 in _M.prev_tc))
-            &&
-            ((_sk__tcPy_1->_sk__tcPy_1 !in _M.prev_tc ||
-              _sk__tcPy_1->_sk__tcPy_1 in _M.prev_tc')
-             &&
-             (_sk__tcPy_1->_sk__tcPy_1 !in _M.prev_tc' ||
-              _sk__tcPy_1->_sk__tcPy_1 in _M.prev_tc))))))
+           (_sk__tcPx_0->_sk__tcPy_1 !in _M.prev_index' ||
+            _sk__tcPx_0->_sk__tcPy_1 in _M.prev_index))))
         &&
-        (((zero->cst !in _M.list || zero->cst in _M.list') &&
-          (zero->cst !in _M.list' || zero->cst in _M.list))
-         &&
-         (((_sk__tcPx_0->cst !in _M.list || _sk__tcPx_0->cst in _M.list') &&
-           (_sk__tcPx_0->cst !in _M.list' || _sk__tcPx_0->cst in _M.list))
+        (((_sk__tcPy_1->zero !in _M.prev_index ||
+           _sk__tcPy_1->zero in _M.prev_index')
           &&
-          ((_sk__tcPy_1->cst !in _M.list || _sk__tcPy_1->cst in _M.list') &&
-           (_sk__tcPy_1->cst !in _M.list' || _sk__tcPy_1->cst in _M.list)))))))
-    }
+          (_sk__tcPy_1->zero !in _M.prev_index' ||
+           _sk__tcPy_1->zero in _M.prev_index))
+         &&
+         (((_sk__tcPy_1->_sk__tcPx_0 !in _M.prev_index ||
+            _sk__tcPy_1->_sk__tcPx_0 in _M.prev_index')
+           &&
+           (_sk__tcPy_1->_sk__tcPx_0 !in _M.prev_index' ||
+            _sk__tcPy_1->_sk__tcPx_0 in _M.prev_index))
+          &&
+          ((_sk__tcPy_1->_sk__tcPy_1 !in _M.prev_index ||
+            _sk__tcPy_1->_sk__tcPy_1 in _M.prev_index')
+           &&
+           (_sk__tcPy_1->_sk__tcPy_1 !in _M.prev_index' ||
+            _sk__tcPy_1->_sk__tcPy_1 in _M.prev_index))))))
+      &&
+      (((((zero->zero !in _M.prev_tc || zero->zero in _M.prev_tc') &&
+          (zero->zero !in _M.prev_tc' || zero->zero in _M.prev_tc))
+         &&
+         (((zero->_sk__tcPx_0 !in _M.prev_tc ||
+            zero->_sk__tcPx_0 in _M.prev_tc')
+           &&
+           (zero->_sk__tcPx_0 !in _M.prev_tc' ||
+            zero->_sk__tcPx_0 in _M.prev_tc))
+          &&
+          ((zero->_sk__tcPy_1 !in _M.prev_tc ||
+            zero->_sk__tcPy_1 in _M.prev_tc')
+           &&
+           (zero->_sk__tcPy_1 !in _M.prev_tc' ||
+            zero->_sk__tcPy_1 in _M.prev_tc))))
+        &&
+        ((((_sk__tcPx_0->zero !in _M.prev_tc ||
+            _sk__tcPx_0->zero in _M.prev_tc')
+           &&
+           (_sk__tcPx_0->zero !in _M.prev_tc' ||
+            _sk__tcPx_0->zero in _M.prev_tc))
+          &&
+          (((_sk__tcPx_0->_sk__tcPx_0 !in _M.prev_tc ||
+             _sk__tcPx_0->_sk__tcPx_0 in _M.prev_tc')
+            &&
+            (_sk__tcPx_0->_sk__tcPx_0 !in _M.prev_tc' ||
+             _sk__tcPx_0->_sk__tcPx_0 in _M.prev_tc))
+           &&
+           ((_sk__tcPx_0->_sk__tcPy_1 !in _M.prev_tc ||
+             _sk__tcPx_0->_sk__tcPy_1 in _M.prev_tc')
+            &&
+            (_sk__tcPx_0->_sk__tcPy_1 !in _M.prev_tc' ||
+             _sk__tcPx_0->_sk__tcPy_1 in _M.prev_tc))))
+         &&
+         (((_sk__tcPy_1->zero !in _M.prev_tc ||
+            _sk__tcPy_1->zero in _M.prev_tc')
+           &&
+           (_sk__tcPy_1->zero !in _M.prev_tc' ||
+            _sk__tcPy_1->zero in _M.prev_tc))
+          &&
+          (((_sk__tcPy_1->_sk__tcPx_0 !in _M.prev_tc ||
+             _sk__tcPy_1->_sk__tcPx_0 in _M.prev_tc')
+            &&
+            (_sk__tcPy_1->_sk__tcPx_0 !in _M.prev_tc' ||
+             _sk__tcPy_1->_sk__tcPx_0 in _M.prev_tc))
+           &&
+           ((_sk__tcPy_1->_sk__tcPy_1 !in _M.prev_tc ||
+             _sk__tcPy_1->_sk__tcPy_1 in _M.prev_tc')
+            &&
+            (_sk__tcPy_1->_sk__tcPy_1 !in _M.prev_tc' ||
+             _sk__tcPy_1->_sk__tcPy_1 in _M.prev_tc))))))
+       &&
+       (((zero->cst !in _M.list || zero->cst in _M.list') &&
+         (zero->cst !in _M.list' || zero->cst in _M.list))
+        &&
+        (((_sk__tcPx_0->cst !in _M.list || _sk__tcPx_0->cst in _M.list') &&
+          (_sk__tcPx_0->cst !in _M.list' || _sk__tcPx_0->cst in _M.list))
+         &&
+         ((_sk__tcPy_1->cst !in _M.list || _sk__tcPy_1->cst in _M.list') &&
+          (_sk__tcPy_1->cst !in _M.list' || _sk__tcPy_1->cst in _M.list)))))) }
   fact {
     ((_sk__tcPx_0->_sk__tcPy_1 in _M.prev_index &&
       eventually

@@ -12,9 +12,8 @@ Tests the TTC Transformation.
   }
   fact {
     always
-     ((no none &&
-       ((some x: Process | zero->x in _M.list) || (all x: Process |
-        zero->x !in _M.list')))
+     (((some x: Process | zero->x in _M.list) || (all x: Process |
+       zero->x !in _M.list'))
       &&
       (((zero->zero !in _M.prev_index || zero->zero in _M.prev_index') &&
         (zero->zero !in _M.prev_index' || zero->zero in _M.prev_index))

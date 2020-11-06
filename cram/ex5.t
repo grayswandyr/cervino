@@ -163,7 +163,7 @@ Tests the TTC Transformation.
          ((_e0->_x !in _M.prev_tc || _e0->_y in _M.prev_tc) &&
           (_e0->_y !in _M.prev_tc || _e0->_x in _M.prev_tc)))
          &&
-        ((all _e0: index |
+         ((all _e0: index |
           ((_x->_e0 !in _M.prev_tc || _y->_e0 in _M.prev_tc) &&
            (_y->_e0 !in _M.prev_tc || _x->_e0 in _M.prev_tc)))
           && (all _e0: Process |
@@ -174,7 +174,6 @@ Tests the TTC Transformation.
      (_x->_y !in _M._eq_Process || (all _e0: index |
       ((_e0->_x !in _M.list || _e0->_y in _M.list) &&
        (_e0->_y !in _M.list || _e0->_x in _M.list)))))) }
-
   fact {
     ((_sk__tcPx_0->_sk__tcPy_1 in _M.prev_index &&
       eventually
