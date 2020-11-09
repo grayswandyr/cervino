@@ -18,7 +18,7 @@
  (name cervino)
  (depends
   (ocaml (>= 4.11.0))
-  dune
+  (dune (>= 2.7.0))
   cmdliner
   (containers (>= 3.0))
   containers-data
@@ -28,8 +28,14 @@
   logs
   menhir
   ppx_deriving
-  ppx_expect {build}
+  ppx_expect 
   ppx_sexp_conv
   sexplib
+  ;; Dev dependencies
+  (bisect_ppx :dev)
+  (utop :dev)
+  (merlin :dev)
+  (ocamlformat :dev)
+  (ocaml-lsp-server :dev)
   )
  (synopsis "Proof of concept for complete verification of models expressed in a fragment of MSFOLTL"))
