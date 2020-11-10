@@ -32,7 +32,7 @@
   ppx_sexp_conv
   sexplib
   ;; Dev dependencies
-  (bisect_ppx :dev)
+  (bisect_ppx (and :dev (>= 2.5.0)))
   (utop :dev)
   (merlin :dev)
   (ocamlformat :dev)

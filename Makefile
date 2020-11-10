@@ -17,10 +17,10 @@ fmt:
 
 test:
 	find . -name '*.coverage' | xargs rm -f
-	dune runtest --instrument-with bisect_ppx --force
+	dune test --instrument-with bisect_ppx --force
 	bisect-ppx-report html
-	bisect-ppx-report summary
 	xdg-open _coverage/index.html
+	bisect-ppx-report summary
 
 deps: $(opam_file)
 
