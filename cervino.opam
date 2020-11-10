@@ -24,7 +24,7 @@ depends: [
   "ppx_expect"
   "ppx_sexp_conv"
   "sexplib"
-  "bisect_ppx" {dev}
+  "bisect_ppx" {dev & >= "2.5.0"}
   "utop" {dev}
   "merlin" {dev}
   "ocamlformat" {dev}
