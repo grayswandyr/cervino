@@ -209,7 +209,11 @@ let convert m =
   let equivalence_axs = List.map equivalence_axioms_for_rel relations_eq in
   let updated_model =
     { m.model with
-      relations = m.model.relations @ relations_eq;
+      relations =
+        List.union
+          ~eq:(fun r1 r2 -> Name.equal r1.rel_name r2.rel_name)
+          m.model.relations
+          relations_eq;
       axioms = equivalence_axs @ equality_axioms @ updated_axioms;
       events = updated_events
     }
