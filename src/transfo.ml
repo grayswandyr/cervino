@@ -25,14 +25,14 @@ let apply_transformation (using : Ast.transfo option) : t =
   let steps : t list =
     match using with
     | Some TEA ->
-        [ Expand_modifies.convert; Transfo_TEA.convert ]
+        [ Expand_modifies.convert; Cervino_semantics.convert(*Transfo_TEA.convert*) ]
     | Some (TTC _) ->
         [ Transfo_TTC.convert_instantiated_TC_axiom;
           Remove_equalities.convert;
           Expand_modifies.convert;
           Remove_equalities.convert;
-          Skolemize.convert;
           Cervino_semantics.convert;
+          Skolemize.convert;
           Instantiation.convert
         ]
     | Some (TFC _) ->
@@ -40,8 +40,8 @@ let apply_transformation (using : Ast.transfo option) : t =
           Remove_equalities.convert;
           Expand_modifies.convert;
           Remove_equalities.convert;
-          Skolemize.convert;
           Cervino_semantics.convert;
+          Skolemize.convert;
           Instantiation.convert
         ]
     | None ->

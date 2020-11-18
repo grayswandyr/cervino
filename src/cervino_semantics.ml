@@ -7,7 +7,6 @@ let create_var s i =
     ~var_name:(Name.make_unloc ("_s_" ^ Name.content s ^ string_of_int i))
     ~var_sort:s
 
-
 let create_vars_up_to_k s k =
   assert (k > 0);
   let rec walk vars i =
@@ -15,20 +14,17 @@ let create_vars_up_to_k s k =
   in
   walk [] k
 
-
 let nb_occ list elt = List.count (fun x -> equal_sort (fst x) elt) list
 
 let occ_list_from_sortlist sortlist =
   let rec walk acc sortlist =
     match sortlist with
-    | [] ->
-        List.rev acc
+    | [] -> List.rev acc
     | hd :: tl ->
         let n = nb_occ acc hd in
         walk ((hd, n + 1) :: acc) tl
   in
   walk [] sortlist
-
 
 let find_fresh_vars_from_occ_list map occlist =
   let open List.Infix in
@@ -36,8 +32,7 @@ let find_fresh_vars_from_occ_list map occlist =
   let+ s, i = occlist in
   assert (i > 0);
   match VarMap.get s map with
-  | None ->
-      Msg.err (fun m -> m "[%s] sort not found: %a" __LOC__ Name.pp s)
+  | None -> Msg.err (fun m -> m "[%s] sort not found: %a" __LOC__ Name.pp s)
   | Some vl ->
       (* Msg.debug (fun m ->
           m
@@ -47,7 +42,6 @@ let find_fresh_vars_from_occ_list map occlist =
             s); *)
       assert (i - 1 < List.length vl);
       List.nth vl (i - 1)
-
 
 (* Creates a formula ([quantifier] x : s,y :s | ev1[x] or ev2[y]) (NOTICE the *absence* of a leading
 `always`, see `semantics_of_events` below). Also returns the list of variables bound by the said quantifier. 
@@ -78,24 +72,22 @@ let quantify_events quantifier events =
   in
   (List.fold_right quantifier quantified_vars (disj fml_events), quantified_vars)
 
-
 let semantics_of_events events = always @@ fst @@ quantify_events exists events
 
-(* Put the formula of the semantics of events (always some x,y | ev1[x] or ev2[y]) in axioms. *)
+(* Puts the formula of the semantics of events (always some x,y | ev1[x] or ev2[y]) in axioms. *)
+(* Puts the check formula (after nagating it) and the assuming formula in axioms. *)
 (* Removes events. Does not handle modifies fields. *)
-let cervino_semantics_model m =
-  let updated_axioms = semantics_of_events m.events :: m.axioms in
-  make_model
-    ~sorts:m.sorts
-    ~relations:m.relations
-    ~constants:m.constants
-    ~closures:m.closures
-    ~axioms:updated_axioms
-    ~events:[]
-    ()
-
-
-let convert m_with_check =
-  Ast.make
-    ~model:(cervino_semantics_model m_with_check.model)
-    ~check:m_with_check.check
+let convert ast =
+  let m = ast.model in
+  let chk = ast.check in
+  let axiom_with_sem_of_events = semantics_of_events m.events in
+  let check_in_axiom = not_ chk.chk_body in
+  let updated_axioms =
+    check_in_axiom :: chk.chk_assuming :: axiom_with_sem_of_events :: m.axioms
+  in
+  let updated_model =
+    make_model ~sorts:m.sorts ~relations:m.relations ~constants:m.constants
+      ~closures:m.closures ~axioms:updated_axioms ~events:[] ()
+  in
+  let updated_check = { chk with chk_body = false_; chk_assuming = true_ } in
+  Ast.make ~model:updated_model ~check:updated_check
