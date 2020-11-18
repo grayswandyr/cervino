@@ -76,7 +76,7 @@ let semantics_of_events events = always @@ fst @@ quantify_events exists events
 
 (* Puts the formula of the semantics of events (always some x,y | ev1[x] or ev2[y]) in axioms. *)
 (* Puts the check formula (after nagating it) and the assuming formula in axioms. *)
-(* Removes events. Does not handle modifies fields. *)
+(* Removes eventsn check body and check assuming. Does not handle modifies fields. *)
 let convert ast =
   let m = ast.model in
   let chk = ast.check in
