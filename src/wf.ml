@@ -53,11 +53,11 @@ let check_elt f =
   in
   (* the exists quantifier at the toplevel is ok *)
   let rec check_outer = function
-    | All (_, f) | G f ->
+    | G f ->
         check_inner f
     | True | False | Lit _ ->
         ()
-    | Exists (_, f) | F f ->
+    | All (_, f) | Exists (_, f) | F f ->
         check_outer f
     | And (f1, f2) | Or (f1, f2) ->
         check_outer f1;
