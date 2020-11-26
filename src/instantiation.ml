@@ -23,7 +23,9 @@ let instantiate_constants v consts fml =
   conj fmls
 
 
-(*Instantiates all the unversal quantifiers in fml with constants in constlist. *)
+(*Instantiates all the unversal quantifiers "all x | f" in fml with values in
+    constlist if f is temporal. 
+    Values in constlist are updated by adding existentially quantified vairables.*)
 let rec instantiate_tprl constlist fml =
   match fml with
   | (True | False | Lit _) as f ->
@@ -33,7 +35,7 @@ let rec instantiate_tprl constlist fml =
   | Or (f1, f2) ->
       or_ (instantiate_tprl constlist f1) (instantiate_tprl constlist f2)
   | Exists (v, f) ->
-      exists v (instantiate_tprl constlist f)
+      exists v (instantiate_tprl (var v :: constlist) f)
   | All (v, f) ->
       let subfml = instantiate_tprl constlist f in
       if is_temporal f
@@ -45,6 +47,9 @@ let rec instantiate_tprl constlist fml =
       always @@ instantiate_tprl constlist f
 
 
+(* Instantiates all subformulas of the form (all x | f) in fml with values
+    in constlist if f includes an existential quantifer. 
+    Values in constlist are updated by adding existentially quantified vairables.*)
 let rec instantiate_ae constlist fml =
   match fml with
   | (True | False | Lit _) as f ->
@@ -54,7 +59,7 @@ let rec instantiate_ae constlist fml =
   | Or (f1, f2) ->
       or_ (instantiate_ae constlist f1) (instantiate_ae constlist f2)
   | Exists (v, f) ->
-      exists v (instantiate_ae constlist f)
+      exists v (instantiate_ae (var v :: constlist) f)
   | All (v, f) ->
       let subfml = instantiate_ae constlist f in
       if includes_exists f
@@ -64,6 +69,24 @@ let rec instantiate_ae constlist fml =
       eventually @@ instantiate_ae constlist f
   | G f ->
       always @@ instantiate_ae constlist f
+
+
+let convert_ae ast =
+  let const = List.map cst ast.model.constants in
+  let updated_axioms = List.map (instantiate_ae const) ast.model.axioms in
+  let updated_assuming = instantiate_ae const ast.check.chk_assuming in
+  let updated_model =
+    make_model
+      ~sorts:ast.model.sorts
+      ~relations:ast.model.relations
+      ~constants:ast.model.constants
+      ~closures:ast.model.closures
+      ~axioms:updated_axioms
+      ~events:ast.model.events
+      ()
+  in
+  let updated_check = { ast.check with chk_assuming = updated_assuming } in
+  Ast.make ~model:updated_model ~check:updated_check
 
 
 (* Does not handle instantiation in check body because it is to be negated in cervino semantics. *)
