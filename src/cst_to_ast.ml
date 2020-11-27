@@ -137,15 +137,29 @@ and walk_prim_formula env (f : Cst.prim_formula) =
   | Pred { pred; primed; args } ->
       Env.check_relation env pred;
       let profile = Env.get_profile env pred in
-      let pred' =
-        make_relation
-          ~rel_name:(Name.of_ident pred)
-          ~rel_profile:(List.map Name.of_ident profile)
-          ()
-      in
-      let next = if primed then 1 else 0 in
-      let args' = List.map2 (walk_term_sort env) args profile in
-      lit (pos_app next pred' args')
+      let arity = List.length profile in
+      let nbargs = List.length args in
+      if nbargs <> arity
+      then
+        Msg.err (fun m ->
+            m
+              "%a has arity %d but is passed %d argument(s)@\n%a"
+              Ident.pp
+              pred
+              arity
+              nbargs
+              Location.excerpt
+              (Ident.positions pred))
+      else
+        let pred' =
+          make_relation
+            ~rel_name:(Name.of_ident pred)
+            ~rel_profile:(List.map Name.of_ident profile)
+            ()
+        in
+        let next = if primed then 1 else 0 in
+        let args' = List.map2 (walk_term_sort env) args profile in
+        lit (pos_app next pred' args')
   | Test (op, t1, t2) ->
       let s1, t1' = walk_term env t1 in
       let s2, t2' = walk_term env t2 in
