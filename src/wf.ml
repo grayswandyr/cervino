@@ -1,73 +1,90 @@
 open Ast
 
-let rec check_event evt f =
-  match f with
-  | Exists ({ var_name; _ }, _) ->
-      Msg.err (fun m ->
-          m
-            "Event `%a`: irregular quantification on `%a`@\n%a"
-            Name.pp
-            evt
-            Name.pp
-            var_name
-            Location.excerpt
-            (Name.positions var_name))
-  | G _ ->
-      Msg.err (fun m ->
-          m "Event `%a` actually contains a `G` connective" Name.pp evt)
-  | F _ ->
-      Msg.err (fun m ->
-          m "Event `%a` actually contains a `F` connective" Name.pp evt)
-  | (Lit (Pos_app (n, _, _)) | Lit (Neg_app (n, _, _))) when n > 1 ->
-      Msg.err (fun m ->
-          m
-            "Event `%a` actually refers to later than just the next instant"
-            Name.pp
-            evt)
-  | True | False | Lit _ ->
-      ()
-  | And (f1, f2) | Or (f1, f2) ->
-      check_event evt f1;
-      check_event evt f2
-  | All (_, f) ->
-      check_event evt f
-
-
-let check_elt f =
-  let rec check_inner = function
+let check_event { ev_name; ev_body; _ } =
+  let rec walk f =
+    match f with
     | Exists ({ var_name; _ }, _) ->
         Msg.err (fun m ->
             m
-              "Irregular quantification on `%a`@\n%a"
+              "Event `%a`: irregular quantification on `%a`@\n%a"
+              Name.pp
+              ev_name
               Name.pp
               var_name
               Location.excerpt
               (Name.positions var_name))
+    | G _ ->
+        Msg.err (fun m ->
+            m "Event `%a` actually contains a `G` connective" Name.pp ev_name)
+    | F _ ->
+        Msg.err (fun m ->
+            m "Event `%a` actually contains a `F` connective" Name.pp ev_name)
+    | (Lit (Pos_app (n, _, _)) | Lit (Neg_app (n, _, _))) when n > 1 ->
+        Msg.err (fun m ->
+            m
+              "Event `%a` actually refers to later than just the next instant"
+              Name.pp
+              ev_name)
     | True | False | Lit _ ->
         ()
     | And (f1, f2) | Or (f1, f2) ->
-        check_inner f1;
-        check_inner f2
-    | All (_, f) | G f | F f ->
-        check_inner f
+        walk f1;
+        walk f2
+    | All (_, f) ->
+        walk f
   in
-  (* the exists quantifier at the toplevel is ok *)
-  let rec check_outer = function
+  walk ev_body
+
+
+let check_elt f =
+  let module Env = struct
+    type t =
+      { saw_g : bool;
+        saw_all : bool;
+        saw_all_exists : bool
+      }
+
+    let empty = { saw_g = false; saw_all = false; saw_all_exists = false }
+  end in
+  let open Env in
+  let rec walk env = function
+    | Exists ({ var_name; _ }, _) when env.saw_g ->
+        Msg.err (fun m ->
+            m
+              "Irregular quantification (nesting of type G/some) on `%a`@\n%a"
+              Name.pp
+              var_name
+              Location.excerpt
+              (Name.positions var_name))
+    | All ({ var_name; _ }, _) when env.saw_all_exists ->
+        Msg.err (fun m ->
+            m
+              "Irregular quantification (nesting of type all/some/all) on `%a`@\n\
+               %a"
+              Name.pp
+              var_name
+              Location.excerpt
+              (Name.positions var_name))
+    | Exists (_, f) when env.saw_all ->
+        walk { env with saw_all_exists = true } f
+    | Exists (_, f) ->
+        walk env f
+    | All (_, f) ->
+        walk { env with saw_all = true } f
     | G f ->
-        check_inner f
+        walk { env with saw_g = true } f
+    | F f ->
+        walk env f
     | True | False | Lit _ ->
         ()
-    | All (_, f) | Exists (_, f) | F f ->
-        check_outer f
     | And (f1, f2) | Or (f1, f2) ->
-        check_outer f1;
-        check_outer f2
+        walk env f1;
+        walk env f2
   in
-  check_outer f
+  walk Env.empty f
 
 
 let check
     { model = { events; axioms; _ }; check = { chk_body; chk_assuming; _ } } =
-  List.iter (fun { ev_name; ev_body; _ } -> check_event ev_name ev_body) events;
-  List.iter check_elt (chk_assuming :: axioms);
-  check_elt (not_ chk_body)
+  List.iter check_event events;
+  List.iter check_elt (not_ chk_body :: chk_assuming :: axioms)
