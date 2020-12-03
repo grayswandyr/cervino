@@ -169,18 +169,51 @@ let equality_axiom_for_rel_list_and_s rel_list s =
   @@ conj
   @@ List.flat_map (fun rel -> equality_axiom_for_rel_and_s rel s) rel_list
 
-
-let convert m =
-  let eq_sorts_axioms, updated_axioms = remove_eq_fml_list m.model.axioms in
-  let eq_sorts_events, updated_events =
-    remove_eq_in_event_list m.model.events
+  (*Adds relations for equality (without adding equality axioms nor replacing '=' is formulas) *)
+let add_eq_relations ast = 
+  let eq_sorts_axioms, _ = remove_eq_fml_list ast.model.axioms in
+  let eq_sorts_events, _ =
+    remove_eq_in_event_list ast.model.events
   in
-  let eq_sorts_chk_fml, updated_chk_fml = remove_eq_fml m.check.chk_body in
+  let eq_sorts_chk_fml, _ = remove_eq_fml ast.check.chk_body in
+  let eq_sorts_assuming, _ =
+    remove_eq_fml ast.check.chk_assuming
+  in
+  let eq_sorts =
+    Sorts.union eq_sorts_axioms
+    @@ Sorts.union
+         eq_sorts_events
+         (Sorts.union eq_sorts_chk_fml eq_sorts_assuming)
+  in
+  let relations_eq =
+    Sorts.fold
+      (fun s rel_list -> build_pred_eq_from_sort s :: rel_list)
+      eq_sorts
+      []
+  in
+  let updated_model =
+    { ast.model with
+      relations =
+        List.union
+          ~eq:(fun r1 r2 -> Name.equal r1.rel_name r2.rel_name)
+          ast.model.relations
+          relations_eq;
+    }
+  in
+  { model = updated_model; check = ast.check;}
+
+  (*Adds equality relations (if necessary) and equality axioms and replaces '=' by these relaitons in formulas. *)
+let convert ast =
+  let eq_sorts_axioms, updated_axioms = remove_eq_fml_list ast.model.axioms in
+  let eq_sorts_events, updated_events =
+    remove_eq_in_event_list ast.model.events
+  in
+  let eq_sorts_chk_fml, updated_chk_fml = remove_eq_fml ast.check.chk_body in
   let eq_sorts_assuming, updated_assuming =
-    remove_eq_fml m.check.chk_assuming
+    remove_eq_fml ast.check.chk_assuming
   in
   let updated_check =
-    { m.check with chk_body = updated_chk_fml; chk_assuming = updated_assuming }
+    { ast.check with chk_body = updated_chk_fml; chk_assuming = updated_assuming }
     (* make_check
        ~chk_name:m.check.chk_name
        ~chk_body:updated_chk_fml
@@ -202,17 +235,17 @@ let convert m =
   let equality_axioms =
     Sorts.fold
       (fun s cur_fmls ->
-        equality_axiom_for_rel_list_and_s m.model.relations s :: cur_fmls)
+        equality_axiom_for_rel_list_and_s ast.model.relations s :: cur_fmls)
       eq_sorts
       []
   in
   let equivalence_axs = List.map equivalence_axioms_for_rel relations_eq in
   let updated_model =
-    { m.model with
+    { ast.model with
       relations =
         List.union
           ~eq:(fun r1 r2 -> Name.equal r1.rel_name r2.rel_name)
-          m.model.relations
+          ast.model.relations
           relations_eq;
       axioms = equivalence_axs @ equality_axioms @ updated_axioms;
       events = updated_events

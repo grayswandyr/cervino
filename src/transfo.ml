@@ -27,13 +27,13 @@ let apply_transformation (using : Ast.transfo option) : t =
     | Some TEA ->
         [ Instantiation.convert_ae;
           Expand_modifies.convert;
-          Cervino_semantics.convert
-          (*Transfo_TEA.convert*)
+          Cervino_semantics.convert;
+          Transfo_TEA.convert
         ]
     | Some (TTC _) ->
         [ Instantiation.convert_ae;
           Transfo_TTC.convert_instantiated_TC_axiom;
-          Remove_equalities.convert;
+          Remove_equalities.add_eq_relations ;
           Expand_modifies.convert;
           Remove_equalities.convert;
           Cervino_semantics.convert;
@@ -43,11 +43,10 @@ let apply_transformation (using : Ast.transfo option) : t =
     | Some (TFC _) ->
         [ Instantiation.convert_ae;
           Transfo_TFC.convert;
-          Remove_equalities.convert;
+          Remove_equalities.add_eq_relations;
           Expand_modifies.convert;
           Remove_equalities.convert;
-          Cervino_semantics.convert;
-          Skolemize.convert;
+          Cervino_semantics.convert;          Skolemize.convert;
           Instantiation.convert
         ]
     | None ->
