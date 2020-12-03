@@ -49,7 +49,9 @@ let find_fresh_vars_from_occ_list map occlist =
       List.nth vl (i - 1)
 
 
-(* Creates a formula ([quantifier] x : s,y :s | ev1[x] or ev2[y]) (NOTICE the *absence* of a leading
+(* IMPORTANT COMMENT!!! ALSO USED IN TEA!!!
+
+Creates a formula ([quantifier] x : s,y :s | ev1[x] or ev2[y]) (NOTICE the *absence* of a leading
 `always`, see `semantics_of_events` below). Also returns the list of variables bound by the said quantifier. 
 
 This is a bit more than strictly necessary for the semantics, but it is also used for the abstract
@@ -79,6 +81,7 @@ let quantify_events quantifier events =
   (List.fold_right quantifier quantified_vars (disj fml_events), quantified_vars)
 
 
+(* BEFORE MODIFYING: SEE COMMENT OF quantify_events ABOVE!!!*)
 let semantics_of_events events = always @@ fst @@ quantify_events exists events
 
 (* Puts the formula of the semantics of events (always some x,y | ev1[x] or ev2[y]) in axioms. *)
