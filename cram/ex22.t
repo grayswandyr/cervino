@@ -9,14 +9,16 @@ Tests well formedness criteria.
     var succ : Id -> Id,
   }
   fact {
+    always (all _eax: Id | (all _eay: Id |
+     (((_eax !in _M._E_s_Id2 || _eay !in _M._E_s_Id2) || _eax = _eay) &&
+      ((_eax !in _M._E_s_Id1 || _eay !in _M._E_s_Id1) || _eax = _eay)))) }
+  fact {
     always (all _s_Id1: Id | (all _s_Id2: Id |
      ((all z: Id | (_s_Id1->z !in _M.succ || _s_Id1 !in _M._E_s_Id1)) &&
       (all _em0: Id | (all _em1: Id |
       ((_em0->_em1 !in _M.succ || _em0->_em1 in _M.succ') &&
        (_em0->_em1 !in _M.succ' || _em0->_em1 in _M.succ))))))) }
-  fact {
-    always (all _eax: Id | (all _eay: Id |
-     (((_eax !in _M._E_s_Id2 || _eay !in _M._E_s_Id2) || _eax = _eay) &&
-      ((_eax !in _M._E_s_Id1 || _eay !in _M._E_s_Id1) || _eax = _eay)))) }
+  fact { (!{}) }
+  fact { ({}) }
   fact /* assuming */ { ({}) }
-  check prop { ({}) }
+  check prop { (!{}) }

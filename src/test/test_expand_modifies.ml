@@ -37,6 +37,10 @@ let%test_module _ =
           var Lock : Node -> Process,
         }
         fact {
+          always (all _eax: Process | (all _eay: Process |
+           ((_eax !in _M._E_s_Process1 || _eay !in _M._E_s_Process1) || _eax = _eay)))
+          }
+        fact {
           always (all _s_Process1: Process |
            ((_s_Process1 in _M.List' || _s_Process1 !in _M._E_s_Process1) &&
             ((all _em0: Process |
@@ -46,10 +50,8 @@ let%test_module _ =
              && (all _em0: Node | (all _em1: Process |
              ((_em0->_em1 !in _M.Lock || _em0->_em1 in _M.Lock') &&
               (_em0->_em1 !in _M.Lock' || _em0->_em1 in _M.Lock))))))) }
-        fact {
-          always (all _eax: Process | (all _eay: Process |
-           ((_eax !in _M._E_s_Process1 || _eay !in _M._E_s_Process1) || _eax = _eay)))
-          }
+        fact { (!{}) }
+        fact { ({}) }
         fact /* assuming */ { ({}) }
-        check Safety { ({}) } |}]
+        check Safety { (!{}) } |}]
   end )

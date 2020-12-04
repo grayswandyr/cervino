@@ -10,8 +10,6 @@ Tests the TTC Transformation.
     var prev_tc : index -> index,
     var list : index -> Process,
   }
-  fact { (!{}) }
-  fact { ({}) }
   fact {
     always
      (((some x: Process | zero->x in _M.list) || (all x: Process |
@@ -25,5 +23,7 @@ Tests the TTC Transformation.
         &&
         ((zero->cst !in _M.list || zero->cst in _M.list') &&
          (zero->cst !in _M.list' || zero->cst in _M.list))))) }
+  fact { (!{}) }
+  fact { ({}) }
   fact /* assuming */ { ({}) }
   check tfc { (!{}) }

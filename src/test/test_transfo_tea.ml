@@ -61,6 +61,19 @@ using TEA
           var last_list : set index,
         }
         fact {
+          always
+           ((all _eax: index | (all _eay: index |
+            ((_eax !in _M._E_s_index1 || _eay !in _M._E_s_index1) || _eax = _eay)))
+            && (all _eax: Process | (all _eay: Process |
+            (((_eax !in _M._E_s_Process3 || _eay !in _M._E_s_Process3) ||
+              _eax = _eay)
+             &&
+             (((_eax !in _M._E_s_Process2 || _eay !in _M._E_s_Process2) ||
+               _eax = _eay)
+              &&
+              ((_eax !in _M._E_s_Process1 || _eay !in _M._E_s_Process1) ||
+               _eax = _eay)))))) }
+        fact {
           always (all _s_index1: index | (all _s_Process1: Process |
            (all _s_Process2: Process | (all _s_Process3: Process |
            (((_s_index1 in _M.last_list || _s_index1 !in _M._E_s_index1) &&
@@ -84,22 +97,11 @@ using TEA
                (i->i2 !in _M.prev_index ||
                 ((i->p !in _M.list || i2->p in _M.list') &&
                  (i2->p !in _M.list' || i->p in _M.list)))))))))))))) }
-        fact {
-          always
-           ((all _eax: index | (all _eay: index |
-            ((_eax !in _M._E_s_index1 || _eay !in _M._E_s_index1) || _eax = _eay)))
-            && (all _eax: Process | (all _eay: Process |
-            (((_eax !in _M._E_s_Process3 || _eay !in _M._E_s_Process3) ||
-              _eax = _eay)
-             &&
-             (((_eax !in _M._E_s_Process2 || _eay !in _M._E_s_Process2) ||
-               _eax = _eay)
-              &&
-              ((_eax !in _M._E_s_Process1 || _eay !in _M._E_s_Process1) ||
-               _eax = _eay)))))) }
+        fact { (some p: Process |
+          eventually (p in _M.is_in_list && always p in _M.is_in_list)) }
+        fact { ({}) }
         fact /* assuming */ { ({}) }
-        check prop { (all p: Process |
-          always (p !in _M.is_in_list || eventually p !in _M.is_in_list)) } |}]
+        check prop { (!{}) } |}]
 
     (*  *)
   end )

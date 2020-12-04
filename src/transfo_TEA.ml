@@ -136,16 +136,26 @@ let make_e_preds_axiom (e_preds : relation list) : formula =
 
 (* Takes a model with events and retruns a model without events, with events expanded and quantified universally; also adds an axiom stating that `E` predicates are "lone". *)
 let convert { model; check } =
-  let e_preds, all_events_axiom = abstract_events model.events in
+  let e_preds, axiom_for_events = abstract_events model.events in
   let e_preds_axiom = make_e_preds_axiom e_preds in
-  let model' =
+  let updated_relations = e_preds @ model.relations in
+  let check_as_axiom = not_ check.chk_body in
+  let updated_axioms =
+    e_preds_axiom
+    :: axiom_for_events
+    :: check_as_axiom
+    :: check.chk_assuming
+    :: model.axioms
+  in
+  let updated_model =
     make_model
       ~sorts:model.sorts
-      ~relations:(e_preds @ model.relations)
+      ~relations:updated_relations
       ~constants:model.constants
       ~closures:model.closures
-      ~axioms:(all_events_axiom :: e_preds_axiom :: model.axioms)
+      ~axioms:updated_axioms
       ~events:[]
       ()
   in
-  make ~model:model' ~check
+  let updated_check = { check with chk_body = false_; chk_assuming = true_ } in
+  make ~model:updated_model ~check:updated_check

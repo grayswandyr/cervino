@@ -87,23 +87,21 @@ let semantics_of_events events = always @@ fst @@ quantify_events exists events
 (* Puts the formula of the semantics of events (always some x,y | ev1[x] or ev2[y]) in axioms. *)
 (* Puts the check formula (after nagating it) and the assuming formula in axioms. *)
 (* Removes eventsn check body and check assuming. Does not handle modifies fields. *)
-let convert ast =
-  let m = ast.model in
-  let chk = ast.check in
-  let axiom_with_sem_of_events = semantics_of_events m.events in
-  let check_in_axiom = not_ chk.chk_body in
+let convert { model; check } =
+  let axiom_for_events = semantics_of_events model.events in
+  let check_as_axiom = not_ check.chk_body in
   let updated_axioms =
-    check_in_axiom :: chk.chk_assuming :: axiom_with_sem_of_events :: m.axioms
+    axiom_for_events :: check_as_axiom :: check.chk_assuming :: model.axioms
   in
   let updated_model =
     make_model
-      ~sorts:m.sorts
-      ~relations:m.relations
-      ~constants:m.constants
-      ~closures:m.closures
+      ~sorts:model.sorts
+      ~relations:model.relations
+      ~constants:model.constants
+      ~closures:model.closures
       ~axioms:updated_axioms
       ~events:[]
       ()
   in
-  let updated_check = { chk with chk_body = false_; chk_assuming = true_ } in
-  Ast.make ~model:updated_model ~check:updated_check
+  let updated_check = { check with chk_body = false_; chk_assuming = true_ } in
+  make ~model:updated_model ~check:updated_check

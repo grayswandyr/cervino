@@ -11,8 +11,6 @@ Tests the plain Semantics.
     var is_in_list : set Process,
     var last_list : set index,
   }
-  fact { (!{}) }
-  fact { ({}) }
   fact {
     always (some _s_index1: index | (some _s_Process1: Process |
      (((_s_index1 in _M.last_list &&
@@ -51,5 +49,7 @@ Tests the plain Semantics.
          && (all _em0: index | (all _em1: index |
          ((_em0->_em1 !in _M.prev_tc || _em0->_em1 in _M.prev_tc') &&
           (_em0->_em1 !in _M.prev_tc' || _em0->_em1 in _M.prev_tc)))))))))) }
+  fact { (!{}) }
+  fact { ({}) }
   fact /* assuming */ { ({}) }
   check sem { (!{}) }
