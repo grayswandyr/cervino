@@ -12,6 +12,8 @@ Tests the TTC Transformation.
     var prev_tc : index -> index,
     var list : index -> Process,
   }
+  fact { (!{}) }
+  fact { ({}) }
   fact {
     always
      (((((zero->zero !in _M.prev_index || zero->zero in _M.prev_index') &&
@@ -167,5 +169,5 @@ Tests the TTC Transformation.
           always
            (_sk__tcPy_1->cst !in _M.list ||
             eventually _sk__tcPy_1->cst in _M.list))))))) }
-  fact /* assuming */ { no none }
-  check ttc { no none }
+  fact /* assuming */ { ({}) }
+  check ttc { (!{}) }

@@ -16,5 +16,5 @@ Tests well formedness of axioms and check.
     always (all _eax: Id | (all _eay: Id |
      (((_eax !in _M._E_s_Id2 || _eay !in _M._E_s_Id2) || _eax = _eay) &&
       ((_eax !in _M._E_s_Id1 || _eay !in _M._E_s_Id1) || _eax = _eay)))) }
-  fact /* assuming */ { no none }
+  fact /* assuming */ { ({}) }
   check prop { ((all x: Id | x->x in _M.succ) && (all x: Id | x->x in _M.succ)) }

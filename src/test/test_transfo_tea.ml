@@ -97,7 +97,7 @@ using TEA
               &&
               ((_eax !in _M._E_s_Process1 || _eay !in _M._E_s_Process1) ||
                _eax = _eay)))))) }
-        fact /* assuming */ { no none }
+        fact /* assuming */ { ({}) }
         check prop { (all p: Process |
           always (p !in _M.is_in_list || eventually p !in _M.is_in_list)) } |}]
 

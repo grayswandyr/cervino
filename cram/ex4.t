@@ -24,5 +24,5 @@ Tests the TEA Transformation.
       && (all _eax: Process | (all _eay: Process |
       ((_eax !in _M._E_s_Process1 || _eay !in _M._E_s_Process1) || _eax = _eay))))
     }
-  fact /* assuming */ { no none }
-  check tea { no none }
+  fact /* assuming */ { ({}) }
+  check tea { ({}) }

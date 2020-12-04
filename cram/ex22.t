@@ -18,5 +18,5 @@ Tests well formedness criteria.
     always (all _eax: Id | (all _eay: Id |
      (((_eax !in _M._E_s_Id2 || _eay !in _M._E_s_Id2) || _eax = _eay) &&
       ((_eax !in _M._E_s_Id1 || _eay !in _M._E_s_Id1) || _eax = _eay)))) }
-  fact /* assuming */ { no none }
-  check prop { no none }
+  fact /* assuming */ { ({}) }
+  check prop { ({}) }

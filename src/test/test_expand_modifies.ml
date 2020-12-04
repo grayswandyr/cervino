@@ -50,6 +50,6 @@ let%test_module _ =
           always (all _eax: Process | (all _eay: Process |
            ((_eax !in _M._E_s_Process1 || _eay !in _M._E_s_Process1) || _eax = _eay)))
           }
-        fact /* assuming */ { no none }
-        check Safety { no none } |}]
+        fact /* assuming */ { ({}) }
+        check Safety { ({}) } |}]
   end )
