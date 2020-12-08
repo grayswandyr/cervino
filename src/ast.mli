@@ -127,9 +127,9 @@ val and_ : formula -> formula -> formula
 
 val or_ : formula -> formula -> formula
 
-val all : variable -> formula -> formula
+val all : ?folding_constants:constant list -> variable -> formula -> formula
 
-val exists : variable -> formula -> formula
+val exists : ?folding_constants:constant list -> variable -> formula -> formula
 
 val eventually : formula -> formula
 

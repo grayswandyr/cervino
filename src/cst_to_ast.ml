@@ -205,9 +205,16 @@ and walk_prim_formula env (f : Cst.prim_formula) =
       let t' = walk_formula env t in
       let e' = walk_formula env e in
       ite c' t' e'
-  | Quant (_, [], _) ->
+  | Quant (_, _, [], _) ->
       assert false
-  | Quant (q, ts, b) ->
+  | Quant (q, _folding_constants, [ ([ v ], s) ], b) ->
+      (* in Parser, it is already checked that folding_constants is non empty
+         only if ts is made of a single ranging *)
+      let env' = Env.push_variables env [ (v, s) ] in
+      let b' = walk_block env' b in
+      quantify q (v, s) b'
+  | Quant (q, folding_constants, ts, b) ->
+      assert (List.is_empty folding_constants);
       (* reverse to make stack-shaped substitution *)
       let ts' = flatten_telescope env ts in
       let env' = Env.push_variables env (List.rev ts') in

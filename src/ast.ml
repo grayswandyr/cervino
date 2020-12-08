@@ -165,9 +165,15 @@ and and_ f1 f2 = match (f1, f2) with True, f | f, True -> f | _ -> And (f1, f2)
 
 and or_ f1 f2 = match (f1, f2) with False, f | f, False -> f | _ -> Or (f1, f2)
 
-and all x f = All (x, f)
+and all ?folding_constants x f =
+  ignore folding_constants;
+  All (x, f)
 
-and exists x f = Exists (x, f)
+
+and exists ?folding_constants x f =
+  ignore folding_constants;
+  Exists (x, f)
+
 
 and eventually f = F f
 

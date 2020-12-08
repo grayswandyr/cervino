@@ -66,7 +66,14 @@ let outfile =
 let verb_term = Logs_cli.level ()
 
 let main_term =
-  Term.(const Main.main $ verb_term $ second_pass $ output_cervino $ check $ infile $ outfile)
+  Term.(
+    const Main.main
+    $ verb_term
+    $ second_pass
+    $ output_cervino
+    $ check
+    $ infile
+    $ outfile)
 
 
 (* MAIN *)
