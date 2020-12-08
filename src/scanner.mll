@@ -49,7 +49,7 @@ let number = (digit | [ '1'-'9'] digit*)
                            
 let letter = [ 'A'-'Z' 'a'-'z' ]
 
-let ident = letter (letter | digit | '_')*
+let ident = '_'? letter (letter | digit | '_')*
 
 let electrum_kwd = ("sig" | "var" | "one" | "fact" | "eventually" | "always")
 

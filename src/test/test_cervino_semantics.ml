@@ -71,9 +71,6 @@ using TEA
           var is_in_list : set Process,
           var last_list : set index,
         }
-        fact { (some p: Process |
-          eventually (p in _M.is_in_list && always p in _M.is_in_list)) }
-        fact { ({}) }
         fact {
           always (some _s_index1: index | (some _s_Process1: Process |
            ((_s_index1 in _M.last_list &&
@@ -92,6 +89,9 @@ using TEA
                (i->i2 !in _M.prev_index ||
                 ((i->p !in _M.list || i2->p in _M.list') &&
                  (i2->p !in _M.list' || i->p in _M.list)))))))))))) }
+        fact { (some p: Process |
+          eventually (p in _M.is_in_list && always p in _M.is_in_list)) }
+        fact { ({}) }
         fact {
           always (all i1: index | (all i2: index | (all i3: index |
            (zero->i1 !in _M.prev_index &&

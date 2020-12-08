@@ -504,3 +504,118 @@ module Electrum = struct
     pf fmt "@[<hov2>fact /* assuming */ {@ %a@ @]}@\n" pp_formula chk_assuming;
     pf fmt "@[<hov2>check %a {@ %a@ @]}" Name.pp chk_name pp_formula chk_body
 end
+
+module Cervino = struct
+  open Fmt
+
+  let _true fmt = string fmt "true"
+
+  let _false fmt = string fmt "false"
+
+  let comma = const string ","
+
+  let rec pp_formula fmt = function
+    | True ->
+        _true fmt
+    | False ->
+        _false fmt
+    | Lit (Pos_app (nexts, p, args)) ->
+        assert (nexts >= 0);
+        pp_app fmt true p args nexts
+    | Lit (Neg_app (nexts, p, args)) ->
+        assert (nexts >= 0);
+        pp_app fmt false p args nexts
+    | Lit (Eq (t1, t2)) ->
+        pf fmt "%a = %a" pp_term t1 pp_term t2
+    | Lit (Not_eq (t1, t2)) ->
+        pf fmt "%a != %a" pp_term t1 pp_term t2
+    | And (f1, f2) ->
+        pf fmt "@[<1>(%a@ &&@ %a)@]" pp_formula f1 pp_formula f2
+    | Or (f1, f2) ->
+        pf fmt "@[<1>(%a@ ||@ %a)@]" pp_formula f1 pp_formula f2
+    | Exists ({ var_name; var_sort }, f) ->
+        pp_quantified fmt "some" var_name var_sort f
+    | All ({ var_name; var_sort }, f) ->
+        pp_quantified fmt "all" var_name var_sort f
+    | F f ->
+        pf fmt "@[<1>F@ %a@]" pp_formula f
+    | G f ->
+        pf fmt "@[<1>G@ %a@]" pp_formula f
+
+
+  and pp_app fmt pos p args nexts =
+    pf
+      fmt
+      "%s%a%s(%a)"
+      (if pos then "" else "!")
+      pp_relation
+      p
+      (String.repeat "'" nexts)
+      pp_terms
+      args
+
+
+  and pp_quantified fmt q x s f =
+    pf fmt "(%s %a: %a |@ %a)" q Name.pp x Name.pp s pp_formula f
+
+
+  and pp_relation fmt { rel_name; _ } = pf fmt "%a" Name.pp rel_name
+
+  and pp_terms fmt terms = pf fmt "%a" (list ~sep:comma pp_term) terms
+
+  and pp_term fmt = function
+    | Var { var_name = n; _ } | Cst { cst_name = n; _ } ->
+        Name.pp fmt n
+
+
+  let rec pp fmt { model; check } =
+    pf fmt "@[<v>%a@,%a@]@." pp_model model pp_check check
+
+
+  and pp_model fmt { sorts; relations; constants; axioms; _ } =
+    pf
+      fmt
+      "@[<v>%a@,%a@,%a@,%a@]"
+      (vbox @@ list pp_sort)
+      sorts
+      (vbox @@ list pp_constant)
+      constants
+      pp_relations
+      relations
+      (vbox @@ list pp_axiom)
+      axioms
+
+
+  and pp_sort fmt sort = pf fmt "sort %a" Name.pp sort
+
+  and pp_constant fmt { cst_name; cst_sort } =
+    pf fmt "constant %a in %a" Name.pp cst_name Name.pp cst_sort
+
+
+  and pp_relations fmt relations =
+    pf fmt "@[<v>%a@]" (list pp_relation_decl) relations
+
+
+  and pp_relation_decl fmt { rel_name; rel_profile } =
+    pf
+      fmt
+      "@[<h>relation %a in %a@]"
+      Name.pp
+      rel_name
+      (list ~sep:(const string " * ") Name.pp)
+      rel_profile
+
+
+  and pp_axiom fmt f = pf fmt "@[<hov2>axiom {@ %a@ }@]" pp_formula f
+
+  and pp_check fmt { chk_name; chk_assuming; chk_body; _ } =
+    pf
+      fmt
+      "@[<hov2>check %a {@ %a@ @]}@\n@[<hov2>assuming {@ %a@ @]}"
+      Name.pp
+      chk_name
+      pp_formula
+      chk_body
+      pp_formula
+      chk_assuming
+end

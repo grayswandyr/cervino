@@ -29,7 +29,7 @@ let pp_header ppf (l, h) =
       @@ Option.map_or ~default:(keyword l) (fun s -> short l ^ s) h
 
 
-let main verbosity property input output =
+let main verbosity second_pass output_cervino property input output =
   Printexc.record_backtrace true;
   Logs.set_reporter (Logs_fmt.reporter ~pp_header ());
   Fmt_tty.setup_std_outputs ();
@@ -52,15 +52,16 @@ let main verbosity property input output =
     let ast = Cst_to_ast.convert model property in
     Msg.info (fun m -> m "Conversion to AST done.");
     Msg.debug (fun m -> m "AST:@.%a" Ast.pp ast);
-    Wf.check ast;
+    if not second_pass then Wf.check ast;
+    let pp = if output_cervino then Ast.Cervino.pp else Ast.Electrum.pp in
     let result = Transfo.convert ast in
     match output with
     | None ->
-        Ast.Electrum.pp Fmt.stdout result
+        pp Fmt.stdout result
     | Some s ->
         IO.with_out s (fun out ->
             let fmt = Format.formatter_of_out_channel out in
-            Ast.Electrum.pp fmt result)
+            pp fmt result)
   with
   | Exit ->
       ()

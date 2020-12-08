@@ -31,6 +31,16 @@ let main_info =
 
 (* OPTIONS *)
 
+let second_pass =
+  let doc = "If present, perform the instantiation pass only." in
+  Arg.(value & flag & info [ "2"; "inst" ] ~doc)
+
+
+let output_cervino =
+  let doc = "If present, output Cervino code (Electrum code otherwise)." in
+  Arg.(value & flag & info [ "c"; "cervino" ] ~doc)
+
+
 let check =
   let doc = "Check command to execute." in
   Arg.(
@@ -55,7 +65,9 @@ let outfile =
 (* verbosity options (already def'd in Logs_cli, thx!) *)
 let verb_term = Logs_cli.level ()
 
-let main_term = Term.(const Main.main $ verb_term $ check $ infile $ outfile)
+let main_term =
+  Term.(const Main.main $ verb_term $ second_pass $ output_cervino $ check $ infile $ outfile)
+
 
 (* MAIN *)
 
