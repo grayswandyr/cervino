@@ -31,9 +31,12 @@ let main_info =
 
 (* OPTIONS *)
 
-let second_pass =
-  let doc = "If present, perform the instantiation pass only." in
-  Arg.(value & flag & info [ "2"; "inst" ] ~doc)
+let instantiate =
+  let doc =
+    "If present, perform the instantiation pass only (deactivates the \
+     well-formedness check)."
+  in
+  Arg.(value & flag & info [ "i"; "inst" ] ~doc)
 
 
 let output_cervino =
@@ -69,7 +72,7 @@ let main_term =
   Term.(
     const Main.main
     $ verb_term
-    $ second_pass
+    $ instantiate
     $ output_cervino
     $ check
     $ infile
