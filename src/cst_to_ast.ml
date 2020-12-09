@@ -81,11 +81,15 @@ let find_relation relations ident =
   List.find_opt (fun r -> Name.equal r.rel_name (Name.of_ident ident)) relations
 
 
-let quantify q (x, s) b =
+let quantify q folding_constants (x, s) b =
   let var_name = Name.of_ident x in
   let var_sort = Name.of_ident s in
   let var = make_variable ~var_name ~var_sort in
-  match q with Cst.All -> all var b | Cst.Exists -> exists var b
+  match q with
+  | Cst.All ->
+      all ~folding_constants var b
+  | Cst.Exists ->
+      exists ~folding_constants var b
 
 
 (* converts [ ([x;y], s); ([w;z], t)] into (mind the reversal!):
@@ -123,12 +127,31 @@ let convert_relation sorts Cst.{ r_name; r_profile } =
   make_relation ~rel_name:(Name.of_ident r_name) ~rel_profile ()
 
 
-let rec walk_formula env (f : Cst.formula) =
+let find_constant (constants : constant list) (ident : Ident.t) =
+  match
+    List.find_opt
+      (fun { cst_name; _ } ->
+        String.equal (Name.content cst_name) (Ident.content ident))
+      constants
+  with
+  | None ->
+      Msg.err (fun m ->
+          m
+            "Not a constant: %a@\n%a"
+            Ident.pp
+            ident
+            Location.excerpt
+            (Ident.positions ident))
+  | Some c ->
+      c
+
+
+let rec walk_formula constants env (f : Cst.formula) =
   let pf = Location.content f in
-  walk_prim_formula env pf
+  walk_prim_formula constants env pf
 
 
-and walk_prim_formula env (f : Cst.prim_formula) =
+and walk_prim_formula (constants : constant list) env (f : Cst.prim_formula) =
   match f with
   | False ->
       false_
@@ -180,8 +203,8 @@ and walk_prim_formula env (f : Cst.prim_formula) =
               Ident.pp
               s2)
   | Binary (op, f1, f2) ->
-      let f1' = walk_formula env f1 in
-      let f2' = walk_formula env f2 in
+      let f1' = walk_formula constants env f1 in
+      let f2' = walk_formula constants env f2 in
       let op' =
         match op with
         | And ->
@@ -195,36 +218,37 @@ and walk_prim_formula env (f : Cst.prim_formula) =
       in
       op' f1' f2'
   | Unary (op, f) ->
-      let f' = walk_formula env f in
+      let f' = walk_formula constants env f in
       let op' =
         match op with Not -> not_ | F -> eventually | G -> always | X -> next
       in
       op' f'
   | Ite (c, t, e) ->
-      let c' = walk_formula env c in
-      let t' = walk_formula env t in
-      let e' = walk_formula env e in
+      let c' = walk_formula constants env c in
+      let t' = walk_formula constants env t in
+      let e' = walk_formula constants env e in
       ite c' t' e'
   | Quant (_, _, [], _) ->
       assert false
-  | Quant (q, _folding_constants, [ ([ v ], s) ], b) ->
-      (* in Parser, it is already checked that folding_constants is non empty
-         only if ts is made of a single ranging *)
+  | Quant (q, folding_constants, [ ([ v ], s) ], b) ->
+      (* in Parser, it is already checked that if folding_constants is non empty
+         then ts is made of a single one-variable ranging *)
       let env' = Env.push_variables env [ (v, s) ] in
-      let b' = walk_block env' b in
-      quantify q (v, s) b'
+      let b' = walk_block constants env' b in
+      let fcs = List.map (find_constant constants) folding_constants in
+      quantify q fcs (v, s) b'
   | Quant (q, folding_constants, ts, b) ->
       assert (List.is_empty folding_constants);
       (* reverse to make stack-shaped substitution *)
       let ts' = flatten_telescope env ts in
       let env' = Env.push_variables env (List.rev ts') in
-      let b' = walk_block env' b in
-      List.fold_right (quantify q) ts' b'
+      let b' = walk_block constants env' b in
+      List.fold_right (quantify q []) ts' b'
   | Block b ->
-      walk_block env b
+      walk_block constants env b
 
 
-and walk_block env b = conj (List.map (walk_formula env) b)
+and walk_block constants env b = conj (List.map (walk_formula constants env) b)
 
 and check_type x s1 s2 =
   if Ident.equal s1 s2
@@ -338,7 +362,9 @@ let convert_path (relations : relation list) Cst.{ t_base; t_tc; t_between } =
             (Ident.positions t_base))
 
 
-let convert_axiom env Cst.{ a_body; _ } = walk_block env a_body
+let convert_axiom constants env Cst.{ a_body; _ } =
+  walk_block constants env a_body
+
 
 let convert_modifies env relations Cst.{ mod_field; mod_modifications } =
   match
@@ -382,7 +408,8 @@ let convert_modifies env relations Cst.{ mod_field; mod_modifications } =
       make_ev_modify ~mod_rel ~mod_mods ()
 
 
-let convert_event env relations Cst.{ e_name; e_args; e_modifies; e_body } =
+let convert_event
+    constants env relations Cst.{ e_name; e_args; e_modifies; e_body } =
   if not
      @@ Mysc.List.all_different
           ~eq:(fun f1 f2 -> Ident.equal f1.Cst.mod_field f2.Cst.mod_field)
@@ -406,11 +433,11 @@ let convert_event env relations Cst.{ e_name; e_args; e_modifies; e_body } =
     (* handle modifies *)
     let ev_modifies = List.map (convert_modifies env' relations) e_modifies in
     (* handle body *)
-    let ev_body = walk_block env' e_body in
+    let ev_body = walk_block constants env' e_body in
     make_event ~ev_name ~ev_args ~ev_body ~ev_modifies ()
 
 
-let convert_using env = function
+let convert_using constants env = function
   | Cst.TEA ->
       tea
   | Cst.TTC (rel_id, (x, s), ts, b) ->
@@ -437,7 +464,7 @@ let convert_using env = function
           ts'
       in
       let env' = Env.push_variables env ((x, s) :: List.rev ts') in
-      let f = walk_block env' b in
+      let f = walk_block constants env' b in
       ttc rel v vars f
   | Cst.TFC args ->
       assert (not @@ List.is_empty args);
@@ -466,13 +493,13 @@ let convert_using env = function
               (* reverse to make stack-shaped substitution *)
               let subst = flatten_telescope env e_args |> List.rev in
               let env' = Env.push_variables env subst in
-              let fml = walk_block env' ev_block in
+              let fml = walk_block constants env' ev_block in
               (Name.of_ident ev_id, fml)
         in
         tfc (fun event_name -> List.assoc_opt ~eq:Name.equal event_name assoc)
 
 
-let convert_check env chk_id checks =
+let convert_check constants env chk_id checks =
   match List.find_opt (fun c -> Ident.equal c.Cst.check_name chk_id) checks with
   | None ->
       Msg.err (fun m ->
@@ -484,13 +511,13 @@ let convert_check env chk_id checks =
             (List.map (fun Cst.{ check_name; _ } -> check_name) checks))
   | Some Cst.{ check_body; check_assuming; check_using; _ } ->
       let chk_name = Name.of_ident chk_id in
-      let chk_body = walk_block env check_body in
-      let chk_assuming = walk_block env check_assuming in
+      let chk_body = walk_block constants env check_body in
+      let chk_assuming = walk_block constants env check_assuming in
       ( match check_using with
       | None ->
           make_check ~chk_name ~chk_body ~chk_assuming ()
       | Some u ->
-          let chk_using = convert_using env u in
+          let chk_using = convert_using constants env u in
           make_check ~chk_name ~chk_body ~chk_assuming ~chk_using () )
 
 
@@ -501,10 +528,10 @@ let convert (cst : Cst.t) (check : string) =
   let relations = map (convert_relation cst.sorts) cst.relations in
   let closures = map (convert_path relations) cst.closures in
   let env = Env.make cst in
-  let axioms = map (convert_axiom env) cst.axioms in
-  let events = map (convert_event env relations) cst.events in
+  let axioms = map (convert_axiom constants env) cst.axioms in
+  let events = map (convert_event constants env relations) cst.events in
   let check_id = Ident.of_string check in
-  let check = convert_check env check_id cst.checks in
+  let check = convert_check constants env check_id cst.checks in
   let model =
     make_model ~sorts ~relations ~constants ~closures ~axioms ~events ()
   in

@@ -31,12 +31,17 @@ let main_info =
 
 (* OPTIONS *)
 
+let transform =
+  let doc = "If present, perform the transformation pass only." in
+  Arg.(value & flag & info [ "t"; "transform" ] ~doc)
+
+
 let instantiate =
   let doc =
     "If present, perform the instantiation pass only (deactivates the \
      well-formedness check)."
   in
-  Arg.(value & flag & info [ "i"; "inst" ] ~doc)
+  Arg.(value & flag & info [ "i"; "instantiate" ] ~doc)
 
 
 let output_cervino =
@@ -66,12 +71,13 @@ let outfile =
 
 
 (* verbosity options (already def'd in Logs_cli, thx!) *)
-let verb_term = Logs_cli.level ()
+let verbosity = Logs_cli.level ()
 
 let main_term =
   Term.(
     const Main.main
-    $ verb_term
+    $ verbosity
+    $ transform
     $ instantiate
     $ output_cervino
     $ check
