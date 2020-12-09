@@ -152,9 +152,9 @@ and not_ = function
   | Or (f1, f2) ->
       and_ (not_ f1) (not_ f2)
   | Exists (folding_csts, x, f) ->
-      all folding_csts x (not_ f)
+      all ~folding_csts x (not_ f)
   | All (folding_csts, x, f) ->
-      exists folding_csts x (not_ f)
+      exists ~folding_csts x (not_ f)
   | F f ->
       always (not_ f)
   | G f ->
@@ -187,9 +187,9 @@ let rec conj = function [] -> true_ | [ f ] -> f | f :: fs -> and_ f (conj fs)
 
 let rec disj = function [] -> false_ | [ f ] -> f | f :: fs -> or_ f (disj fs)
 
-let all_many ?(folding_constants = []) vars f = List.fold_right (all folding_constants) vars f
+let all_many ?(folding_csts = []) vars f = List.fold_right (all ~folding_csts) vars f
 
-let exists_many ?(folding_constants = []) vars f = List.fold_right (exists folding_constants) vars f
+let exists_many ?(folding_csts = []) vars f = List.fold_right (exists ~folding_csts) vars f
 
 let implies f1 f2 = or_ (not_ f1) f2
 
@@ -215,9 +215,9 @@ let rec next = function
   | Or (f1, f2) ->
       or_ (next f1) (next f2)
   | Exists (folding_csts, x, f) ->
-      exists x (next f)
+      exists ~folding_csts  x (next f)
   | All (folding_csts, x, f) ->
-      all x folding_constants (next f)
+      all ~folding_csts x (next f)
   | F f ->
       eventually (next f)
   | G f ->
@@ -292,10 +292,10 @@ let substitute x ~by fml =
         or_
           (subst_except_bound_vars bound_vars x ~by f1)
           (subst_except_bound_vars bound_vars x ~by f2)
-    | Exists (folding_ctsts, varx, f) ->
-        exists folding_ctsts varx (subst_except_bound_vars (varx :: bound_vars) x ~by f)
-    | All (folding_ctsts, varx, f) ->
-        all folding_ctsts varx (subst_except_bound_vars (varx :: bound_vars) x ~by f)
+    | Exists (folding_csts, varx, f) ->
+        exists ~folding_csts varx (subst_except_bound_vars (varx :: bound_vars) x ~by f)
+    | All (folding_csts, varx, f) ->
+        all ~folding_csts varx (subst_except_bound_vars (varx :: bound_vars) x ~by f)
     | F f ->
         eventually (subst_except_bound_vars bound_vars x ~by f)
     | G f ->
