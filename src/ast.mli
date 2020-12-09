@@ -36,8 +36,8 @@ type formula = private
   | Lit of literal
   | And of formula * formula
   | Or of formula * formula
-  | Exists of variable * formula
-  | All of variable * formula
+  | Exists of constant list * variable * formula
+  | All of constant list * variable * formula
   | F of formula
   | G of formula
 [@@deriving eq, ord, sexp_of]
@@ -127,9 +127,9 @@ val and_ : formula -> formula -> formula
 
 val or_ : formula -> formula -> formula
 
-val all : ?folding_constants:constant list -> variable -> formula -> formula
+val all : ?folding_csts:constant list -> variable -> formula -> formula
 
-val exists : ?folding_constants:constant list -> variable -> formula -> formula
+val exists : ?folding_csts:constant list -> variable -> formula -> formula
 
 val eventually : formula -> formula
 
@@ -139,10 +139,10 @@ val conj : formula list -> formula
 
 val disj : formula list -> formula
 
-val all_many : variable list -> formula -> formula
+val all_many : ?folding_csts:constant list -> variable list -> formula -> formula
 (** quantification maintains the order of variables *)
 
-val exists_many : variable list -> formula -> formula
+val exists_many : ?folding_csts:constant list -> variable list -> formula -> formula
 (** quantification maintains the order of variables *)
 
 val implies : formula -> formula -> formula

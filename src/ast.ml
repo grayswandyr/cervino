@@ -151,10 +151,10 @@ and not_ = function
       or_ (not_ f1) (not_ f2)
   | Or (f1, f2) ->
       and_ (not_ f1) (not_ f2)
-  | Exists (x, f) ->
-      all x (not_ f)
-  | All (x, f) ->
-      exists x (not_ f)
+  | Exists (folding_csts, x, f) ->
+      all folding_ctsts x (not_ f)
+  | All (folding_csts, x, f) ->
+      exists folding_ctsts x (not_ f)
   | F f ->
       always (not_ f)
   | G f ->
@@ -165,14 +165,12 @@ and and_ f1 f2 = match (f1, f2) with True, f | f, True -> f | _ -> And (f1, f2)
 
 and or_ f1 f2 = match (f1, f2) with False, f | f, False -> f | _ -> Or (f1, f2)
 
-and all ?folding_constants x f =
-  ignore folding_constants;
-  All (x, f)
+and all ?(folding_csts = []) x f =
+  All (folding_csts, x, f)
 
 
-and exists ?folding_constants x f =
-  ignore folding_constants;
-  Exists (x, f)
+and exists ?(folding_csts = []) x f =
+  Exists (folding_csts, x, f)
 
 
 and eventually f = F f
@@ -189,9 +187,9 @@ let rec conj = function [] -> true_ | [ f ] -> f | f :: fs -> and_ f (conj fs)
 
 let rec disj = function [] -> false_ | [ f ] -> f | f :: fs -> or_ f (disj fs)
 
-let all_many vars f = List.fold_right all vars f
+let all_many ?(folding_constants = []) vars f = List.fold_right (all folding_constants) vars f
 
-let exists_many vars f = List.fold_right exists vars f
+let exists_many ?(folding_constants = []) vars f = List.fold_right (exists folding_constants) vars f
 
 let implies f1 f2 = or_ (not_ f1) f2
 
@@ -216,10 +214,10 @@ let rec next = function
       and_ (next f1) (next f2)
   | Or (f1, f2) ->
       or_ (next f1) (next f2)
-  | Exists (x, f) ->
+  | Exists (folding_csts, x, f) ->
       exists x (next f)
-  | All (x, f) ->
-      all x (next f)
+  | All (folding_csts, x, f) ->
+      all x folding_constants (next f)
   | F f ->
       eventually (next f)
   | G f ->
@@ -294,10 +292,10 @@ let substitute x ~by fml =
         or_
           (subst_except_bound_vars bound_vars x ~by f1)
           (subst_except_bound_vars bound_vars x ~by f2)
-    | Exists (varx, f) ->
-        exists varx (subst_except_bound_vars (varx :: bound_vars) x ~by f)
-    | All (varx, f) ->
-        all varx (subst_except_bound_vars (varx :: bound_vars) x ~by f)
+    | Exists (folding_ctsts, varx, f) ->
+        exists folding_ctsts varx (subst_except_bound_vars (varx :: bound_vars) x ~by f)
+    | All (folding_ctsts, varx, f) ->
+        all folding_ctsts varx (subst_except_bound_vars (varx :: bound_vars) x ~by f)
     | F f ->
         eventually (subst_except_bound_vars bound_vars x ~by f)
     | G f ->
@@ -354,7 +352,7 @@ let rec nb_next fml =
       | Some sn1, Some sn2 ->
           (is_tprl1 || is_tprl2 || (not @@ Int.equal sn1 sn2), Some (sn1 + sn2))
       )
-  | Exists (_, f) | All (_, f) ->
+  | Exists (_, _, f) | All (_, _, f) ->
       nb_next f
   | G _ | F _ ->
       (true, Some 0)
@@ -371,7 +369,7 @@ let rec is_temporal fml =
   | Or _ ->
       let is_tprl, _ = nb_next fml in
       is_tprl
-  | Exists (_, f) | All (_, f) ->
+  | Exists (_, _, f) | All (_, _, f) ->
       is_temporal f
   | G f ->
       is_temporal f
@@ -389,7 +387,7 @@ let rec includes_exists fml =
       includes_exists f1 || includes_exists f2
   | Exists _ ->
       true
-  | All (_, f) ->
+  | All (_, _, f) ->
       includes_exists f
   | G f | F f ->
       includes_exists f
@@ -423,9 +421,9 @@ module Electrum = struct
         pf fmt "@[<1>(%a@ &&@ %a)@]" pp_formula f1 pp_formula f2
     | Or (f1, f2) ->
         pf fmt "@[<1>(%a@ ||@ %a)@]" pp_formula f1 pp_formula f2
-    | Exists ({ var_name; var_sort }, f) ->
+    | Exists (_, { var_name; var_sort }, f) ->
         pp_quantified fmt "some" var_name var_sort f
-    | All ({ var_name; var_sort }, f) ->
+    | All (_, { var_name; var_sort }, f) ->
         pp_quantified fmt "all" var_name var_sort f
     | F f ->
         pf fmt "@[<1>eventually@ %a@]" pp_formula f
@@ -539,9 +537,9 @@ module Cervino = struct
         pf fmt "@[<1>(%a@ &&@ %a)@]" pp_formula f1 pp_formula f2
     | Or (f1, f2) ->
         pf fmt "@[<1>(%a@ ||@ %a)@]" pp_formula f1 pp_formula f2
-    | Exists ({ var_name; var_sort }, f) ->
+    | Exists (_, { var_name; var_sort }, f) ->
         pp_quantified fmt "some" var_name var_sort f
-    | All ({ var_name; var_sort }, f) ->
+    | All (_, { var_name; var_sort }, f) ->
         pp_quantified fmt "all" var_name var_sort f
     | F f ->
         pf fmt "@[<1>F@ %a@]" pp_formula f

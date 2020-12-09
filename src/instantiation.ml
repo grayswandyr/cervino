@@ -58,13 +58,13 @@ let rec instantiate_ae constlist fml =
       and_ (instantiate_ae constlist f1) (instantiate_ae constlist f2)
   | Or (f1, f2) ->
       or_ (instantiate_ae constlist f1) (instantiate_ae constlist f2)
-  | Exists (v, f) ->
-      exists v (instantiate_ae (var v :: constlist) f)
-  | All (v, f) ->
+  | Exists (folding_csts, v, f) ->
+      exists ~folding_csts v (instantiate_ae (var v :: constlist) f)
+  | All (folding_csts, v, f) ->
       let subfml = instantiate_ae constlist f in
       if includes_exists f
       then instantiate_constants v constlist subfml
-      else all v subfml
+      else all ~folding_csts v subfml
   | F f ->
       eventually @@ instantiate_ae constlist f
   | G f ->

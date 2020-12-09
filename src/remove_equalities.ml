@@ -69,12 +69,12 @@ let rec remove_eq_fml = function
       let ss1, fml1 = remove_eq_fml f1 in
       let ss2, fml2 = remove_eq_fml f2 in
       (Sorts.union ss1 ss2, or_ fml1 fml2)
-  | Exists (v, f) ->
+  | Exists (folding_csts, v, f) ->
       let ss, fml = remove_eq_fml f in
-      (ss, exists v fml)
-  | All (v, f) ->
+      (ss, exists ~folding_ctsts v fml)
+  | All (folding_csts, v, f) ->
       let ss, fml = remove_eq_fml f in
-      (ss, all v fml)
+      (ss, all ~folding_csts v fml)
   | F f ->
       let ss, fml = remove_eq_fml f in
       (ss, eventually fml)
