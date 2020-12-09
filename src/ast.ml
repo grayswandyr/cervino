@@ -38,8 +38,8 @@ type formula =
   | Lit of literal
   | And of formula * formula
   | Or of formula * formula
-  | Exists of variable * formula
-  | All of variable * formula
+  | Exists of constant list * variable * formula
+  | All of constant list * variable * formula
   | F of formula
   | G of formula
 [@@deriving eq, ord, sexp_of]
