@@ -71,7 +71,7 @@ let rec remove_eq_fml = function
       (Sorts.union ss1 ss2, or_ fml1 fml2)
   | Exists (folding_csts, v, f) ->
       let ss, fml = remove_eq_fml f in
-      (ss, exists ~folding_ctsts v fml)
+      (ss, exists ~folding_csts v fml)
   | All (folding_csts, v, f) ->
       let ss, fml = remove_eq_fml f in
       (ss, all ~folding_csts v fml)

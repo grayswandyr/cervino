@@ -18,7 +18,7 @@ let rec skolemize fml =
       let csts1, skfml1 = skolemize f1 in
       let csts2, skfml2 = skolemize f2 in
       (List.append csts1 csts2, or_ skfml1 skfml2)
-  | Exists (x, f) ->
+  | Exists (_, x, f) ->
       let cst_x = constant_from_var x in
       let csts_f, skfml = skolemize f in
       (cst_x :: csts_f, substitute x ~by:(cst cst_x) skfml)

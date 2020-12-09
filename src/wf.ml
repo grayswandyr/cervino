@@ -3,7 +3,7 @@ open Ast
 let check_event { ev_name; ev_body; _ } =
   let rec walk f =
     match f with
-    | Exists ({ var_name; _ }, _) ->
+    | Exists (_, { var_name; _ }, _) ->
         Msg.err (fun m ->
             m
               "Event `%a`: irregular quantification on `%a`@\n%a"
@@ -30,7 +30,7 @@ let check_event { ev_name; ev_body; _ } =
     | And (f1, f2) | Or (f1, f2) ->
         walk f1;
         walk f2
-    | All (_, f) ->
+    | All (_, _, f) ->
         walk f
   in
   walk ev_body
@@ -48,7 +48,7 @@ let check_elt f =
   end in
   let open Env in
   let rec walk env = function
-    | Exists ({ var_name; _ }, _) when env.saw_g ->
+    | Exists (_, { var_name; _ }, _) when env.saw_g ->
         Msg.err (fun m ->
             m
               "Irregular quantification (nesting of type G/some) on `%a`@\n%a"
@@ -56,7 +56,7 @@ let check_elt f =
               var_name
               Location.excerpt
               (Name.positions var_name))
-    | All ({ var_name; _ }, _) when env.saw_all_exists ->
+    | All (_, { var_name; _ }, _) when env.saw_all_exists ->
         Msg.err (fun m ->
             m
               "Irregular quantification (nesting of type all/some/all) on `%a`@\n\
@@ -65,11 +65,11 @@ let check_elt f =
               var_name
               Location.excerpt
               (Name.positions var_name))
-    | Exists (_, f) when env.saw_all ->
+    | Exists (_, _, f) when env.saw_all ->
         walk { env with saw_all_exists = true } f
-    | Exists (_, f) ->
+    | Exists (_, _, f) ->
         walk env f
-    | All (_, f) ->
+    | All (_, _, f) ->
         walk { env with saw_all = true } f
     | G f ->
         walk { env with saw_g = true } f

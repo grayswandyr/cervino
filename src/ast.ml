@@ -152,9 +152,9 @@ and not_ = function
   | Or (f1, f2) ->
       and_ (not_ f1) (not_ f2)
   | Exists (folding_csts, x, f) ->
-      all folding_ctsts x (not_ f)
+      all folding_csts x (not_ f)
   | All (folding_csts, x, f) ->
-      exists folding_ctsts x (not_ f)
+      exists folding_csts x (not_ f)
   | F f ->
       always (not_ f)
   | G f ->
