@@ -81,15 +81,15 @@ let find_relation relations ident =
   List.find_opt (fun r -> Name.equal r.rel_name (Name.of_ident ident)) relations
 
 
-let quantify q folding_constants (x, s) b =
+let quantify q folding_csts (x, s) b =
   let var_name = Name.of_ident x in
   let var_sort = Name.of_ident s in
   let var = make_variable ~var_name ~var_sort in
   match q with
   | Cst.All ->
-      all ~folding_constants var b
+      all ~folding_csts var b
   | Cst.Exists ->
-      exists ~folding_constants var b
+      exists ~folding_csts var b
 
 
 (* converts [ ([x;y], s); ([w;z], t)] into (mind the reversal!):
