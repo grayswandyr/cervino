@@ -65,7 +65,7 @@ let rec abstract_formula (vrs : (term, relation) List.Assoc.t) f : formula =
   | Or (f1, f2) ->
       or_ (abstract_formula vrs f1) (abstract_formula vrs f2)
   | All (folding_csts, x, f) ->
-      all ?folding_csts x (abstract_formula vrs f)
+      all ~folding_csts x (abstract_formula vrs f)
   | F _ | G _ | Exists _ ->
       (* forbidden cases *)
       Msg.err (fun m ->
