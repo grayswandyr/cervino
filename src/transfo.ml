@@ -15,12 +15,15 @@ module Id = struct
   let convert ast = ast
 end
 
+let if_ cond t1 t2 =
+  if cond then t1 else t2
+
 (* apply ast->ast transformations from left to right *)
 let compose (transfos : t list) : t =
  fun ast -> List.fold_left (fun ast convert -> convert ast) ast transfos
 
 
-let apply_transformation (using : Ast.transfo option) : t =
+let apply_transformation preinstantiate (using : Ast.transfo option) : t =
   (* applied from left to right *)
   let steps : t list =
     match using with
@@ -39,7 +42,7 @@ let apply_transformation (using : Ast.transfo option) : t =
           Remove_equalities.convert;
           Cervino_semantics.convert;
           Skolemize.convert;
-          Instantiation.convert
+          if_ preinstantiate Id.convert Instantiation.convert 
         ]
     | Some (TFC _) ->
         [ Instantiation.convert_ae;
@@ -49,13 +52,17 @@ let apply_transformation (using : Ast.transfo option) : t =
           Remove_equalities.convert;
           Cervino_semantics.convert;
           Skolemize.convert;
-          Instantiation.convert
-        ]
+          if_ preinstantiate Id.convert Instantiation.convert 
+          ]
     | None ->
         [ Expand_modifies.convert; Cervino_semantics.convert ]
   in
   compose steps
 
 
-let convert Ast.({ check = { chk_using; _ }; _ } as ast) =
-  apply_transformation chk_using ast
+let convert preinstantiate instantiate Ast.({ check = { chk_using; _ }; _ } as ast) =
+  if instantiate
+  then 
+    Instantiation.convert ast
+  else
+    apply_transformation preinstantiate chk_using ast

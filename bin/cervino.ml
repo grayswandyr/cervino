@@ -31,9 +31,9 @@ let main_info =
 
 (* OPTIONS *)
 
-let transform =
-  let doc = "If present, perform the transformation pass only." in
-  Arg.(value & flag & info [ "t"; "transform" ] ~doc)
+let preinstantiate =
+  let doc = "If present, perform a pre-instantiation step." in
+  Arg.(value & flag & info [ "p"; "pre-instantiate" ] ~doc)
 
 
 let instantiate =
@@ -77,7 +77,7 @@ let main_term =
   Term.(
     const Main.main
     $ verbosity
-    $ transform
+    $ preinstantiate
     $ instantiate
     $ output_cervino
     $ check

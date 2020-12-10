@@ -29,13 +29,13 @@ let pp_header ppf (l, h) =
       @@ Option.map_or ~default:(keyword l) (fun s -> short l ^ s) h
 
 
-let main verbosity transform instantiate output_cervino property input output =
+let main verbosity preinstantiate instantiate output_cervino property input output =
   Printexc.record_backtrace true;
   Logs.set_reporter (Logs_fmt.reporter ~pp_header ());
   Fmt_tty.setup_std_outputs ();
   Logs.set_level ~all:true verbosity;
-  if transform && instantiate
-  then Msg.err (fun m -> m "Error: incompatible flags: -t and -i");
+  if preinstantiate && instantiate
+  then Msg.err (fun m -> m "Error: incompatible flags: -p and -i");
   let version =
     match Build_info.V1.version () with
     | None ->
@@ -56,10 +56,10 @@ let main verbosity transform instantiate output_cervino property input output =
     Msg.debug (fun m -> m "AST:@.%a" Ast.pp ast);
     let result =
       if instantiate
-      then Instantiation.convert ast
+      then Transfo.convert preinstantiate instantiate ast
       else (
         Wf.check ast;
-        Transfo.convert ast )
+        Transfo.convert preinstantiate instantiate ast )
     in
     let pp = if output_cervino then Ast.Cervino.pp else Ast.Electrum.pp in
     match output with
