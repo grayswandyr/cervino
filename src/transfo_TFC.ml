@@ -7,7 +7,7 @@ let transform_event_tfc f ev =
     ~ev_name:ev.ev_name
     ~ev_args:ev.ev_args
     ~ev_body:(and_ ev.ev_body stab_axiom)
-    ~ev_modifies:[]
+    ~ev_modifies:ev.ev_modifies
     ()
 
 

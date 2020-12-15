@@ -46,12 +46,12 @@ let apply_transformation preinstantiate (using : Ast.transfo option) : t =
         ]
     | Some (TFC _) ->
         [ Instantiation.convert_ae;
-          Transfo_TFC.convert;
+         Transfo_TFC.convert;
           Remove_equalities.add_eq_relations;
           Expand_modifies.convert;
           Remove_equalities.convert;
           Cervino_semantics.convert;
-          Skolemize.convert;
+         Skolemize.convert;
           if_ preinstantiate Id.convert Instantiation.convert 
           ]
     | None ->
