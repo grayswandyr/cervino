@@ -346,7 +346,7 @@ let rec nb_next fml =
   | And (f1, f2) | Or (f1, f2) ->
       let is_tprl1, n1 = nb_next f1 in
       let is_tprl2, n2 = nb_next f2 in
-             (is_tprl1 || is_tprl2 || (not @@ Int.equal n1 n2), n1 + n2)
+             (is_tprl1 || is_tprl2 || (not @@ Int.equal n1 n2), n1)
   | Exists (_, _, f) | All (_, _, f) ->
       nb_next f
   | G _ | F _ ->
