@@ -36,7 +36,7 @@ let rec abstract_formula (vrs : (term, relation) List.Assoc.t) f : formula =
         List.return (not_ e_pred.![term])
       in
       disj (literal :: negated_e_preds)
-  | Lit (Eq (t_i, t_j)) as literal ->
+  | Lit (Eq (_, t_i, t_j)) as literal ->
     ( match (get_e_pred t_i vrs, get_e_pred t_j vrs) with
     | Some e_pred_i, Some e_pred_j ->
         and_
@@ -48,7 +48,7 @@ let rec abstract_formula (vrs : (term, relation) List.Assoc.t) f : formula =
         e_pred.![t_i]
     | None, None ->
         literal )
-  | Lit (Not_eq (t_i, t_j)) as literal ->
+  | Lit (Not_eq (_, t_i, t_j)) as literal ->
     ( match (get_e_pred t_i vrs, get_e_pred t_j vrs) with
     | Some e_pred_i, Some e_pred_j ->
         and_
@@ -127,7 +127,7 @@ let make_e_preds_axiom (e_preds : relation list) : formula =
       let* e_pred = e_preds_for_one_sort in
       let e_pred_x = lit @@ pos_app 0 e_pred [ term_x ] in
       let e_pred_y = lit @@ pos_app 0 e_pred [ term_y ] in
-      List.return @@ implies (and_ e_pred_x e_pred_y) (lit @@ eq term_x term_y)
+      List.return @@ implies (and_ e_pred_x e_pred_y) (lit @@ eq 0 term_x term_y)
     in
     List.return @@ all x @@ all y @@ conj formula_for_one_sort
   in

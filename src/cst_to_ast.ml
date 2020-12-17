@@ -189,7 +189,7 @@ and walk_prim_formula (constants : constant list) env (f : Cst.prim_formula) =
       if Ident.equal s1 s2
       then
         let op' = match op with Neq -> neq | Eq -> eq in
-        lit (op' t1' t2')
+        lit (op' 0 t1' t2')
       else
         Msg.err (fun m ->
             m

@@ -26,8 +26,8 @@ type term = private
 type literal = private
   | Pos_app of int * relation * term list (* int = number of X, is >= 0 *)
   | Neg_app of int * relation * term list (* int = number of X, is >= 0 *)
-  | Eq of term * term
-  | Not_eq of term * term
+  | Eq of int * term * term (* int = number of X, is >= 0 *)
+  | Not_eq of int * term * term (* int = number of X, is >= 0 *)
 [@@deriving eq, ord, sexp_of]
 
 type formula = private
@@ -111,9 +111,9 @@ val pos_app : int -> relation -> term list -> literal
 val neg_app : int -> relation -> term list -> literal
 (** pre: int >= 0 && |list| >= 0 *)
 
-val eq : term -> term -> literal
+val eq : int -> term -> term -> literal
 
-val neq : term -> term -> literal
+val neq : int -> term -> term -> literal
 
 val true_ : formula
 
@@ -177,7 +177,7 @@ val sort_bag_of_event : event -> Name.Bag.t
 
 val sort_bag_of_events : event list -> Name.Bag.t
 
-val nb_next : formula -> bool * int option
+val nb_next : formula -> bool * int
 
 val is_temporal : formula -> bool
 

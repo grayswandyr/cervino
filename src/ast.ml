@@ -28,8 +28,8 @@ type term =
 type literal =
   | Pos_app of int * relation * term list (* int = number of X, is >= 0 *)
   | Neg_app of int * relation * term list (* int = number of X, is >= 0 *)
-  | Eq of term * term
-  | Not_eq of term * term
+  | Eq of int * term * term (* int = number of X, is >= 0, also needed for = beacause of remove_equality *)
+  | Not_eq of int * term * term (* int = number of X, is >= 0, also needed for = beacause of remove_equality *)
 [@@deriving eq, ord, sexp_of]
 
 type formula =
@@ -124,9 +124,9 @@ let neg_app nexts p args =
   Neg_app (nexts, p, args)
 
 
-let eq t1 t2 = Eq (t1, t2)
+let eq i t1 t2 = Eq (i, t1, t2)
 
-let neq t1 t2 = Not_eq (t1, t2)
+let neq i t1 t2 = Not_eq (i, t1, t2)
 
 let rec true_ = True
 
@@ -143,10 +143,10 @@ and not_ = function
       lit (neg_app nexts p args)
   | Lit (Neg_app (nexts, p, args)) ->
       lit (pos_app nexts p args)
-  | Lit (Eq (t1, t2)) ->
-      lit (neq t1 t2)
-  | Lit (Not_eq (t1, t2)) ->
-      lit (eq t1 t2)
+  | Lit (Eq (nexts, t1, t2)) ->
+      lit (neq nexts t1 t2)
+  | Lit (Not_eq (nexts, t1, t2)) ->
+      lit (eq nexts t1 t2)
   | And (f1, f2) ->
       or_ (not_ f1) (not_ f2)
   | Or (f1, f2) ->
@@ -206,10 +206,10 @@ let rec next = function
       lit (pos_app (nexts + 1) p args)
   | Lit (Neg_app (nexts, p, args)) ->
       lit (neg_app (nexts + 1) p args)
-  | Lit (Eq (t1, t2)) ->
-      lit (eq t1 t2)
-  | Lit (Not_eq (t1, t2)) ->
-      lit (neq t1 t2)
+  | Lit (Eq (nexts, t1, t2)) ->
+      lit (eq (nexts + 1) t1 t2)
+  | Lit (Not_eq (nexts, t1, t2)) ->
+      lit (neq (nexts + 1) t1 t2)
   | And (f1, f2) ->
       and_ (next f1) (next f2)
   | Or (f1, f2) ->
@@ -229,11 +229,11 @@ let pp_formula fmt model = Sexplib.Sexp.pp_hum fmt (sexp_of_formula model)
 let pp fmt model = Sexplib.Sexp.pp_hum fmt (sexp_of_t model)
 
 let eq_term_list tl1 tl2 =
-  conj (List.map2 (fun t1 t2 -> lit @@ eq t1 t2) tl1 tl2)
+  conj (List.map2 (fun t1 t2 -> lit @@ eq 0 t1 t2) tl1 tl2)
 
 
 let neq_term_list tl1 tl2 =
-  disj (List.map2 (fun t1 t2 -> lit @@ neq t1 t2) tl1 tl2)
+  disj (List.map2 (fun t1 t2 -> lit @@ neq 0 t1 t2) tl1 tl2)
 
 
 let subst_in_term bound_vars x ~by t =
@@ -274,14 +274,16 @@ let substitute x ~by fml =
     | Lit (Neg_app (nexts, p, args)) ->
         let new_args = List.map (subst_in_term bound_vars x ~by) args in
         lit (neg_app nexts p new_args)
-    | Lit (Eq (t1, t2)) ->
+    | Lit (Eq (nexts, t1, t2)) ->
         lit
           (eq
+            nexts
              (subst_in_term bound_vars x ~by t1)
              (subst_in_term bound_vars x ~by t2))
-    | Lit (Not_eq (t1, t2)) ->
+    | Lit (Not_eq (nexts, t1, t2)) ->
         lit
           (neq
+            nexts
              (subst_in_term bound_vars x ~by t1)
              (subst_in_term bound_vars x ~by t2))
     | And (f1, f2) ->
@@ -332,30 +334,23 @@ let sort_bag_of_events events =
 let rec nb_next fml =
   match fml with
   | True | False ->
-      (false, Some 0)
+      (false, 0)
   | Lit (Pos_app (nexts, _, _)) ->
-      (false, Some nexts)
+      (false, nexts)
   | Lit (Neg_app (nexts, _, _)) ->
-      (false, Some nexts)
-  | Lit (Eq (_, _)) ->
-      (false, None)
-  | Lit (Not_eq (_, _)) ->
-      (false, None)
+      (false, nexts)
+  | Lit (Eq (nexts, _, _)) ->
+      (false, nexts)
+  | Lit (Not_eq (nexts, _, _)) ->
+      (false, nexts)
   | And (f1, f2) | Or (f1, f2) ->
       let is_tprl1, n1 = nb_next f1 in
       let is_tprl2, n2 = nb_next f2 in
-      ( match (n1, n2) with
-      | None, _ ->
-          (is_tprl2, n2)
-      | _, None ->
-          (is_tprl1, n1)
-      | Some sn1, Some sn2 ->
-          (is_tprl1 || is_tprl2 || (not @@ Int.equal sn1 sn2), Some (sn1 + sn2))
-      )
+             (is_tprl1 || is_tprl2 || (not @@ Int.equal n1 n2), n1 + n2)
   | Exists (_, _, f) | All (_, _, f) ->
       nb_next f
   | G _ | F _ ->
-      (true, Some 0)
+      (true, 0)
 
 
 (* Returns true if the formula includes an eventually operator or a disjunction of formulas including either always or litterals not referring to the same exact instant. *)
@@ -413,9 +408,11 @@ module Electrum = struct
     | Lit (Neg_app (nexts, p, args)) ->
         assert (nexts >= 0);
         pp_app fmt "!in" p args nexts
-    | Lit (Eq (t1, t2)) ->
+    | Lit (Eq (nexts, t1, t2)) ->
+      assert (nexts >= 0);
         pf fmt "%a = %a" pp_term t1 pp_term t2
-    | Lit (Not_eq (t1, t2)) ->
+    | Lit (Not_eq (nexts, t1, t2)) ->
+      assert (nexts >= 0);
         pf fmt "%a != %a" pp_term t1 pp_term t2
     | And (f1, f2) ->
         pf fmt "@[<1>(%a@ &&@ %a)@]" pp_formula f1 pp_formula f2
@@ -529,9 +526,9 @@ module Cervino = struct
     | Lit (Neg_app (nexts, p, args)) ->
         assert (nexts >= 0);
         pp_app fmt false p args nexts
-    | Lit (Eq (t1, t2)) ->
+    | Lit (Eq (_, t1, t2)) ->
         pf fmt "%a = %a" pp_term t1 pp_term t2
-    | Lit (Not_eq (t1, t2)) ->
+    | Lit (Not_eq (_, t1, t2)) ->
         pf fmt "%a != %a" pp_term t1 pp_term t2
     | And (f1, f2) ->
         pf fmt "@[<1>(%a@ &&@ %a)@]" pp_formula f1 pp_formula f2

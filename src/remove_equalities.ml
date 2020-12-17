@@ -53,14 +53,14 @@ let rec remove_eq_fml = function
         (Sorts.empty, lit (pos_app i n tl))
     | Neg_app (i, n, tl) ->
         (Sorts.empty, lit (neg_app i n tl))
-    | Eq (t1, t2) ->
+    | Eq (nexts, t1, t2) ->
         let s = sort_of_term t1 in
         let pred_eq = build_pred_eq_from_sort s in
-        (Sorts.add s Sorts.empty, lit @@ pos_app 0 pred_eq [ t1; t2 ])
-    | Not_eq (t1, t2) ->
+        (Sorts.add s Sorts.empty, lit @@ pos_app nexts pred_eq [ t1; t2 ])
+    | Not_eq (nexts, t1, t2) ->
         let s = sort_of_term t1 in
         let pred_eq = build_pred_eq_from_sort s in
-        (Sorts.add s Sorts.empty, lit @@ neg_app 0 pred_eq [ t1; t2 ]) )
+        (Sorts.add s Sorts.empty, lit @@ neg_app nexts pred_eq [ t1; t2 ]) )
   | And (f1, f2) ->
       let ss1, fml1 = remove_eq_fml f1 in
       let ss2, fml2 = remove_eq_fml f2 in
