@@ -39,13 +39,10 @@ let rec instantiate_tprl constlist fml =
   | All (folding_csts, v, f) ->
       let subfml = instantiate_tprl constlist f in
       if is_temporal f
-      then 
-        begin
-            if List.is_empty folding_csts then 
-                instantiate_constants v constlist subfml 
-            else
-                instantiate_constants v (List.map cst folding_csts) subfml    
-        end
+      then
+        if List.is_empty folding_csts
+        then instantiate_constants v constlist subfml
+        else instantiate_constants v (List.map cst folding_csts) subfml
       else all ~folding_csts v subfml
   | F f ->
       eventually @@ instantiate_tprl constlist f

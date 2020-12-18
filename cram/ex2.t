@@ -3,10 +3,10 @@ Tests the TTC Transformation.
   cervino (C) 2020 ONERA (development version)
   sig Process {}
   sig index {}
-  one sig zero in index {}
-  one sig cst in Process {}
-  one sig _sk__tcPx_0 in index {}
-  one sig _sk__tcPy_1 in index {}
+  one sig zero extends index {}
+  one sig cst extends Process {}
+  one sig _sk__tcPx_0 extends index {}
+  one sig _sk__tcPy_1 extends index {}
   one sig _M {
     var prev_index : index -> index,
     var prev_tc : index -> index,

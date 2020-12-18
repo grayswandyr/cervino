@@ -5,7 +5,7 @@ let%test_module _ =
     let check src =
       let cst = Parsing.parse_string src in
       let ast = Cst_to_ast.convert cst "prop" in
-      Fmt.pr "%a@." Ast.Electrum.pp ast
+      Fmt.pr "%a@." Ast.Electrum_one_sig_in.pp ast
 
 
     let%expect_test "sorts, relations and constants" =

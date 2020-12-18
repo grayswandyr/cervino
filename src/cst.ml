@@ -57,7 +57,7 @@ and block = formula list [@@deriving eq, ord, sexp_of]
 type transfo =
   | TEA
   | TFC of (Ident.t * block) list
-  | TTC of Ident.t * (Ident.t * sort) * telescope * block
+  | TTC of (Ident.t * (Ident.t * sort) * telescope * block) option
 [@@deriving eq, ord, sexp_of]
 
 type modification = Ident.t list [@@deriving eq, ord, sexp_of]

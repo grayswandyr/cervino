@@ -29,7 +29,8 @@ let pp_header ppf (l, h) =
       @@ Option.map_or ~default:(keyword l) (fun s -> short l ^ s) h
 
 
-let main verbosity preinstantiate instantiate output_cervino property input output =
+let main
+    verbosity preinstantiate instantiate output_cervino property input output =
   Printexc.record_backtrace true;
   Logs.set_reporter (Logs_fmt.reporter ~pp_header ());
   Fmt_tty.setup_std_outputs ();
@@ -61,7 +62,11 @@ let main verbosity preinstantiate instantiate output_cervino property input outp
         Wf.check ast;
         Transfo.convert preinstantiate instantiate ast )
     in
-    let pp = if output_cervino then Ast.Cervino.pp else Ast.Electrum.pp in
+    let pp =
+      if output_cervino
+      then Ast.Cervino.pp
+      else Ast.pp_electrum ast.check.chk_using
+    in
     match output with
     | None ->
         pp Fmt.stdout result

@@ -15,8 +15,7 @@ module Id = struct
   let convert ast = ast
 end
 
-let if_ cond t1 t2 =
-  if cond then t1 else t2
+let if_ cond t1 t2 = if cond then t1 else t2
 
 (* apply ast->ast transformations from left to right *)
 let compose (transfos : t list) : t =
@@ -42,27 +41,26 @@ let apply_transformation preinstantiate (using : Ast.transfo option) : t =
           Remove_equalities.convert;
           Cervino_semantics.convert;
           Skolemize.convert;
-          if_ preinstantiate Id.convert Instantiation.convert 
+          if_ preinstantiate Id.convert Instantiation.convert
         ]
     | Some (TFC _) ->
         [ Instantiation.convert_ae;
-         Transfo_TFC.convert;
+          Transfo_TFC.convert;
           Remove_equalities.add_eq_relations;
           Expand_modifies.convert;
           Remove_equalities.convert;
           Cervino_semantics.convert;
-         Skolemize.convert;
-          if_ preinstantiate Id.convert Instantiation.convert 
-          ]
+          Skolemize.convert;
+          if_ preinstantiate Id.convert Instantiation.convert
+        ]
     | None ->
         [ Expand_modifies.convert; Cervino_semantics.convert ]
   in
   compose steps
 
 
-let convert preinstantiate instantiate Ast.({ check = { chk_using; _ }; _ } as ast) =
+let convert
+    preinstantiate instantiate Ast.({ check = { chk_using; _ }; _ } as ast) =
   if instantiate
-  then 
-    Instantiation.convert ast
-  else
-    apply_transformation preinstantiate chk_using ast
+  then Instantiation.convert ast
+  else apply_transformation preinstantiate chk_using ast

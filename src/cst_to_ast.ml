@@ -440,7 +440,9 @@ let convert_event
 let convert_using constants env = function
   | Cst.TEA ->
       tea
-  | Cst.TTC (rel_id, (x, s), ts, b) ->
+  | Cst.TTC None ->
+      ttc_none
+  | Cst.TTC (Some (rel_id, (x, s), ts, b)) ->
       Env.check_relation env rel_id;
       let profile = Env.get_profile env rel_id in
       let rel =
@@ -465,9 +467,8 @@ let convert_using constants env = function
       in
       let env' = Env.push_variables env ((x, s) :: List.rev ts') in
       let f = walk_block constants env' b in
-      ttc rel v vars f
+      ttc_some rel v vars f
   | Cst.TFC args ->
-      assert (not @@ List.is_empty args);
       let open List.Infix in
       let events = Env.get_events env in
       if not

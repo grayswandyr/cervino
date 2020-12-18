@@ -59,7 +59,7 @@ let convert_instantiated_TC_axiom ast =
   let check = ast.check in
   let const = List.map cst ast.model.constants in
   match check.chk_using with
-  | Some (TTC (r, x, varlist, fml)) ->
+  | Some (TTC (Some (r, x, varlist, fml))) ->
       let tc_axiom = closure_axiom m r x varlist fml in
       let inst_tc_axiom = Instantiation.instantiate_ae const tc_axiom in
       let updated_axioms = inst_tc_axiom :: m.axioms in
@@ -74,6 +74,8 @@ let convert_instantiated_TC_axiom ast =
           ()
       in
       Ast.make ~model:updated_model ~check
+  | Some (TTC None) ->
+      ast
   | _ ->
       assert false
 
@@ -83,7 +85,7 @@ let convert ast =
   let m = ast.model in
   let check = ast.check in
   match check.chk_using with
-  | Some (TTC (r, x, varlist, fml)) ->
+  | Some (TTC (Some (r, x, varlist, fml))) ->
       let updated_axioms = closure_axiom m r x varlist fml :: m.axioms in
       let updated_model =
         make_model
@@ -96,5 +98,7 @@ let convert ast =
           ()
       in
       Ast.make ~model:updated_model ~check
+  | Some (TTC None) ->
+      ast
   | _ ->
       assert false

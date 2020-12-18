@@ -60,7 +60,7 @@ type event =
 
 type transfo = private
   | TEA
-  | TTC of relation * variable * variable list * formula
+  | TTC of (relation * variable * variable list * formula) option
   | TFC of (Name.t -> formula option)
 [@@deriving sexp_of]
 
@@ -139,10 +139,12 @@ val conj : formula list -> formula
 
 val disj : formula list -> formula
 
-val all_many : ?folding_csts:constant list -> variable list -> formula -> formula
+val all_many :
+  ?folding_csts:constant list -> variable list -> formula -> formula
 (** quantification maintains the order of variables *)
 
-val exists_many : ?folding_csts:constant list -> variable list -> formula -> formula
+val exists_many :
+  ?folding_csts:constant list -> variable list -> formula -> formula
 (** quantification maintains the order of variables *)
 
 val implies : formula -> formula -> formula
@@ -155,7 +157,9 @@ val next : formula -> formula
 
 val tea : transfo
 
-val ttc : relation -> variable -> variable list -> formula -> transfo
+val ttc_none : transfo
+
+val ttc_some : relation -> variable -> variable list -> formula -> transfo
 
 val tfc : (Name.t -> formula option) -> transfo
 
@@ -183,12 +187,21 @@ val is_temporal : formula -> bool
 
 val includes_exists : formula -> bool
 
-module Electrum : sig
+module Electrum_one_sig_in : sig
   val pp : t Fmt.t
   (** does not print the events and closures fields, they must have been handled by prior transformations  *)
 
   val pp_formula : Format.formatter -> formula -> unit
 end
+
+module Electrum_one_sig_extends : sig
+  val pp : t Fmt.t
+  (** does not print the events and closures fields, they must have been handled by prior transformations  *)
+
+  val pp_formula : Format.formatter -> formula -> unit
+end
+
+val pp_electrum : transfo option -> t Fmt.t
 
 module Cervino : sig
   val pp : t Fmt.t

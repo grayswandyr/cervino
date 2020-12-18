@@ -3,7 +3,7 @@ Tests the plain Semantics.
   cervino (C) 2020 ONERA (development version)
   sig Process {}
   sig index {}
-  one sig zero in index {}
+  one sig zero extends index {}
   one sig _M {
     var prev_index : index -> index,
     var prev_tc : index -> index,

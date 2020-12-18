@@ -166,10 +166,13 @@ using:
   | USING r = ttc { r }
   
 %inline tfc:
-  TFC args = brackets(comma_sep1(separated_pair(ident, COMMA, block)))
+  TFC args = brackets(comma_sep(separated_pair(ident, COMMA, block)))
   { TFC args }
 
 %inline ttc :
+  TTC LBRACKET RBRACKET 
+  { TTC None }
+  |
   TTC 
   LBRACKET
   rel = ident 
@@ -180,7 +183,7 @@ using:
   COMMA 
   b = block
   RBRACKET
-  { TTC (rel, var, ts, b) }
+  { TTC (Some (rel, var, ts, b)) }
   
 %inline block:
   fs = braces(formula*)

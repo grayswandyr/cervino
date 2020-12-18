@@ -62,7 +62,7 @@ type event =
 
 type transfo =
   | TEA
-  | TTC of relation * variable * variable list * formula
+  | TTC of (relation * variable * variable list * formula) option
   | TFC of (Name.t -> formula option)
 [@@deriving sexp_of]
 
@@ -165,13 +165,9 @@ and and_ f1 f2 = match (f1, f2) with True, f | f, True -> f | _ -> And (f1, f2)
 
 and or_ f1 f2 = match (f1, f2) with False, f | f, False -> f | _ -> Or (f1, f2)
 
-and all ?(folding_csts = []) x f =
-  All (folding_csts, x, f)
+and all ?(folding_csts = []) x f = All (folding_csts, x, f)
 
-
-and exists ?(folding_csts = []) x f =
-  Exists (folding_csts, x, f)
-
+and exists ?(folding_csts = []) x f = Exists (folding_csts, x, f)
 
 and eventually f = F f
 
@@ -179,7 +175,9 @@ and always f = G f
 
 let tea = TEA
 
-let ttc rel var vars f = TTC (rel, var, vars, f)
+let ttc_none = TTC None
+
+let ttc_some rel var vars f = TTC (Some (rel, var, vars, f))
 
 let tfc mapping = TFC mapping
 
@@ -187,9 +185,13 @@ let rec conj = function [] -> true_ | [ f ] -> f | f :: fs -> and_ f (conj fs)
 
 let rec disj = function [] -> false_ | [ f ] -> f | f :: fs -> or_ f (disj fs)
 
-let all_many ?(folding_csts = []) vars f = List.fold_right (all ~folding_csts) vars f
+let all_many ?(folding_csts = []) vars f =
+  List.fold_right (all ~folding_csts) vars f
 
-let exists_many ?(folding_csts = []) vars f = List.fold_right (exists ~folding_csts) vars f
+
+let exists_many ?(folding_csts = []) vars f =
+  List.fold_right (exists ~folding_csts) vars f
+
 
 let implies f1 f2 = or_ (not_ f1) f2
 
@@ -215,7 +217,7 @@ let rec next = function
   | Or (f1, f2) ->
       or_ (next f1) (next f2)
   | Exists (folding_csts, x, f) ->
-      exists ~folding_csts  x (next f)
+      exists ~folding_csts x (next f)
   | All (folding_csts, x, f) ->
       all ~folding_csts x (next f)
   | F f ->
@@ -277,13 +279,13 @@ let substitute x ~by fml =
     | Lit (Eq (nexts, t1, t2)) ->
         lit
           (eq
-            nexts
+             nexts
              (subst_in_term bound_vars x ~by t1)
              (subst_in_term bound_vars x ~by t2))
     | Lit (Not_eq (nexts, t1, t2)) ->
         lit
           (neq
-            nexts
+             nexts
              (subst_in_term bound_vars x ~by t1)
              (subst_in_term bound_vars x ~by t2))
     | And (f1, f2) ->
@@ -295,9 +297,15 @@ let substitute x ~by fml =
           (subst_except_bound_vars bound_vars x ~by f1)
           (subst_except_bound_vars bound_vars x ~by f2)
     | Exists (folding_csts, varx, f) ->
-        exists ~folding_csts varx (subst_except_bound_vars (varx :: bound_vars) x ~by f)
+        exists
+          ~folding_csts
+          varx
+          (subst_except_bound_vars (varx :: bound_vars) x ~by f)
     | All (folding_csts, varx, f) ->
-        all ~folding_csts varx (subst_except_bound_vars (varx :: bound_vars) x ~by f)
+        all
+          ~folding_csts
+          varx
+          (subst_except_bound_vars (varx :: bound_vars) x ~by f)
     | F f ->
         eventually (subst_except_bound_vars bound_vars x ~by f)
     | G f ->
@@ -346,7 +354,7 @@ let rec nb_next fml =
   | And (f1, f2) | Or (f1, f2) ->
       let is_tprl1, n1 = nb_next f1 in
       let is_tprl2, n2 = nb_next f2 in
-             (is_tprl1 || is_tprl2 || (not @@ Int.equal n1 n2), n1)
+      (is_tprl1 || is_tprl2 || (not @@ Int.equal n1 n2), n1)
   | Exists (_, _, f) | All (_, _, f) ->
       nb_next f
   | G _ | F _ ->
@@ -388,7 +396,13 @@ let rec includes_exists fml =
       includes_exists f
 
 
-module Electrum = struct
+(* For some transformations (TFC, TTC), constants can be disjoint while they cannot for others
+(TEA). The following functor pretty-prints to Electrum, with a constant pretty-printer as parameter
+to account for this difference. *)
+module MakeElectrum (Ppc : sig
+  val pp_constant : constant Fmt.t
+end) =
+struct
   open Fmt
 
   let _global = "_M"
@@ -409,10 +423,10 @@ module Electrum = struct
         assert (nexts >= 0);
         pp_app fmt "!in" p args nexts
     | Lit (Eq (nexts, t1, t2)) ->
-      assert (nexts >= 0);
+        assert (nexts >= 0);
         pf fmt "%a = %a" pp_term t1 pp_term t2
     | Lit (Not_eq (nexts, t1, t2)) ->
-      assert (nexts >= 0);
+        assert (nexts >= 0);
         pf fmt "%a != %a" pp_term t1 pp_term t2
     | And (f1, f2) ->
         pf fmt "@[<1>(%a@ &&@ %a)@]" pp_formula f1 pp_formula f2
@@ -465,7 +479,7 @@ module Electrum = struct
       "@[<v>%a@,%a@,%a@,%a@]"
       (vbox @@ list pp_sort)
       sorts
-      (vbox @@ list pp_constant)
+      (vbox @@ list Ppc.pp_constant)
       constants
       pp_relations
       relations
@@ -474,10 +488,6 @@ module Electrum = struct
 
 
   and pp_sort fmt sort = pf fmt "sig %a {}" Name.pp sort
-
-  and pp_constant fmt { cst_name; cst_sort } =
-    pf fmt "one sig %a in %a {}" Name.pp cst_name Name.pp cst_sort
-
 
   and pp_relations fmt relations =
     pf
@@ -505,6 +515,24 @@ module Electrum = struct
     pf fmt "@[<hov2>fact /* assuming */ {@ %a@ @]}@\n" pp_formula chk_assuming;
     pf fmt "@[<hov2>check %a {@ %a@ @]}" Name.pp chk_name pp_formula chk_body
 end
+
+module Electrum_one_sig_in = MakeElectrum (struct
+  let pp_constant fmt { cst_name; cst_sort } =
+    Fmt.pf fmt "one sig %a in %a {}" Name.pp cst_name Name.pp cst_sort
+end)
+
+module Electrum_one_sig_extends = MakeElectrum (struct
+  let pp_constant fmt { cst_name; cst_sort } =
+    Fmt.pf fmt "one sig %a extends %a {}" Name.pp cst_name Name.pp cst_sort
+end)
+
+let pp_electrum transfo fmt model =
+  match transfo with
+  | Some TEA ->
+      Electrum_one_sig_in.pp fmt model
+  | Some (TFC _) | Some (TTC _) | None ->
+      Electrum_one_sig_extends.pp fmt model
+
 
 module Cervino = struct
   open Fmt
@@ -609,14 +637,27 @@ module Cervino = struct
 
   and pp_axiom fmt f = pf fmt "@[<hov2>axiom {@ %a@ }@]" pp_formula f
 
-  and pp_check fmt { chk_name; chk_assuming; chk_body; _ } =
+  and pp_check fmt { chk_name; chk_assuming; chk_body; chk_using } =
     pf
       fmt
-      "@[<hov2>check %a {@ %a@ @]}@\n@[<hov2>assuming {@ %a@ @]}"
+      "@[<hov2>check %a {@ %a@ @]}@\n@[<hov2>assuming {@ %a@ @]} %a"
       Name.pp
       chk_name
       pp_formula
       chk_body
       pp_formula
       chk_assuming
+      pp_using
+      chk_using
+
+
+  and pp_using fmt = function
+    | None ->
+        nop fmt ()
+    | Some TEA ->
+        pf fmt "using TEA"
+    | Some (TTC _) ->
+        pf fmt "using TTC[]"
+    | Some (TFC _) ->
+        pf fmt "using TFC[]"
 end
