@@ -17,7 +17,7 @@ fmt:
 
 test:
 	find . -name '*.coverage' | xargs rm -f
-	dune test --instrument-with bisect_ppx --force
+	dune test --instrument-with bisect_ppx --force || true
 	bisect-ppx-report html
 	xdg-open _coverage/index.html
 	bisect-ppx-report summary

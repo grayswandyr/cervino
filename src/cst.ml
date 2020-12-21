@@ -19,7 +19,7 @@ and prim_formula =
   | Binary of binop * formula * formula
   | Unary of unop * formula
   | Ite of formula * formula * formula
-  | Quant of quantifier * Ident.t list * telescope * block
+  | Quant of quantifier * Ident.t list option * telescope * block
   | Block of block
 
 and compop =

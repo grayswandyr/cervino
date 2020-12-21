@@ -36,14 +36,43 @@ let rec instantiate_tprl constlist fml =
       or_ (instantiate_tprl constlist f1) (instantiate_tprl constlist f2)
   | Exists (folding_csts, v, f) ->
       exists ~folding_csts v (instantiate_tprl (var v :: constlist) f)
-  | All (folding_csts, v, f) ->
+  | All (None, v, f) ->
       let subfml = instantiate_tprl constlist f in
       if is_temporal f
+      then instantiate_constants v constlist subfml
+      else all ~folding_csts:None v subfml
+  | All (Some [], _, _) ->
+      true_
+  | All ((Some csts as folding_csts), v, f) ->
+      let csts_sorts =
+        List.map (fun c -> c.cst_sort) csts |> List.sort_uniq ~cmp:compare_sort
+      in
+      if List.length csts_sorts >= 2
       then
-        if List.is_empty folding_csts
-        then instantiate_constants v constlist subfml
-        else instantiate_constants v (List.map cst folding_csts) subfml
-      else all ~folding_csts v subfml
+        Msg.err (fun m ->
+            m
+              "Folding constants with different sorts: %a"
+              Format.(list Name.pp)
+              (List.map (fun c -> c.cst_name) csts))
+      else
+        let sort = List.hd csts_sorts in
+        if not @@ equal_sort sort v.var_sort
+        then
+          Msg.err (fun m ->
+              m
+                "Folding constant(s) with sort %a but quantified variable %a \
+                 has sort %a"
+                Name.pp
+                sort
+                Name.pp
+                v.var_name
+                Name.pp
+                v.var_sort)
+        else
+          let subfml = instantiate_tprl constlist f in
+          if is_temporal f
+          then instantiate_constants v (List.map cst csts) subfml
+          else all ~folding_csts v subfml
   | F f ->
       eventually @@ instantiate_tprl constlist f
   | G f ->

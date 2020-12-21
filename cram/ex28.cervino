@@ -1,0 +1,14 @@
+sort A
+sort B
+
+relation p in B
+
+constant c in A 
+constant d in A
+constant e in B
+
+axiom {
+  all[c,d] x: B | F p(x)
+}
+
+check ttc {} using TTC[]

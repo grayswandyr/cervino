@@ -38,8 +38,8 @@ type formula =
   | Lit of literal
   | And of formula * formula
   | Or of formula * formula
-  | Exists of constant list * variable * formula
-  | All of constant list * variable * formula
+  | Exists of constant list option * variable * formula
+  | All of constant list option * variable * formula
   | F of formula
   | G of formula
 [@@deriving eq, ord, sexp_of]
@@ -165,13 +165,21 @@ and and_ f1 f2 = match (f1, f2) with True, f | f, True -> f | _ -> And (f1, f2)
 
 and or_ f1 f2 = match (f1, f2) with False, f | f, False -> f | _ -> Or (f1, f2)
 
-and all ?(folding_csts = []) x f = All (folding_csts, x, f)
-
-and exists ?(folding_csts = []) x f = Exists (folding_csts, x, f)
-
 and eventually f = F f
 
 and always f = G f
+
+and all ?(folding_csts = None) x f = All (folding_csts, x, f)
+
+and exists ?(folding_csts = None) x f = Exists (folding_csts, x, f)
+
+let all_many ?(folding_csts = None) vars f =
+  List.fold_right (all ~folding_csts) vars f
+
+
+let exists_many ?(folding_csts = None) vars f =
+  List.fold_right (exists ~folding_csts) vars f
+
 
 let tea = TEA
 
@@ -184,14 +192,6 @@ let tfc mapping = TFC mapping
 let rec conj = function [] -> true_ | [ f ] -> f | f :: fs -> and_ f (conj fs)
 
 let rec disj = function [] -> false_ | [ f ] -> f | f :: fs -> or_ f (disj fs)
-
-let all_many ?(folding_csts = []) vars f =
-  List.fold_right (all ~folding_csts) vars f
-
-
-let exists_many ?(folding_csts = []) vars f =
-  List.fold_right (exists ~folding_csts) vars f
-
 
 let implies f1 f2 = or_ (not_ f1) f2
 

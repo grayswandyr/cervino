@@ -202,22 +202,24 @@ prim_formula:
   { r }
   | f1 = formula op = lbinop f2 = formula 
   { Binary (op, f1, f2) }
-	| q = quant folding_constants = loption(brackets(comma_sep1(ident))) rangings = comma_sep1(ranging) b = block_or_bar
+	| q = quant folding_constants = brackets(comma_sep(ident))? rangings = comma_sep1(ranging) b = block_or_bar
   { 
-    match folding_constants, rangings with 
+    match folding_constants, rangings with
       | _, [] -> assert false
-      | [], _ ->
-          Quant (q, [], rangings, b) 
-      | c::_, [([_], _)] -> 
-        if Mysc.List.all_different ~eq:Ident.equal folding_constants then
+      | None, _ -> Quant (q, folding_constants, rangings, b) 
+      | Some [], _ -> 
+          Quant (q, folding_constants, rangings, b) 
+      | Some ((c::_) as csts), [([_],_)] ->
+        (* if there are foldings constants, then the telescope can only range in one sort *)
+        if Mysc.List.all_different ~eq:Ident.equal csts then
           Quant (q, folding_constants, rangings, b) 
         else 
           Msg.err (fun m -> 
             m "Syntax error: same constant used several times@\n%a"
               L.excerpt (Ident.positions c))
-      | c::_, _ -> 
+      | Some (c::_), _ -> 
         Msg.err (fun m -> 
-          m "Syntax error: folding constants are only allowed on single quantifications:@\n%a" L.excerpt (Ident.positions c))
+          m "Syntax error: constant folding is only allowed on a single quantified variable:@\n%a" L.excerpt (Ident.positions c))
   }
 	| f1 = formula IMPLIES f2 = formula ELSE f3 = formula 
   { Ite (f1, f2, f3) }

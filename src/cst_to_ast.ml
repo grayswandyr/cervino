@@ -235,15 +235,17 @@ and walk_prim_formula (constants : constant list) env (f : Cst.prim_formula) =
          then ts is made of a single one-variable ranging *)
       let env' = Env.push_variables env [ (v, s) ] in
       let b' = walk_block constants env' b in
-      let fcs = List.map (find_constant constants) folding_constants in
+      let fcs =
+        Option.map (List.map (find_constant constants)) folding_constants
+      in
       quantify q fcs (v, s) b'
   | Quant (q, folding_constants, ts, b) ->
-      assert (List.is_empty folding_constants);
+      assert (Option.is_none folding_constants);
       (* reverse to make stack-shaped substitution *)
       let ts' = flatten_telescope env ts in
       let env' = Env.push_variables env (List.rev ts') in
       let b' = walk_block constants env' b in
-      List.fold_right (quantify q []) ts' b'
+      List.fold_right (quantify q None) ts' b'
   | Block b ->
       walk_block constants env b
 
