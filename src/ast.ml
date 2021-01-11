@@ -2,6 +2,10 @@ open Sexplib.Std
 
 type sort = Name.t [@@deriving eq, ord, sexp_of]
 
+module SM = Map.Make (struct type t = sort let compare = compare_sort end)
+module SortMap = struct include SM let sexp_of_t _ _ = assert false end
+type scope = int SortMap.t [@@deriving eq, ord, sexp_of]
+
 type variable =
   { var_name : Name.t;
     var_sort : sort
@@ -77,6 +81,7 @@ type check =
   { chk_name : Name.t;
     chk_body : formula;
     chk_assuming : formula;
+    chk_bounds : (scope [@sexp.opaque]);
     chk_using : transfo option
   }
 [@@deriving make, sexp_of]
@@ -396,6 +401,46 @@ let rec includes_exists fml =
       includes_exists f
 
 
+let rec nb_exists fml =
+  match fml with
+  | True | False | Lit _ ->
+      0
+  | And (f1, f2) |  Or(f1, f2) ->
+    if not (includes_exists f1 || includes_exists f2) 
+    then 0
+    else nb_exists f1 + nb_exists f2
+  | Exists (_, _, f) -> 1 + nb_exists f
+  | All (_, _, f) ->
+      if (includes_exists f) then failwith "Ast.nb_exists called for a formula having forall/exists nesting quantifiers"
+      else 0
+  | G f | F f ->
+      if includes_exists f then failwith "Ast.nb_exists called for a formula having G/exists of F/exists nesting quantifiers"
+      else 0
+
+(* Compute the domain bound for a formula. To be applied to  *)
+let rec bound_computation fml =
+  match fml with 
+ | True | False | Lit _ ->
+      0
+  | And (f1, f2) |  Or(f1, f2) ->
+    bound_computation f1 + bound_computation f2
+  | Exists _ ->  nb_exists fml
+  | All (_, _, f) ->
+      if (includes_exists f) then failwith "Ast.bound_computation is called for a formula having forall/exists nesting quantifiers"
+      else 0
+  | G f ->
+      Msg.debug (fun m -> m "PASSAGE PAR G f");
+      if includes_exists f then 2 * nb_exists f
+      else 0
+  | F f ->  if (includes_exists f) then failwith "Ast.bound_computation is called for a formula having F/exists nesting quantifiers"
+      else 0
+
+let bound ast = 
+  let model = ast.model in
+  let fml = conj model.axioms in
+  let bound_from_axioms = bound_computation fml in
+  bound_from_axioms + List.length model.constants
+
 (* For some transformations (TFC, TTC), constants can be disjoint while they cannot for others
 (TEA). The following functor pretty-prints to Electrum, with a constant pretty-printer as parameter
 to account for this difference. *)
@@ -511,7 +556,7 @@ struct
 
   and pp_axiom fmt f = pf fmt "@[<hov2>fact {@ %a@ }@]" pp_formula f
 
-  and pp_check fmt { chk_name; chk_assuming; chk_body; _ } =
+  and pp_check fmt { chk_name; chk_assuming; chk_body; _} =
     pf fmt "@[<hov2>fact /* assuming */ {@ %a@ @]}@\n" pp_formula chk_assuming;
     pf fmt "@[<hov2>check %a {@ %a@ @]}" Name.pp chk_name pp_formula chk_body
 end
@@ -637,7 +682,7 @@ module Cervino = struct
 
   and pp_axiom fmt f = pf fmt "@[<hov2>axiom {@ %a@ }@]" pp_formula f
 
-  and pp_check fmt { chk_name; chk_assuming; chk_body; chk_using } =
+  and pp_check fmt { chk_name; chk_assuming; chk_body; chk_using ; _} =
     pf
       fmt
       "@[<hov2>check %a {@ %a@ @]}@\n@[<hov2>assuming {@ %a@ @]} %a"

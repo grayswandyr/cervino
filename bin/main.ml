@@ -30,7 +30,7 @@ let pp_header ppf (l, h) =
 
 
 let main
-    verbosity preinstantiate instantiate output_cervino property input output =
+    verbosity bound preinstantiate instantiate output_cervino property input output =
   Printexc.record_backtrace true;
   Logs.set_reporter (Logs_fmt.reporter ~pp_header ());
   Fmt_tty.setup_std_outputs ();
@@ -67,6 +67,7 @@ let main
       then Ast.Cervino.pp
       else Ast.pp_electrum ast.check.chk_using
     in
+    if bound then Msg.info (fun m -> m "Bound : %d." (Ast.bound result));
     match output with
     | None ->
         pp Fmt.stdout result

@@ -30,6 +30,9 @@ let main_info =
 
 
 (* OPTIONS *)
+let bound =
+  let doc = "If present, compute the domain bound (completeness threshold)." in
+  Arg.(value & flag & info [ "b"; "bound" ] ~doc)
 
 let preinstantiate =
   let doc = "If present, perform a pre-instantiation step." in
@@ -77,6 +80,7 @@ let main_term =
   Term.(
     const Main.main
     $ verbosity
+    $ bound
     $ preinstantiate
     $ instantiate
     $ output_cervino
