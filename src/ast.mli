@@ -1,6 +1,7 @@
 type sort = Name.t [@@deriving eq, ord, sexp_of]
 
-module SortMap : Map.S  
+module SortMap : Map.S
+
 type scope = int SortMap.t [@@deriving eq, ord, sexp_of]
 
 type variable = private
@@ -71,7 +72,7 @@ type check =
   { chk_name : Name.t;
     chk_body : formula;
     chk_assuming : formula;
-    chk_bounds : (scope [@sexp.opaque]);
+    chk_bounds : (scope[@sexp.opaque]);
     chk_using : transfo option
   }
 [@@deriving make, sexp_of]
@@ -192,9 +193,10 @@ val is_temporal : formula -> bool
 
 val includes_exists : formula -> bool
 
-val bound_computation : formula -> int
+val bound_computation : sort -> formula -> int
 
-val bound : t -> int
+val compute_scope : t -> t
+
 module Electrum_one_sig_in : sig
   val pp : t Fmt.t
   (** does not print the events and closures fields, they must have been handled by prior transformations  *)

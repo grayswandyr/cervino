@@ -30,9 +30,12 @@ let main_info =
 
 
 (* OPTIONS *)
-let bound =
-  let doc = "If present, compute the domain bound (completeness threshold)." in
-  Arg.(value & flag & info [ "b"; "bound" ] ~doc)
+let nobound =
+  let doc =
+    "If present, does not compute the scope (the bound on the sort domain)."
+  in
+  Arg.(value & flag & info [ "nb"; "nobound" ] ~doc)
+
 
 let preinstantiate =
   let doc = "If present, perform a pre-instantiation step." in
@@ -80,7 +83,7 @@ let main_term =
   Term.(
     const Main.main
     $ verbosity
-    $ bound
+    $ nobound
     $ preinstantiate
     $ instantiate
     $ output_cervino

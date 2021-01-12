@@ -522,7 +522,8 @@ let convert_check constants env chk_id checks =
           make_check ~chk_name ~chk_body ~chk_assuming ~chk_bounds ()
       | Some u ->
           let chk_using = convert_using constants env u in
-          make_check ~chk_name ~chk_body ~chk_assuming ~chk_bounds ~chk_using () )
+          make_check ~chk_name ~chk_body ~chk_assuming ~chk_bounds ~chk_using ()
+      )
 
 
 let convert (cst : Cst.t) (check : string) =

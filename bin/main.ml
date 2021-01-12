@@ -30,7 +30,14 @@ let pp_header ppf (l, h) =
 
 
 let main
-    verbosity bound preinstantiate instantiate output_cervino property input output =
+    verbosity
+    nobound
+    preinstantiate
+    instantiate
+    output_cervino
+    property
+    input
+    output =
   Printexc.record_backtrace true;
   Logs.set_reporter (Logs_fmt.reporter ~pp_header ());
   Fmt_tty.setup_std_outputs ();
@@ -55,19 +62,21 @@ let main
     let ast = Cst_to_ast.convert model property in
     Msg.info (fun m -> m "Conversion to AST done.");
     Msg.debug (fun m -> m "AST:@.%a" Ast.pp ast);
-    let result =
+    let result_wo_bounds =
       if instantiate
       then Transfo.convert preinstantiate instantiate ast
       else (
         Wf.check ast;
         Transfo.convert preinstantiate instantiate ast )
     in
+    let result =
+      if nobound then result_wo_bounds else Ast.compute_scope result_wo_bounds
+    in
     let pp =
       if output_cervino
       then Ast.Cervino.pp
       else Ast.pp_electrum ast.check.chk_using
     in
-    if bound then Msg.info (fun m -> m "Bound : %d." (Ast.bound result));
     match output with
     | None ->
         pp Fmt.stdout result

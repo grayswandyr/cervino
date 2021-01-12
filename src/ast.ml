@@ -2,8 +2,18 @@ open Sexplib.Std
 
 type sort = Name.t [@@deriving eq, ord, sexp_of]
 
-module SM = Map.Make (struct type t = sort let compare = compare_sort end)
-module SortMap = struct include SM let sexp_of_t _ _ = assert false end
+module SM = Map.Make (struct
+  type t = sort
+
+  let compare = compare_sort
+end)
+
+module SortMap = struct
+  include SM
+
+  let sexp_of_t _ _ = assert false
+end
+
 type scope = int SortMap.t [@@deriving eq, ord, sexp_of]
 
 type variable =
@@ -81,7 +91,7 @@ type check =
   { chk_name : Name.t;
     chk_body : formula;
     chk_assuming : formula;
-    chk_bounds : (scope [@sexp.opaque]);
+    chk_bounds : (scope[@sexp.opaque]);
     chk_using : transfo option
   }
 [@@deriving make, sexp_of]
@@ -401,45 +411,89 @@ let rec includes_exists fml =
       includes_exists f
 
 
-let rec nb_exists fml =
+(* Returns the number of existential quantifiers of variables of a given sort in a given formula.*)
+let rec nb_exists s fml =
   match fml with
   | True | False | Lit _ ->
       0
-  | And (f1, f2) |  Or(f1, f2) ->
-    if not (includes_exists f1 || includes_exists f2) 
-    then 0
-    else nb_exists f1 + nb_exists f2
-  | Exists (_, _, f) -> 1 + nb_exists f
+  | And (f1, f2) | Or (f1, f2) ->
+      if not (includes_exists f1 || includes_exists f2)
+      then 0
+      else nb_exists s f1 + nb_exists s f2
+  | Exists (_, x, f) ->
+      if equal_sort s (sort_of_var x) then 1 + nb_exists s f else nb_exists s f
   | All (_, _, f) ->
-      if (includes_exists f) then failwith "Ast.nb_exists called for a formula having forall/exists nesting quantifiers"
+      if includes_exists f
+      then
+        failwith
+          "Ast.nb_exists called for a formula having forall/exists nesting \
+           quantifiers"
       else 0
   | G f | F f ->
-      if includes_exists f then failwith "Ast.nb_exists called for a formula having G/exists of F/exists nesting quantifiers"
+      if includes_exists f
+      then
+        failwith
+          "Ast.nb_exists called for a formula having G/exists of F/exists \
+           nesting quantifiers"
       else 0
 
-(* Compute the domain bound for a formula. To be applied to  *)
-let rec bound_computation fml =
-  match fml with 
- | True | False | Lit _ ->
+
+(* Compute the domain bound for a given sort and a formula. *)
+let rec bound_computation s fml =
+  match fml with
+  | True | False | Lit _ ->
       0
-  | And (f1, f2) |  Or(f1, f2) ->
-    bound_computation f1 + bound_computation f2
-  | Exists _ ->  nb_exists fml
+  | And (f1, f2) | Or (f1, f2) ->
+      bound_computation s f1 + bound_computation s f2
+  | Exists _ ->
+      nb_exists s fml
   | All (_, _, f) ->
-      if (includes_exists f) then failwith "Ast.bound_computation is called for a formula having forall/exists nesting quantifiers"
+      if includes_exists f
+      then
+        failwith
+          "Ast.bound_computation is called for a formula having forall/exists \
+           nesting quantifiers"
       else 0
   | G f ->
-      Msg.debug (fun m -> m "PASSAGE PAR G f");
-      if includes_exists f then 2 * nb_exists f
-      else 0
-  | F f ->  if (includes_exists f) then failwith "Ast.bound_computation is called for a formula having F/exists nesting quantifiers"
+      Msg.info (fun m -> m "PASSAGE PAR G f");
+      if includes_exists f then 2 * nb_exists s f else 0
+  | F f ->
+      if includes_exists f
+      then
+        failwith
+          "Ast.bound_computation is called for a formula having F/exists \
+           nesting quantifiers"
       else 0
 
-let bound ast = 
+
+let nb_csts_of_sort s list_csts =
+  List.fold_left
+    (fun k cur_cst -> if equal_sort (sort_of_cst cur_cst) s then k + 1 else k)
+    0
+    list_csts
+
+
+(* Computes the scope (a bound for every sort that is sufficiently large to
+    make the verificaiton complete) and adds it to the ast *)
+let compute_scope ast =
   let model = ast.model in
   let fml = conj model.axioms in
-  let bound_from_axioms = bound_computation fml in
-  bound_from_axioms + List.length model.constants
+  let sorts = model.sorts in
+  (*Bounds from existential quantifiers in axioms *)
+  let bound_map =
+    List.fold_left
+      (fun cur_map cur_sort ->
+        SortMap.add
+          cur_sort
+          ( bound_computation cur_sort fml
+          + nb_csts_of_sort cur_sort model.constants )
+          cur_map)
+      SortMap.empty
+      sorts
+  in
+  let updated_chk = { ast.check with chk_bounds = bound_map } in
+  { ast with check = updated_chk }
+
 
 (* For some transformations (TFC, TTC), constants can be disjoint while they cannot for others
 (TEA). The following functor pretty-prints to Electrum, with a constant pretty-printer as parameter
@@ -556,9 +610,24 @@ struct
 
   and pp_axiom fmt f = pf fmt "@[<hov2>fact {@ %a@ }@]" pp_formula f
 
-  and pp_check fmt { chk_name; chk_assuming; chk_body; _} =
+  and pp_check fmt { chk_name; chk_assuming; chk_body; chk_using; chk_bounds } =
     pf fmt "@[<hov2>fact /* assuming */ {@ %a@ @]}@\n" pp_formula chk_assuming;
-    pf fmt "@[<hov2>check %a {@ %a@ @]}" Name.pp chk_name pp_formula chk_body
+    pf fmt "@[<hov2>check %a {@ %a@ @]}" Name.pp chk_name pp_formula chk_body;
+    pf fmt "%a" pp_using chk_using;
+    pf fmt "@[<hov2> for %a @]" pp_scope chk_bounds
+
+
+  and pp_using fmt _ = pf fmt ""
+
+  and pp_scope fmt chk_bounds =
+    pf fmt "%a" (vbox @@ list ~sep:comma pp_bound) (SortMap.bindings chk_bounds)
+
+
+  and pp_bound fmt bound =
+    match bound with s, i -> pf fmt "%a %a" pp_int i Name.pp s
+
+
+  and pp_int fmt i = pf fmt "%d" i
 end
 
 module Electrum_one_sig_in = MakeElectrum (struct
@@ -682,7 +751,7 @@ module Cervino = struct
 
   and pp_axiom fmt f = pf fmt "@[<hov2>axiom {@ %a@ }@]" pp_formula f
 
-  and pp_check fmt { chk_name; chk_assuming; chk_body; chk_using ; _} =
+  and pp_check fmt { chk_name; chk_assuming; chk_body; chk_using; _ } =
     pf
       fmt
       "@[<hov2>check %a {@ %a@ @]}@\n@[<hov2>assuming {@ %a@ @]} %a"
