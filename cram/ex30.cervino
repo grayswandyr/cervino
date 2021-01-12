@@ -1,0 +1,12 @@
+sort A
+sort B
+
+relation p in A
+
+event e1 [x, y: A, z: B]
+{  }
+
+event e [x: A, z: B]
+{  }
+
+check prop {} using TFC[]

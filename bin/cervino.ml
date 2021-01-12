@@ -9,7 +9,7 @@ let main_info =
       `P
         {|Julien BRUNEL (ONERA), David CHEMOUIL (ONERA), Quentin PEYRAS (ONERA).|};
       `S "COPYRIGHT";
-      `P "Cervino (C) 2020 ONERA.";
+      `P "Cervino (C) 2020-2021 ONERA.";
       `P
         "Cervino is free software: you can redistribute it and/or modify it \
          under the terms of the Mozilla Public License, v. 2.0. If a copy of \
@@ -31,17 +31,25 @@ let main_info =
 
 (* OPTIONS *)
 
-let preinstantiate =
+let preinstantiate_only =
   let doc = "If present, perform a pre-instantiation step." in
   Arg.(value & flag & info [ "p"; "pre-instantiate" ] ~doc)
 
 
-let instantiate =
+let instantiate_only =
   let doc =
     "If present, perform the instantiation pass only (deactivates the \
      well-formedness check)."
   in
   Arg.(value & flag & info [ "i"; "instantiate" ] ~doc)
+
+
+let unfold_event_quantification =
+  let doc =
+    "If present, unfold the event axiom existential quantification (brittle \
+     option)."
+  in
+  Arg.(value & flag & info [ "u"; "unfold-event-axiom" ] ~doc)
 
 
 let output_cervino =
@@ -77,8 +85,9 @@ let main_term =
   Term.(
     const Main.main
     $ verbosity
-    $ preinstantiate
-    $ instantiate
+    $ preinstantiate_only
+    $ instantiate_only
+    $ unfold_event_quantification
     $ output_cervino
     $ check
     $ infile

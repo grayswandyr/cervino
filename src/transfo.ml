@@ -15,8 +15,6 @@ module Id = struct
   let convert ast = ast
 end
 
-let if_ cond t1 t2 = if cond then t1 else t2
-
 (* apply ast->ast transformations from left to right *)
 let compose (transfos : t list) : t =
  fun ast -> List.fold_left (fun ast convert -> convert ast) ast transfos
@@ -41,7 +39,7 @@ let apply_transformation preinstantiate (using : Ast.transfo option) : t =
           Remove_equalities.convert;
           Cervino_semantics.convert;
           Skolemize.convert;
-          if_ preinstantiate Id.convert Instantiation.convert
+          (if preinstantiate then Id.convert else Instantiation.convert)
         ]
     | Some (TFC _) ->
         [ Instantiation.convert_ae;
@@ -51,7 +49,7 @@ let apply_transformation preinstantiate (using : Ast.transfo option) : t =
           Remove_equalities.convert;
           Cervino_semantics.convert;
           Skolemize.convert;
-          if_ preinstantiate Id.convert Instantiation.convert
+          (if preinstantiate then Id.convert else Instantiation.convert)
         ]
     | None ->
         [ Expand_modifies.convert; Cervino_semantics.convert ]
@@ -60,7 +58,13 @@ let apply_transformation preinstantiate (using : Ast.transfo option) : t =
 
 
 let convert
-    preinstantiate instantiate Ast.({ check = { chk_using; _ }; _ } as ast) =
-  if instantiate
-  then Instantiation.convert ast
-  else apply_transformation preinstantiate chk_using ast
+    ~preinstantiate_only
+    ~instantiate_only
+    ~unfold_event_axiom
+    Ast.({ check = { chk_using; _ }; _ } as ast) =
+  let result =
+    if instantiate_only
+    then Instantiation.convert ast
+    else apply_transformation preinstantiate_only chk_using ast
+  in
+  if unfold_event_axiom then Unfold_event_axiom.convert result else result

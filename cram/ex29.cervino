@@ -1,0 +1,9 @@
+sort A
+
+relation p in A
+
+event e1 [y: A]
+{  }
+
+
+check prop {} using TFC[]
