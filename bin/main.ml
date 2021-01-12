@@ -32,8 +32,9 @@ let pp_header ppf (l, h) =
 let main
     verbosity
     nobound
-    preinstantiate
-    instantiate
+    preinstantiate_only
+    instantiate_only
+    unfold_event_axiom
     output_cervino
     property
     input
@@ -42,7 +43,7 @@ let main
   Logs.set_reporter (Logs_fmt.reporter ~pp_header ());
   Fmt_tty.setup_std_outputs ();
   Logs.set_level ~all:true verbosity;
-  if preinstantiate && instantiate
+  if preinstantiate_only && instantiate_only
   then Msg.err (fun m -> m "Error: incompatible flags: -p and -i");
   let version =
     match Build_info.V1.version () with
@@ -62,12 +63,14 @@ let main
     let ast = Cst_to_ast.convert model property in
     Msg.info (fun m -> m "Conversion to AST done.");
     Msg.debug (fun m -> m "AST:@.%a" Ast.pp ast);
+
+    if not instantiate_only then Wf.check ast;
     let result_wo_bounds =
-      if instantiate
-      then Transfo.convert preinstantiate instantiate ast
-      else (
-        Wf.check ast;
-        Transfo.convert preinstantiate instantiate ast )
+      Transfo.convert
+        ~preinstantiate_only
+        ~instantiate_only
+        ~unfold_event_axiom
+        ast
     in
     let result =
       if nobound then result_wo_bounds else Ast.compute_scope result_wo_bounds
