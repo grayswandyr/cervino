@@ -438,21 +438,21 @@ let rec nb_exists s fml =
       else 0
 
 
-(* Compute the domain bound for a given sort and a formula. *)
-let rec bound_computation s fml =
+(* Compute the domain bound (obtained from existential quantifiers) for a given sort and a formula. *)
+let rec bound_computation_ex s fml =
   match fml with
   | True | False | Lit _ ->
       0
   | And (f1, f2) | Or (f1, f2) ->
-      bound_computation s f1 + bound_computation s f2
+      bound_computation_ex s f1 + bound_computation_ex s f2
   | Exists _ ->
       nb_exists s fml
   | All (_, _, f) ->
       if includes_exists f
       then
         failwith
-          "Ast.bound_computation is called for a formula having forall/exists \
-           nesting quantifiers"
+          "Ast.bound_computation_ex is called for a formula having \
+           forall/exists nesting quantifiers"
       else 0
   | G f ->
       Msg.info (fun m -> m "PASSAGE PAR G f");
@@ -461,7 +461,7 @@ let rec bound_computation s fml =
       if includes_exists f
       then
         failwith
-          "Ast.bound_computation is called for a formula having F/exists \
+          "Ast.bound_computation_ex is called for a formula having F/exists \
            nesting quantifiers"
       else 0
 
@@ -471,6 +471,12 @@ let nb_csts_of_sort s list_csts =
     (fun k cur_cst -> if equal_sort (sort_of_cst cur_cst) s then k + 1 else k)
     0
     list_csts
+
+
+(* Computes the domain bound for a given sort due to both existential quantifiers in fml and to csts in list_csts *)
+let bound_computation s list_csts fml =
+  let result = nb_csts_of_sort s list_csts + bound_computation_ex s fml in
+  if result = 0 then 1 else result
 
 
 (* Computes the scope (a bound for every sort that is sufficiently large to
@@ -485,8 +491,7 @@ let compute_scope ast =
       (fun cur_map cur_sort ->
         SortMap.add
           cur_sort
-          ( bound_computation cur_sort fml
-          + nb_csts_of_sort cur_sort model.constants )
+          (bound_computation cur_sort model.constants fml)
           cur_map)
       SortMap.empty
       sorts
@@ -614,17 +619,27 @@ struct
     pf fmt "@[<hov2>fact /* assuming */ {@ %a@ @]}@\n" pp_formula chk_assuming;
     pf fmt "@[<hov2>check %a {@ %a@ @]}" Name.pp chk_name pp_formula chk_body;
     pf fmt "%a" pp_using chk_using;
-    pf fmt "@[<hov2> for %a @]" pp_scope chk_bounds
+    if not @@ SortMap.is_empty chk_bounds
+    then pf fmt "@[<hov2> for %a @]" pp_scope (chk_bounds, chk_using)
 
 
   and pp_using fmt _ = pf fmt ""
 
-  and pp_scope fmt chk_bounds =
-    pf fmt "%a" (vbox @@ list ~sep:comma pp_bound) (SortMap.bindings chk_bounds)
+  and pp_scope fmt (chk_bounds, chk_using) =
+    let list_chk_bounds = SortMap.bindings chk_bounds in
+    match chk_using with
+    | Some (TFC _) | Some (TTC _) ->
+        pf fmt "%a" (vbox @@ list ~sep:comma pp_bound_exactly) list_chk_bounds
+    | _ ->
+        pf fmt "%a" (vbox @@ list ~sep:comma pp_bound) list_chk_bounds
 
 
   and pp_bound fmt bound =
     match bound with s, i -> pf fmt "%a %a" pp_int i Name.pp s
+
+
+  and pp_bound_exactly fmt bound =
+    match bound with s, i -> pf fmt "exactly %a %a" pp_int i Name.pp s
 
 
   and pp_int fmt i = pf fmt "%d" i

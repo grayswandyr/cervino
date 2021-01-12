@@ -193,7 +193,7 @@ val is_temporal : formula -> bool
 
 val includes_exists : formula -> bool
 
-val bound_computation : sort -> formula -> int
+val bound_computation_ex : sort -> formula -> int
 
 val compute_scope : t -> t
 
