@@ -437,8 +437,34 @@ let rec nb_exists s fml =
            nesting quantifiers"
       else 0
 
+(* Computes the domain bound (for a given sort) due to existential quantifiers
+ in the scope of a G operator. *)
+let rec bound_computation_G_ex s fml =
+  match fml with
+  | True | False | Lit _ ->
+      0
+  | And (f1, f2) | Or (f1, f2) ->
+      bound_computation_G_ex s f1 + bound_computation_G_ex s f2
+  | Exists _ -> 
+      let includes_dist_instants, _ = nb_next fml in
+      if includes_dist_instants then
+        begin
+        Msg.debug (fun m -> m "passage par le cas 2* avec %a" pp_formula fml); 
+        2 * (nb_exists s fml)
+        end
+      else nb_exists s fml
+  | All (_, _, f) ->
+      if includes_exists f
+      then
+        failwith
+          "Ast.bound_computation_G_ex is called for a formula having \
+           forall/exists nesting in the scope of a G"
+      else 0
+  | G _ -> 
+    failwith "Ast.bound_computation_G_ex is called for a formula having 2 nested G operators."
+  | F _ -> failwith "Ast.bound_computation_G_ex is called for a formula having a G/F nesting."
 
-(* Compute the domain bound (obtained from existential quantifiers) for a given sort and a formula. *)
+(* Computes the domain bound (obtained from existential quantifiers) for a given sort and a formula. *)
 let rec bound_computation_ex s fml =
   match fml with
   | True | False | Lit _ ->
@@ -455,8 +481,8 @@ let rec bound_computation_ex s fml =
            forall/exists nesting quantifiers"
       else 0
   | G f ->
-      Msg.info (fun m -> m "PASSAGE PAR G f");
-      if includes_exists f then 2 * nb_exists s f else 0
+      Msg.debug (fun m -> m "PASSAGE PAR G f");
+      bound_computation_G_ex s f
   | F f ->
       if includes_exists f
       then
