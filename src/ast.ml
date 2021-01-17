@@ -2,14 +2,12 @@ open Sexplib.Std
 
 type sort = Name.t [@@deriving eq, ord, sexp_of]
 
-module SM = Map.Make (struct
-  type t = sort
-
-  let compare = compare_sort
-end)
-
 module SortMap = struct
-  include SM
+  include Map.Make (struct
+    type t = sort
+
+    let compare = compare_sort
+  end)
 
   let sexp_of_t _ _ = assert false
 end

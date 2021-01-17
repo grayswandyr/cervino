@@ -15,8 +15,8 @@ Tests keeping the event axiom "folded"...
   $ cervino -cu prop ex29.cervino
   cervino (C) 2020 ONERA (development version)
   sort A
-  constant _s_A1_1 in A
   constant _s_A1_0 in A
+  constant _s_A1_1 in A
   relation p in A
   axiom {
     G
