@@ -73,7 +73,9 @@ let main
         ast
     in
     let result =
-      if nobound then result_wo_bounds else Ast.compute_scope result_wo_bounds
+      if nobound || Option.is_none ast.check.chk_using
+      then result_wo_bounds
+      else Ast.compute_scope result_wo_bounds
     in
     let pp =
       if output_cervino

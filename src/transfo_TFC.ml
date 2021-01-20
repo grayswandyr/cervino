@@ -1,7 +1,7 @@
 open Ast
 
 let transform_event_tfc f ev =
-  let stab_form = match f ev.ev_name with Some e -> e | None -> ev.ev_body in
+  let stab_form = match f ev.ev_name with Some e -> e | None -> true_ in
   let stab_axiom = implies stab_form (next stab_form) in
   make_event
     ~ev_name:ev.ev_name

@@ -463,10 +463,14 @@ let rec bound_computation_G_ex s fml =
       failwith
         "Ast.bound_computation_G_ex is called for a formula having 2 nested G \
          operators."
-  | F _ ->
-      failwith
-        "Ast.bound_computation_G_ex is called for a formula having a G/F \
-         nesting."
+  | F f ->
+      if includes_exists f
+      then (
+        Msg.debug (fun m -> m "Nesting G/F for formula %a" pp_formula fml);
+        failwith
+          "Ast.bound_computation_G_ex is called for a formula having a G/F \
+           nesting." )
+      else 0
 
 
 (* Computes the domain bound (obtained from existential quantifiers) for a given sort and a formula. *)
