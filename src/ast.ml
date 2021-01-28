@@ -494,9 +494,12 @@ let rec bound_computation_ex s fml =
   | F f ->
       if includes_exists f
       then
+        begin
+        Msg.debug (fun m -> m "Nesting F/exists for formula %a" pp_formula fml);
         failwith
           "Ast.bound_computation_ex is called for a formula having F/exists \
            nesting quantifiers"
+        end
       else 0
 
 
