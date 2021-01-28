@@ -657,7 +657,7 @@ struct
     pf fmt "@[<hov2>check %a {@ %a@ @]}" Name.pp chk_name pp_formula chk_body;
     pf fmt "%a" pp_using chk_using;
     if not @@ SortMap.is_empty chk_bounds
-    then pf fmt "@[<hov2> for %a @]" pp_scope (chk_bounds, chk_using)
+    then pf fmt "@[<hov2> for 1.. steps, %a @]" pp_scope (chk_bounds, chk_using)
 
 
   and pp_using fmt _ = pf fmt ""
