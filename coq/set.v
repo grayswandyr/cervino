@@ -1435,12 +1435,68 @@ Qed.
   apply InEmptyPow_intro.
   apply InUnion_l; auto.
  Qed.
+
+ Lemma InPow_intro: forall `{T: EqDec} (s: set T) x, subset x s -> exists (y: setDec T), set_eq x y /\ set_In y (pow s).
+ Proof.
+  intros.
+  revert s x H; induction s; intros.
+  exists [].
+  simpl in *; split; auto.
+  split; intro; auto.
+  destruct H0.
+  
+  set (y := remove a x).
+  assert (subset y s).
+  repeat intro.
+  generalize H0; intro H1.
+  apply InRemove_l in H0; apply InRemove_r in H1.
+  apply H in H1.
+  destruct H1; auto; subst; tauto.
+  apply IHs in H0; clear IHs.
+  destruct H0 as [y1 H0].
+  destruct (In_dec a x).
+  simpl.
+  exists (add a y1).
+  split.
+  apply proj1 in H0.
+  split; repeat intro.
+  destruct (eq_dec v a); subst.
+  apply InAdd_l.
+  apply InAdd_r.
+  apply H0.
+  apply InRemove; now auto.
+  apply InAdd in H1; destruct H1; subst; auto.
+  apply H0 in s1.
+  apply InRemove_r in s1; now auto.
+  apply InUnion_r.
+  apply InImage_intro with (w:=y1); now auto.
+  
+  exists y1.
+  split.
+  apply proj1 in H0.
+  split; repeat intro.
+  apply H0.
+  apply InRemove; auto.
+  intro; subst; tauto.
+  apply H0 in H1.
+  apply InRemove_r in H1; now auto.
+  simpl.
+  apply InUnion_l.
+  tauto.
+ Qed. 
  
  Lemma pow_union: forall `{T: EqDec} (s1 s2 s: set T),
   set_In (T:=setDec T) s1 (pow s) -> set_In (T:=setDec T) s2 (pow s) -> set_In (T:=setDec T) (union s1 s2) (pow s).
  Proof.
+  intros.
+  apply InPow_elim in H.
+  apply InPow_elim in H0.
+  assert (subset (union s1 s2) s).
+  repeat intro.
+  apply InUnion in H1.
+  destruct H1 as [H1 | H1]; [apply H in H1 | apply H0 in H1]; now auto.
+  generalize (InPow_intro H1); intro.
+  
  Admitted.
  
- Lemma InPow_intro: forall `{T: EqDec} (s: set T) x, subset x s -> exists (y: setDec T), set_eq x y /\ set_In y (pow s).
- Admitted. 
 End SV.

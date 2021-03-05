@@ -8,6 +8,7 @@ Require Import api2coq.
 Require foltl.
 Require Import set.
 Require Import finite.
+Require Import dec.
 Require abstraction.
 Require closure.
 Require Import coq2ml.
@@ -176,27 +177,9 @@ Section Transfo.
            (mlDisj (map mlEvtSem (events mdl)))
            mlFormOfDisj_incl)).
 
-  Program Definition applyTTC (r: relation) hr (v: variable) hv (P: formula) hP:
-    option formula :=
-    let cr := relation2Pred mdl r hr in
-    let cls := closures mdl in
-    let lp := utils.imap cls (fun p h => 
-      (relation2Pred mdl (base p) _, relation2Pred mdl (tc p) _)) in 
-    match dec.assoc cr lp with
-      None => None
-    | Some r' =>
-      let cf: foltl.formula (coqSig mdl) := formula2formula mdl P hP in
-      let cv := mlVar2Var mdl v hv in
-      match closure.ClosureSpec_dec (srcSg := coqSig mdl) cr r' cf cv with
-        left cs => 
-          let res := closure.absClosure cs in
-          Some (fm2ml _ (fun s => proj1_sig s) (fun _ v => _) (fun _ c => cst_name _) (fun r => rel_name (proj1_sig r)) res)
-      | right _ => None
-      end
-    end.
-  Next Obligation.
-    clear r hr v hv P hP.
-    unfold relations.
+  Lemma In_base_rel: forall p, In p (closures mdl) -> In (base p) (relations mdl).
+  Proof.
+    unfold relations; intros.
     apply (utils.imap_filter_In_intro _ _ isMLRelDec (modelIds mdl)
       (fun (v : mlIdent) (h1 : isMLRel v) (_ : In v (modelIds mdl)) =>
       getMLRel v h1) (MLR (base p)) I ).
@@ -212,8 +195,10 @@ Section Transfo.
     apply in_app_iff; right.
     unfold mlRelIds; simpl; tauto.
   Qed.
-  Next Obligation.
-    unfold relations.
+
+  Lemma In_tc_rel: forall p, In p (closures mdl) -> In (tc p) (relations mdl).
+  Proof.
+    unfold relations; intros.
     apply (utils.imap_filter_In_intro _ _ isMLRelDec (modelIds mdl)
       (fun (v : mlIdent) (h1 : isMLRel v) (_ : In v (modelIds mdl)) =>
       getMLRel v h1) (MLR (tc p)) I ).
@@ -228,26 +213,44 @@ Section Transfo.
     apply in_app_iff; left.
     unfold mlRelIds; left; now auto.
   Qed.
-  Next Obligation.
-    unfold dec.eqDom in v; simpl in v.
-    unfold closure.dstVarT in v; simpl in v.
-    destruct (finite.asDec_obligation_1 mlSort StrDec 
-       (mlSorts mdl) H (mlSortOfVar mdl v0 hv)).
-    destruct v.
+
+  Definition TTC_var (v: variable) hv s' (w: foltl.variable (Sig:=closure.dstSg (coqSig mdl) (mlSortOfVar mdl v hv)) s'): string.
+    simpl in *.
+    destruct (finite.asDec_obligation_1 mlSort StrDec (mlSorts mdl) s' (mlSortOfVar mdl v hv)).
+    destruct w.
     destruct a eqn:aux.
       exact "_X1"%string.
       exact "_X2"%string.
       exact "_Z1"%string.
       exact "_Z2"%string.
-    destruct e0 as [v _].
-    exact (var_name v).
-    destruct v as [v _].
-    exact (var_name v).
+    destruct e0 as [w _].
+    exact (var_name w).
+    destruct w as [w _].
+    exact (var_name w).
   Defined.
-  Next Obligation.
-    apply proj1_sig in c.
-    exact c.
-  Defined.
+  
+  Definition applyTTC (r: relation) hr (v: variable) hv (P: formula) hP:
+    option formula :=
+    let cr := relation2Pred mdl r hr in
+    let cls := closures mdl in
+    let lp := utils.imap cls (fun p h => 
+      (relation2Pred mdl (base p) (In_base_rel _ h), relation2Pred mdl (tc p) (In_tc_rel _ h))) in 
+    let sg := closure.dstSg (coqSig mdl) (mlSortOfVar mdl v hv) in
+    match dec.assoc cr lp with
+      None => None
+    | Some r' =>
+      let cf: foltl.formula (coqSig mdl) := formula2formula mdl P hP in
+      let cv := mlVar2Var mdl v hv in
+      match closure.ClosureSpec_dec (srcSg := coqSig mdl) cr r' cf cv with
+        left cs => 
+          let res := closure.absClosure cs in
+          Some (fm2ml _ (fun s => proj1_sig s) (TTC_var v hv) 
+                  (fun s (c: foltl.constant (Sig:=sg) s) => 
+                    let c' : constant := proj1_sig c in cst_name c')
+                  (fun r => rel_name (proj1_sig r)) res)
+      | right _ => None
+      end
+    end.
   
   Lemma TTC_r_In_rels: forall {r v P}, 
     TTC r v P = chk_using (checkWith mdl) -> In r (relations mdl).

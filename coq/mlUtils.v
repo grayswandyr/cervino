@@ -45,7 +45,7 @@ Definition eventIds ev :=
 
 Definition pathIds p := mlRelIds (tc p) ++ mlRelIds (base p).
 
-Definition mlUsingIds u evts :=
+Definition transfoIds u evts :=
   match u with
     TEA => nil
   | TTC r v f => (mlRelIds r) ++ (mlVarIds v) ++ (formulaIds f)
@@ -55,7 +55,7 @@ Definition mlUsingIds u evts :=
 Definition checkIds chk evts :=
   formulaIds (chk_body chk) ++
   formulaIds (chk_assuming chk) ++
-  mlUsingIds (chk_using chk) evts.
+  transfoIds (chk_using chk) evts.
 
 Definition modelIds m :=
   List.concat (List.map formulaIds (axioms m)) ++
@@ -355,7 +355,7 @@ Proof.
   apply In_app_imp_In_app.
   apply mlSortOfFormVarIn.
   generalize (chk_using (checkWith m)); intro u.
-  unfold mlUsingIds.
+  unfold transfoIds.
   destruct u; simpl in *; intros; auto.
   destruct H; try discriminate.
   right.
@@ -382,7 +382,7 @@ Proof.
   apply In_app_imp_In_app.
   apply mlSortOfFormCstIn.
   generalize (chk_using (checkWith m)); intro u.
-  unfold mlUsingIds.
+  unfold transfoIds.
   destruct u; simpl in *; intros; auto.
   destruct H; try discriminate.
   right.
@@ -478,11 +478,11 @@ Proof.
 Qed.
 
 Lemma mlSortOfRelUsingArityIn: forall m u r s,
-  In s (rel_profile r) -> In (MLR r) (mlUsingIds u (events m)) ->
-    In (MLS s) (mlUsingIds u (events m)).
+  In s (rel_profile r) -> In (MLR r) (transfoIds u (events m)) ->
+    In (MLS s) (transfoIds u (events m)).
 Proof.
   intros.
-  unfold mlUsingIds in *.
+  unfold transfoIds in *.
   destruct u.
   destruct H0.
   revert H0; apply In_app_imp_In_app.

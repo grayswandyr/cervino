@@ -22,7 +22,7 @@ http://people.mpi-inf.mpg.de/~mvoigt/files/Dissertation_with_hyperref.pdf
 SubClass SortT {Ts} := @Finite Ts.
 SubClass VariableT {Tv} := @Finite Tv.
 SubClass ConstantT {Tc} := @Finite Tc.
-SubClass PredicateT {Tp} := @EqDec Tp.
+SubClass PredicateT {Tp} := @Finite Tp.
 
 Class Sig {Ts: Type} {Tv: Ts->Type} {Tc: Ts->Type} {Tp} := {
   Sort: @SortT Ts;
@@ -36,7 +36,7 @@ Class Sig {Ts: Type} {Tv: Ts->Type} {Tc: Ts->Type} {Tp} := {
 Class Dom {Ts Tv Tc Tp} (Sg: @Sig Ts Tv Tc Tp) := {
   ssemT : Sort -> Type;
   ssem : forall s, @EqDec (ssemT s);
-  domType: EqDec := PairDec Sort ssem;
+  domType: EqDec := DepPairDec Sort ssem;
   neDom: forall s, ssem s
 }.
 Coercion domType : Dom >-> EqDec.
