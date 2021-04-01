@@ -1,4 +1,4 @@
-
+Require Import Arith.
 Require Import Eqdep_dec.
 Require Import Fin.
 Import EqNotations.
@@ -36,7 +36,7 @@ Section Closure.
   Variable SuccAr': pr_arity Succ' = 2.
   Variable SuccArgs: forall i, pr_args Succ i = s.
   Variable SuccArgs': forall i, pr_args Succ' i = s.
-  Variable Succ_stb: forall t1 t2 a, psem Succ t1 a <-> psem Succ t2 a.
+  (*Variable Succ_stb: forall t1 t2 a, psem Succ t1 a <-> psem Succ t2 a. *)
   
   Definition SuccSem t (x y: ssem s) :=
     psem Succ t (fun i => match i with F1 => rew [ssem] (eq_sym (SuccArgs i)) in x | _ => rew [ssem] (eq_sym (SuccArgs i)) in y end).
@@ -82,6 +82,19 @@ Section Closure.
     exact (inr v).
     exact v.
   Defined.
+  
+  Lemma tfrVar_inj: forall {s1 s2} (v1: variable (Sig:=srcSg) s1) (v2: variable (Sig:=srcSg) s2),
+    @isEq2 _ Sort _ (variable (Sig:=dstSg)) s1 (tfrVar v1) s2 (tfrVar v2) -> @isEq2 _ Sort _ (variable (Sig:=srcSg)) s1 v1 s2 v2.
+  Proof.
+    intros.
+    injection H; clear H; intros; subst; auto.
+    apply inj_pair2_eq_dec in H; try apply eq_dec.
+    unfold tfrVar in H.
+    destruct (eq_dec s2 s); subst; auto.
+    injection H; intros; subst; auto.
+    constructor.
+    constructor.
+  Qed.
   
   Definition tfrTerm {s} (tm: term srcSg s): term dstSg s :=
   match tm return term dstSg s with
@@ -236,6 +249,18 @@ Section Closure.
     exfalso; clear H; tauto.
   Qed.
   
+  Lemma tfrVar_var_diff: forall {s1} (v1: variable (Sig:=srcSg) s1) v2,
+    not (@isEq2 _ Sort _ (variable (Sig:=dstSg)) s1 (tfrVar v1) _ (var v2)).
+  Proof.
+    intros; intro.
+    inversion H; subst.
+    apply inj_pair2_eq_dec in H2; try apply eq_dec.
+    unfold tfrVar,var in H2.
+    destruct (eq_dec s s); try tauto.
+    discriminate.
+    auto.
+  Qed.
+  
   Definition unary `{Sg: Sig} {s} (P: formula Sg) (x: variable (Sig:=Sg) s) :=
     vsIn Sg x (free Sg P) /\ 
     vsSubset Sg (free Sg P) (vsSing Sg x).
@@ -246,18 +271,177 @@ Section Closure.
     apply (AndDec {| dc_dec := vsIn_dec Sg x (free Sg P) |}
                      {| dc_dec := vsSubset_dec Sg (free Sg P) (vsSing Sg x) |}).
   Defined.
+
+  Lemma tfr_tm_vars: forall s s' (w: variable s) (tm: term srcSg s'), 
+    vsIn srcSg w (tm_vars srcSg tm) <->
+    vsIn dstSg (tfrVar w) (tm_vars dstSg (tfrTerm tm)).
+  Proof.
+    intros.
+    destruct tm; simpl; split; intro.
+    apply vsSing_elim in H.
+    injection H; clear H; intros; subst.
+    apply inj_pair2_eq_dec in H; try apply eq_dec; subst w.
+    apply vsSing_intro.
+
+    apply vsSing_elim in H.
+    injection H; clear H; intros; subst.
+    apply inj_pair2_eq_dec in H; try apply eq_dec.
+    unfold tfrVar in H.
+    destruct (eq_dec s' s).
+    injection H; clear H; intros; subst w.
+    apply vsSing_intro.
+    subst w.
+    apply vsSing_intro.
+
+    destruct H.
+    destruct H.
+  Qed.
+
+  Lemma tfr_lt_vars: forall s (w: variable s) l, 
+    vsIn srcSg w (lt_vars srcSg l) <->
+    vsIn dstSg (tfrVar w) (lt_vars dstSg (tfrLiteral l)).
+  Proof.
+    intros.
+    destruct l; simpl.
+    split; intro.
+    apply vsGUnion_elim in H.
+    destruct H as [k H].
+    apply vsGUnion_intro with k.
+    apply tfr_tm_vars in H.
+    apply H.
+    
+    apply vsGUnion_elim in H.
+    destruct H as [k H].
+    apply vsGUnion_intro with k.
+    apply tfr_tm_vars in H.
+    apply H.
+  Qed.
+  
+  Lemma tfr_at_vars: forall s (w: variable s) a, 
+    vsIn srcSg w (at_vars srcSg a) <->
+    vsIn dstSg (tfrVar w) (at_vars dstSg (tfrAtom a)).
+  Proof.
+    intros.
+    destruct a; simpl.
+    apply tfr_lt_vars.
+    apply tfr_lt_vars.
+    split; intro.
+
+    apply vsUnion_elim in H.
+    destruct H; [apply vsUnion_l | apply vsUnion_r].
+    revert H; apply tfr_tm_vars.
+    revert H; apply tfr_tm_vars.
+
+    apply vsUnion_elim in H.
+    destruct H; [apply vsUnion_l | apply vsUnion_r].
+    revert H; apply tfr_tm_vars.
+    revert H; apply tfr_tm_vars.
+
+    split; intro.
+    apply vsUnion_elim in H.
+    destruct H; [apply vsUnion_l | apply vsUnion_r].
+    revert H; apply tfr_tm_vars.
+    revert H; apply tfr_tm_vars.
+
+    apply vsUnion_elim in H.
+    destruct H; [apply vsUnion_l | apply vsUnion_r].
+    revert H; apply tfr_tm_vars.
+    revert H; apply tfr_tm_vars.    
+  Qed.
   
   Lemma tfr_free: forall (P: formula srcSg) s' (w: variable s'),
     vsIn srcSg w (free srcSg P) <-> vsIn dstSg (tfrVar w) (free dstSg (tfrFormula P)).
   Proof.
-    clear D srcItp SuccSem_cls' Succ_stb.
-  Admitted.
-  
+    clear D srcItp SuccSem_cls'.
+    induction P; simpl; intros; auto.
+    - split; intro H; destruct H.
+    - split; intro H; destruct H.
+    - apply tfr_at_vars.
+    - split; intro; apply vsUnion_elim in H.
+      destruct H; [apply vsUnion_l; apply IHP1 | apply vsUnion_r; apply IHP2]; apply H.
+      destruct H; [apply vsUnion_l; apply IHP1 | apply vsUnion_r; apply IHP2]; apply H.
+    - split; intro; apply vsUnion_elim in H.
+      destruct H; [apply vsUnion_l; apply IHP1 | apply vsUnion_r; apply IHP2]; apply H.
+      destruct H; [apply vsUnion_l; apply IHP1 | apply vsUnion_r; apply IHP2]; apply H.
+    - split; intro.
+      apply vsInRemove_elim in H; destruct H.
+      apply IHP in H.
+      apply vsInRemove_intro; auto.
+      intro; apply H0; clear H0.
+      apply tfrVar_inj in H1; now auto.
+      
+      apply vsInRemove_elim in H; destruct H.
+      apply IHP in H.
+      apply vsInRemove_intro; auto.
+      intro; apply H0; clear H0.
+      inversion H1; clear H1; intros; subst.
+      apply inj_pair2_eq_dec in H3; try apply eq_dec; subst; constructor.
+    - split; intro.
+      apply vsInRemove_elim in H; destruct H.
+      apply IHP in H.
+      apply vsInRemove_intro; auto.
+      intro; apply H0; clear H0.
+      apply tfrVar_inj in H1; now auto.
+      
+      apply vsInRemove_elim in H; destruct H.
+      apply IHP in H.
+      apply vsInRemove_intro; auto.
+      intro; apply H0; clear H0.
+      inversion H1; clear H1; intros; subst.
+      apply inj_pair2_eq_dec in H3; try apply eq_dec; subst; constructor.
+  Qed.
+
+  Lemma tfr_aux_tm: forall x s (tm: term srcSg s),
+    not (vsIn dstSg (var x) (tm_vars dstSg (tfrTerm tm))).
+  Proof.
+    intros; intro.
+    destruct tm; simpl in *.
+    apply vsSing_elim in H.
+    simpl in H; symmetry in H.
+    apply tfrVar_var_diff in H; now auto.
+    inversion H.
+  Qed.
+
+  Lemma tfr_aux_lt: forall x l,
+    not (vsIn dstSg (var x) (lt_vars dstSg (tfrLiteral l))).
+  Proof.
+    intros.
+    destruct l; simpl; intro.
+    apply vsGUnion_elim in H.
+    destruct H as [k H].
+    apply tfr_aux_tm in H; now auto.
+  Qed.
+
+  Lemma tfr_aux_at: forall x a,
+    not (vsIn dstSg (var x) (at_vars dstSg (tfrAtom a))).
+  Proof.
+    intros; intro.
+    destruct a; simpl in H.
+    apply tfr_aux_lt in H; now auto.
+    apply tfr_aux_lt in H; now auto.
+    apply vsUnion_elim in H.
+    destruct H; apply tfr_aux_tm in H; now auto.
+    apply vsUnion_elim in H.
+    destruct H; apply tfr_aux_tm in H; now auto.    
+  Qed.
+
   Lemma tfr_aux: forall (P: formula srcSg) x,
     not (vsIn dstSg (var x) (free dstSg (tfrFormula P))).
   Proof.
-    clear D srcItp SuccSem_cls' Succ_stb.
-  Admitted.
+    clear D srcItp SuccSem_cls'.
+    induction P; simpl; intros; intro; auto.
+    - apply tfr_aux_at in H; now auto.
+    - apply vsUnion_elim in H.
+      destruct H; [apply IHP1 in H | apply IHP2 in H]; now auto.
+    - apply vsUnion_elim in H.
+      destruct H; [apply IHP1 in H | apply IHP2 in H]; now auto.
+    - apply vsInRemove_elim in H; destruct H.
+      apply IHP in H; now auto.
+    - apply vsInRemove_elim in H; destruct H.
+      apply IHP in H; now auto.
+    - apply IHP in H; now auto.
+    - apply IHP in H; now auto.
+  Qed.
   
   Lemma unary_tfr: forall (P: formula srcSg) (v: variable s), unary P v -> unary (tfrFormula P) (tfrVar v).
   Proof.
@@ -351,10 +535,11 @@ Section Closure.
   Qed.
   
   Definition Propagates (P: formula dstSg) v (fp: unary P v) :=
-   All dstSg _ v (All dstSg _ (var X2) (G dstSg
-    (Imp dstSg (And dstSg P (at_Succ (Var dstSg s v) (Var dstSg s (var X2))))
-          (F dstSg ([v := var X2] P ))))).
-
+   All dstSg _ v (All dstSg _ (var X2) 
+                      (Imp dstSg (at_Succ (Var dstSg s v) (Var dstSg s (var X2)))
+                           (G dstSg (Imp dstSg P (F dstSg ([v := var X2] P )))))).
+  (****** A REVOIR ****)
+  
   Definition AbsClosure (P: formula dstSg) v (fp: unary P v) :=
     All dstSg _ (var Z1) (Imp dstSg  (And dstSg ([v := var Z1] P ) (Propagates P v fp))
                        (All dstSg _ (var Z2) (Imp dstSg (at_Succ' (Var dstSg s (var Z1)) (Var dstSg s (var Z2))) (F dstSg ([v := var Z2] P ))))).
@@ -384,7 +569,7 @@ Section Closure.
    Proof.
     intros.
     unfold SuccSem'; simpl.
-    clear SuccSem_cls' SuccArgs SuccAr Succ_stb Succ.
+    clear SuccSem_cls' SuccArgs SuccAr Succ.
     generalize (psem Succ' t) as ps.
     revert SuccArgs'; generalize (pr_args Succ') as pa.
     rewrite SuccAr'; clear SuccAr'; intros.
@@ -446,48 +631,46 @@ Section Closure.
     unfold Propagates in H0.
     rewrite All_sem in H0; specialize H0 with d2.
     rewrite All_sem in H0; specialize H0 with d3.
-    rewrite G_sem in H0.
-    generalize (H0 t' h1); clear H0; intro H0.
+    rewrite Imp_sem in H0.
+    rewrite <-vsubst_sem with (env1:=add dstSg (tfrVar v) (d2: ssem (Dom:=dstD) s) env) in h2; auto.
+    match goal with H0: ?p -> _ |- _ => assert p as h; [clear H0 | apply H0 in h; clear H0] end.
+    apply SuccSem_equ; simpl.
+    rewrite add_eq.
+    rewrite add_ne.
+    rewrite add_eq; now auto.
+
+    unfold tfrVar, var; simpl.
+    destruct (eq_dec s s); try discriminate; now auto.
+    
+    rewrite G_sem in h.
+    generalize (h t' h1); clear h; intro H0.
     rewrite Imp_sem in H0.
     match goal with H0: ?p -> _ |- _ => assert p as h; [clear H0 | apply H0 in h; clear H0] end.
-    apply And_sem; split.
-    rewrite <-vsubst_sem with (env1:=add dstSg (tfrVar v) (d2: ssem (Dom:=dstD) s) env) in h2; auto.
     revert h2; apply fm_sem_equiv; intros; auto.
     apply fp in H; apply (vsSing_elim dstSg) in H.
     injection H; intros; subst s0.
     apply inj_pair2_eq_dec in H0; try apply eq_dec; subst v0.
+    clear H.
     repeat rewrite add_eq.
-    rewrite add_ne; try (intro diff; apply var_inj in diff; discriminate).
+    rewrite add_ne.
     rewrite add_eq; now auto.
     unfold tfrVar, var; simpl.
-    destruct (eq_dec s s); auto; try tauto; discriminate.
-    repeat rewrite add_eq; now auto.
-    unfold tfrVar, var; simpl.
-    destruct (eq_dec s s); auto; try tauto; discriminate.
+    destruct (eq_dec s s); try discriminate; now auto.
 
-    simpl.
-    apply Succ_stb with (t2:=t).
-    apply SuccSem_equ; simpl.  
-    
-    rewrite add_eq.
-    rewrite add_ne; try (intro diff; apply var_inj in diff; discriminate).
-    rewrite add_eq.
-    apply H2.
-
-    unfold tfrVar, var; simpl.
-    destruct (eq_dec s s); auto; try tauto; discriminate.
-
-    rewrite F_sem in h; destruct h as [t'' [h h']].
+    rewrite F_sem in h.
+    destruct h as [t'' [h3 h]].
+    rewrite F_sem.
     exists t''; split.
-    apply Arith.Le.le_trans with t'; now auto.
-    rewrite <-vsubst_sem with (env1:=add dstSg (tfrVar v) (d3: ssem (Dom:=dstD) s) env) in h'; auto.
+    apply le_trans with t'; now auto.
+    
+    rewrite <-vsubst_sem with (env1:=add dstSg (tfrVar v) (d3: ssem (Dom:=dstD) s) env) in h; auto.
     rewrite <-vsubst_sem with (env1:=add dstSg (tfrVar v) (d3: ssem (Dom:=dstD) s) env); auto.
-    repeat rewrite add_eq; auto.
-    unfold tfrVar, var; simpl.
-    destruct (eq_dec s s); auto; try tauto; discriminate.
-    repeat rewrite add_eq; auto.
-    unfold tfrVar, var; simpl.
-    destruct (eq_dec s s); auto; try tauto; discriminate.
+    repeat rewrite add_eq; now auto.
+    unfold tfrVar, var; simpl; destruct (eq_dec s s); try discriminate; now auto.
+    repeat rewrite add_eq; now auto.
+    unfold tfrVar, var; simpl; destruct (eq_dec s s); try discriminate; now auto.
+    repeat rewrite add_eq; now auto.
+    unfold tfrVar, var; simpl; destruct (eq_dec s s); try discriminate; now auto.
   Qed.
 End Closure.
 
@@ -518,11 +701,10 @@ Proof.
 Defined.
 
 Definition cs_sem `{srcSg: Sig} {s} {Succ Succ'} {P} {v} (cs: ClosureSpec srcSg s Succ Succ' P v) {D: Dom srcSg} (itp: Interp D) : Prop :=
-  ClosureSem srcSg D s itp Succ Succ' (cs_prf cs) (cs_prf' cs) /\
-  forall t1 t2 a, psem Succ t1 a <-> psem Succ t2 a.
+  ClosureSem srcSg D s itp Succ Succ' (cs_prf cs) (cs_prf' cs).
 
 Definition absClosure`{srcSg: Sig} {s} {Succ Succ'} {P} {v} (cs: ClosureSpec srcSg s Succ Succ' P v) :=
-  AbsClosure srcSg s Succ Succ' (cs_ar cs) (cs_ar' cs) (cs_prf cs) (cs_prf' cs) (tfrFormula srcSg s P) (tfrVar srcSg s v) (unary_tfr srcSg _  _ _ (cs_ar cs) (cs_ar' cs) (cs_prf cs) (cs_prf' cs) P v (cs_one cs)).
+  AbsClosure srcSg s Succ Succ' (cs_ar cs) (cs_ar' cs) (cs_prf cs) (cs_prf' cs) (tfrFormula srcSg s P) (tfrVar srcSg s v) (unary_tfr srcSg _  _ _ (cs_one cs)).
 
 Lemma elim_cs: forall `(srcSg: Sig) s Succ Succ' P v (cs: ClosureSpec srcSg s Succ Succ' P v) (f: formula srcSg) {D: Dom srcSg} (itp: Interp D) env t,
   (cs_sem cs itp /\ fm_sem srcSg (Itp:=itp) env f t) -> 
@@ -532,7 +714,5 @@ Proof.
   destruct H.
   apply And_sem; split.
   apply AbsClosureOK; intros; auto.
-  apply (proj2 H).
-  apply (proj1 H).
   apply tfr_sem; auto.
 Qed.

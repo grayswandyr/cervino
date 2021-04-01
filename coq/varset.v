@@ -258,7 +258,7 @@ Proof.
 Qed.
 
 Definition vsFinite (vs: VarSet): Finite :=
-  PairFin Sort (fun s => asFinite (vs s)).
+  DepPairFin Sort (fun s => asFinite (vs s)).
 
 Lemma vsSing_intro: forall s v, SV.set_In v (vsSing v s).
 Proof.

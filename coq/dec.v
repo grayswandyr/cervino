@@ -111,6 +111,11 @@ Instance isEq `{T: EqDec} (x y:T) : Decidable := {
   dc_dec := eq_dec x y
 }.
 
+Instance isNEq `{T: EqDec} (x y:T) : Decidable := {
+  dcPred := x<>y;
+  dc_dec := match eq_dec x y with left e => right (fun h => h e) | right n => left n end
+}.
+
 Instance isEqF (T1: Type) `{T2: EqDec} (f: T1->T2) (x: T2) (y:T1) : Decidable := {
   dcPred := x=f y;
   dc_dec := eq_dec x (f y)
@@ -145,14 +150,33 @@ Next Obligation.
   apply (n H1).
 Qed.
 
+Lemma isEq2_sym: forall `{T1: EqDec} {T2: T1->Type} x1 x2 y1 y2,
+  isEq2 x1 x2 y1 y2 -> isEq2 y1 y2 x1 x2.
+Proof.
+  intros.
+  inversion H; intros; subst.
+  constructor.
+Qed.  
+
 Program Instance uptoDec n: @EqDec (Fin.t n) := {| eq_dec := Fin.eq_dec |}.
 
 
-Program Instance PairDec `(T1: EqDec) {T2: T1->Type} (U: forall t, @EqDec (T2 t)): @EqDec {x:T1 & U x} := {| eq_dec := _ |}.
+Program Instance DepPairDec `(T1: EqDec) {T2: T1->Type} (U: forall t, @EqDec (T2 t)): @EqDec {x:T1 & U x} := {| eq_dec := _ |}.
 Next Obligation.
   repeat intro.
   destruct x; destruct y.
   apply isEq2.
+Defined.
+
+Program Instance PairDec `(T1: EqDec) `(T2: EqDec) : @EqDec (T1*T2) := {| eq_dec := _ |}.
+Next Obligation.
+  repeat intro.
+  destruct x; destruct y.
+  destruct (eq_dec e e1); subst.
+  destruct (eq_dec e0 e2); subst.
+  left; reflexivity.
+  right; intro H; apply n; clear n; injection H; intros; auto.
+  right; intro H; apply n; clear n; injection H; intros; auto.
 Defined.
 
 Program Definition SumDec `(T1: EqDec) `(T2: EqDec) : @EqDec (T1+T2) := {|

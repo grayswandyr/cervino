@@ -57,6 +57,37 @@ Section Abstraction.
     injection H; clear H; intros; tauto.
   Qed.
 
+  Definition newPredSet : SV.set newPredDec.
+    apply SV.GUnion with (d:=@fin_set _ Sort).
+    apply fin_set.
+    intros s hs.
+    apply SV.GUnion with (d:=@fin_set _ (variable s)).
+    apply fin_set.
+    intros v hv.
+    destruct (SV.set_In_dec v (exv s)).
+    exact (SV.sing newPredDec (NewPred s v i)).
+    exact (SV.empty newPredDec).
+  Defined.
+    
+  Program Definition newPredFin: @Finite newPred := {| 
+    fin_dec := newPredDec;
+    fin_set := SV.union (SV.image OldPred fin_set) newPredSet            
+  |}.
+  Next Obligation.
+    destruct x.
+    apply SV.InUnion_l.
+    apply SV.InImage_intro with (w:=p); auto.
+    apply fin_all.
+    apply SV.InUnion_r.
+    apply SV.InCUnion_intro with (u:=s); intros; try apply fin_all.
+    apply SV.InCUnion_intro with (u:=v); intros; try apply fin_all.
+    simpl.
+    destruct (SV.set_In_dec v (exv s)).
+    apply SV.InSing.
+    rewrite (proof_irrelevance _ i h); now auto.
+    destruct (n h).
+  Qed.
+  
   Definition dstTa (p:newPred): Type := 
     match p with OldPred op => Fin.t (pr_arity op) | NewPred _ _ _ => One end.
 
@@ -64,7 +95,7 @@ Section Abstraction.
     Sort := Sort (Sig:=srcSig);
     variable := variable (Sig:=srcSig);
     constant := constant (Sig:=srcSig);
-    predicate := newPredDec;
+    predicate := newPredFin;
     pr_arity p := match p with OldPred op => pr_arity op | NewPred _ _ _ => 1 end;
     pr_args p := match p with OldPred op => pr_args op | NewPred s _ _ => fun i => s end
   |}.

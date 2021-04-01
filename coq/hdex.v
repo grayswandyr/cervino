@@ -238,10 +238,10 @@ Section FiniteModel_HdEx.
   Qed.
     
   Definition abs_domDec {D:Dom srcSig} (Itp: Interp D) (env: Env srcSig D): EqDec :=
-    PairDec Sort (fun s => abs_ssemDec Itp env s).
+    DepPairDec Sort (fun s => abs_ssemDec Itp env s).
     
   Definition abs_domFin {D:Dom srcSig} (Itp: Interp D) (env: Env srcSig D): Finite :=
-    PairFin Sort (fun s => abs_ssemFin Itp env s).
+    DepPairFin Sort (fun s => abs_ssemFin Itp env s).
   
   Theorem finiteModel_HdEx:
     forall f, noEx srcSig f -> isSat _ f ->

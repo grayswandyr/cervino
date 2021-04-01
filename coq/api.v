@@ -98,16 +98,16 @@ Record event := make_event {
   ev_modificationifies : list ev_modify;
 }.
 
-Inductive mlUsing :=
-  TEA: mlUsing (* transfo Ex -> Alll avec intro E *)
-| TTC: relation -> variable -> formula -> mlUsing (* transitive closure *)
-| TFC: (event -> formula) -> mlUsing. (* frame condition *)
+Inductive transfo :=
+  TEA: transfo (* transfo Ex -> Alll avec intro E *)
+| TTC: relation -> variable -> formula -> transfo (* transitive closure *)
+| TFC: (event -> formula) -> transfo. (* frame condition *)
 
 Record check := make_check {
   chk_name: string;
   chk_body: formula;
   chk_assuming: formula;
-  chk_using: mlUsing;
+  chk_using: transfo;
 }.
 
 Record path := make_path {
