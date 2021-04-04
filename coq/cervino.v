@@ -36,7 +36,7 @@ Structure Cervino := {
   CV_cstsType: CV_sortsType -> Type;
   CV_prdsType: Type;
   CV_sig: @Sig CV_sortsType CV_varsType CV_cstsType CV_prdsType;
-  CV_hyps: formula CV_sig;
+  CV_hyps: formula CV_sig; (* NNF, pas de E dans A ou G - elim de =, skolem, instanciation *)
   CV_EventType: Type;
   CV_Event: @Finite CV_EventType;
   CV_modify: CV_Event -> formula CV_sig;
@@ -60,7 +60,7 @@ Definition TEA_ext {cv: Cervino} (ev: CV_Event cv) :
   extension.Extension (abstraction.dstSig cv (quantifiers.getExF (CV_body cv ev)))
                         (abstraction.dstSig cv (fun s => fin_set (Finite:=variable s))).
 Admitted.
-
+(*
 Program Definition TEA (cv: Cervino): Cervino := {|
   CV_sig := abstraction.dstSig (CV_sig cv) (fun s => fin_set (Finite:=variable s));
   CV_hyps := _;
@@ -70,4 +70,4 @@ Program Definition TEA (cv: Cervino): Cervino := {|
 
 Lemma TEA_OK: forall cv, isSat (CV_sem cv) -> isSat (CV_sem (TEA cv)).
 Admitted.
-
+*)

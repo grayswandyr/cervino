@@ -705,7 +705,7 @@ Definition cs_sem `{srcSg: Sig} {s} {Succ Succ'} {P} {v} (cs: ClosureSpec srcSg 
 
 Definition absClosure`{srcSg: Sig} {s} {Succ Succ'} {P} {v} (cs: ClosureSpec srcSg s Succ Succ' P v) :=
   AbsClosure srcSg s Succ Succ' (cs_ar cs) (cs_ar' cs) (cs_prf cs) (cs_prf' cs) (tfrFormula srcSg s P) (tfrVar srcSg s v) (unary_tfr srcSg _  _ _ (cs_one cs)).
-
+(* PaperTheorem 8 *)
 Lemma elim_cs: forall `(srcSg: Sig) s Succ Succ' P v (cs: ClosureSpec srcSg s Succ Succ' P v) (f: formula srcSg) {D: Dom srcSg} (itp: Interp D) env t,
   (cs_sem cs itp /\ fm_sem srcSg (Itp:=itp) env f t) -> 
     fm_sem (dstSg srcSg s) (Itp:=dstItp srcSg D s itp) (tfrEnv srcSg D s env) (And _ (absClosure cs) (tfrFormula srcSg s f)) t.

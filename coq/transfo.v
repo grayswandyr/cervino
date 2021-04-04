@@ -216,7 +216,8 @@ Section Transfo.
 
   Definition TTC_var (v: variable) hv s' (w: foltl.variable (Sig:=closure.dstSg (coqSig mdl) (mlSortOfVar mdl v hv)) s'): string.
     simpl in *.
-    destruct (finite.asDec_obligation_1 mlSort StrDec (mlSorts mdl) s' (mlSortOfVar mdl v hv)).
+    destruct (finite.subDec_obligation_1 mlSort StrDec
+       (fun x => SV.set_In x (mlSorts mdl)) s' (mlSortOfVar mdl v hv)).
     destruct w.
     destruct a eqn:aux.
       exact "_X1"%string.

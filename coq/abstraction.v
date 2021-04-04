@@ -1009,6 +1009,7 @@ Section Abstraction.
     apply (H0 fv (fun t' => t' >= t) env Itp); auto.
   Qed.
 
+  (* PaperLemma 4 *)
   Theorem abstraction_OK: forall (f: formula srcSig) (hf: isExAll _ f) (fv: forall s, SV.is_empty (free _ f s)),
     isSat srcSig (G _ f) -> 
       isSat (dstSig (getExF f)) (G _ (abstract_ExAll f hf fv)).
@@ -1027,7 +1028,8 @@ Section Abstraction.
 
   Definition abstract_G_EAf_and_g (f g: formula srcSig) (hf: isExAll _ f) (fv: forall s, SV.is_empty (free _ f s)) : formula (dstSig (getExF f)) := 
     (And _ (G _ (abstract_ExAll f hf fv)) (fm_dstSig (getExF f) g)).
-  
+
+  (* PaperLemma 5 *)
   Theorem abstractionInConj_OK: forall (f g: formula srcSig) (hf: isExAll _ f) (fv: forall s, SV.is_empty (free _ f s)),
     isSat srcSig (And _ (G _ f) g) -> isSat (dstSig (getExF f)) (abstract_G_EAf_and_g f g hf fv).
   Proof.
