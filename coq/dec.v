@@ -212,6 +212,13 @@ Definition eProduct `(T1: EqDec) `(T2: EqDec): @EqDec (T1*T2).
     apply (n H0).
   Defined.
 
+  Inductive Empty: Type := .
+  
+  Program Definition EmptyDec: @EqDec Empty := {| eq_dec x y := _ |}.
+  Next Obligation.
+   destruct x. 
+  Defined.
+
   Inductive One: Type := one: One.
   
   Definition OneDec: @EqDec One := {| 

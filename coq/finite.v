@@ -519,6 +519,11 @@ Next Obligation.
   reflexivity.
 Qed.
 
+Program Definition EmptyFin: Finite := {| fin_dec := EmptyDec; fin_set := SV.empty _ |}.
+Next Obligation.
+  destruct x.
+Defined.
+
 Program Definition OneFin: Finite := {| fin_dec := OneDec; fin_set := SV.sing OneDec one |}.
 Next Obligation.
   destruct x; left; reflexivity.

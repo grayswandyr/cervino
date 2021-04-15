@@ -71,6 +71,21 @@ Section FO.
 
 Definition Env (D: Dom mySig) := forall s, variable s -> ssem s.
 
+Lemma veq_dec {s} (v: variable s) {s'} (w: variable s'): 
+  {existT variable s v = existT variable s' w}+{existT variable s v <> existT variable s' w}.
+Proof.
+  destruct (eq_dec s s').
+  subst s'.
+  destruct (eq_dec v w).
+  subst w; left; reflexivity.
+  right; intro.
+  apply inj_pair2_eq_dec in H; try apply eq_dec.
+  apply (n H).
+  right; intro.
+  injection H; clear H; intros.
+  apply (n H0).
+Qed.
+
 Definition add {D: Dom mySig} {s} (v: variable s) (d: ssem s) (env: Env D): Env D:=
   fun s' =>
     match eq_dec s s' with
@@ -776,6 +791,7 @@ Proof.
 Qed.
 
 Definition Imp (f1 f2: formula): formula := Or (Not f1) f2.
+Definition Equiv (f1 f2: formula) := And (Imp f1 f2) (Imp f2 f1).
 
 Lemma And_sem: forall {D: Dom mySig} {Itp: Interp D} (f1 f2: formula) (env: Env D) t,
   fm_sem env (And f1 f2) t <-> (fm_sem env f1 t /\ fm_sem env f2 t).
@@ -796,6 +812,16 @@ Proof.
   unfold Imp.
   rewrite Or_sem.
   rewrite Not_sem.
+  tauto.
+Qed.
+
+Lemma Equiv_sem: forall {D: Dom mySig} {Itp: Interp D} (f1 f2: formula) (env: Env D) t,
+  fm_sem env (Equiv f1 f2) t <-> (fm_sem env f1 t <-> fm_sem env f2 t).
+Proof.
+  intros.
+  unfold Equiv.
+  rewrite And_sem.
+  do 2 rewrite Imp_sem.
   tauto.
 Qed.
 
@@ -824,9 +850,30 @@ Definition tm_subst {s s'} (x : variable s) (tm: term s) (t: term s'): term s' :
   | Cst _ c => Cst _ c
   end.
 
+Definition tm_swap {s s'} (x y: variable s) (t: term s'): term s' :=
+  match t with
+    Var _ v => 
+      match eq_dec s' s return term s' with
+        left e =>
+          match e in _ = s return variable s' -> variable s -> variable s -> term s' with
+            eq_refl => fun v x y => 
+               if eq_dec x v then Var _ y 
+               else if eq_dec y v then Var _ x
+               else Var _ v 
+          end v x y
+      | right _ => t
+      end
+  | Cst _ c => Cst _ c
+  end.
+
 Definition lt_subst {s} (v : variable s) (tm: term s) (l: literal) :=
   match l with
     PApp x r args => PApp x r (fun i => tm_subst v tm (args i))
+  end.
+
+Definition lt_swap {s} (v w : variable s) (l: literal) :=
+  match l with
+    PApp x r args => PApp x r (fun i => tm_swap v w (args i))
   end.
 
 Definition at_subst {s} (x : variable s) (tm: term s) (a: atom) :=
@@ -835,6 +882,14 @@ Definition at_subst {s} (x : variable s) (tm: term s) (a: atom) :=
   | NLiteral l => NLiteral (lt_subst x tm l)
   | Eq s' t1 t2 => Eq s' (tm_subst x tm t1) (tm_subst x tm t2)
   | NEq s' t1 t2  => NEq s' (tm_subst x tm t1) (tm_subst x tm t2)
+  end.
+
+Definition at_swap {s} (x y: variable s) (a: atom) :=
+  match a with
+    Literal l => Literal (lt_swap x y l)
+  | NLiteral l => NLiteral (lt_swap x y l)
+  | Eq s' t1 t2 => Eq s' (tm_swap x y t1) (tm_swap x y t2)
+  | NEq s' t1 t2  => NEq s' (tm_swap x y t1) (tm_swap x y t2)
   end.
 
 Definition esubst {s} (x : variable s) (tm: term s) (P: formula) :=
@@ -855,6 +910,405 @@ Fixpoint subst {s} (x: variable s) (tm: term s) (f: formula) :=
   | F f => F (subst x tm f)
   | G f => G (subst x tm f)
   end.
+
+Fixpoint csubst {s} (x: variable s) (c: constant s) (f: formula) :=
+  match f with
+  | FTrue => FTrue
+  | FFalse => FFalse
+  | Atom a => Atom (at_subst x (Cst s c) a)
+  | And f1 f2 => And (csubst x c f1) (csubst x c f2)
+  | Or f1 f2 => Or (csubst x c f1) (csubst x c f2)
+  | Ex s' w f' => if veq_dec x w then Ex s' w f' else Ex s' w (csubst x c f')
+  | All s' w f' => if veq_dec x w then All s' w f' else All s' w (csubst x c f')
+  | F f => F (csubst x c f)
+  | G f => G (csubst x c f)
+  end.
+
+Fixpoint vswap {s} (x y: variable s) (f: formula) :=
+  match f with
+  | FTrue => FTrue
+  | FFalse => FFalse
+  | Atom a => Atom (at_swap x y a)
+  | And f1 f2 => And (vswap x y f1) (vswap x y f2)
+  | Or f1 f2 => Or (vswap x y f1) (vswap x y f2)
+  | Ex s' w f' => 
+    if veq_dec x w then Ex s y (vswap x y f') 
+    else if veq_dec y w then Ex s x (vswap x y f')
+    else Ex s' w (vswap x y f')
+  | All s' w f' => 
+    if veq_dec x w then All s y (vswap x y f') 
+    else if veq_dec y w then All s x (vswap x y f')
+    else All s' w (vswap x y f')
+  | F f => F (vswap x y f)
+  | G f => G (vswap x y f)
+  end.
+
+Fixpoint vsubst {s} (x y: variable s) (f: formula) :=
+  match f with
+  | FTrue => FTrue
+  | FFalse => FFalse
+  | Atom a => Atom (at_subst x (Var s y) a)
+  | And f1 f2 => And (vsubst x y f1) (vsubst x y f2)
+  | Or f1 f2 => Or (vsubst x y f1) (vsubst x y f2)
+  | Ex s' w f' => 
+    if veq_dec x w then Ex s' w f'
+    else if veq_dec y w then vswap x y (Ex s' w f')  
+    else Ex s' w (vsubst x y f')
+  | All s' w f' => 
+    if veq_dec x w then All s' w f' 
+    else if veq_dec y w then vswap x y (All s' w f') 
+    else All s' w (vsubst x y f')
+  | F f => F (vsubst x y f)
+  | G f => G (vsubst x y f)
+  end.
+
+Ltac psemTac :=
+    match goal with
+      H:psem _ _ ?sa |- psem _ _ ?sa' => assert (sa' = sa) as ae;
+          try (rewrite ae; assumption); (apply functional_extensionality_dep; intros)
+    end.
+
+Lemma tm_csubst_sem: forall  D (Itp: Interp D) env s v c s' (tm: term s'), 
+  tm_sem (add v (csem c) env) tm =
+    tm_sem env (tm_subst v (Cst s c) tm).
+Proof.
+  intros; destruct tm; simpl; auto.
+  unfold add; destruct (eq_dec s' s).
+  subst s'.
+  destruct (eq_dec s s); try tauto.
+  rewrite (proof_irrelevance _ _ eq_refl).
+  destruct (eq_dec v e); reflexivity.
+  destruct (eq_dec s s'); try (subst s'; tauto); reflexivity.
+Qed.
+
+Lemma tm_vsubst_sem: forall  D (Itp: Interp D) env s v w s' (tm: term s'), 
+  tm_sem (add v (env s  w) env) tm =
+    tm_sem env (tm_subst v (Var s w) tm).
+Proof.
+  intros; destruct tm; simpl; auto.
+  unfold add; destruct (eq_dec s' s).
+  subst s'.
+  destruct (eq_dec s s); try tauto.
+  rewrite (proof_irrelevance _ _ eq_refl).
+  destruct (eq_dec v e); reflexivity.
+  destruct (eq_dec s s'); try (subst s'; tauto); reflexivity.
+Qed.
+
+Lemma tm_swap_sem: forall  D (Itp: Interp D) env s v w s' (tm: term s'), 
+  tm_sem (add v (env s w) (add w (env s v) env)) tm =
+    tm_sem env (tm_swap v w tm).
+Proof.
+  intros; destruct tm; simpl; auto.
+  unfold add; destruct (eq_dec s' s).
+  subst s'.
+  destruct (eq_dec s s); try tauto.
+  rewrite (proof_irrelevance _ _ eq_refl).
+  destruct (eq_dec v e); try reflexivity.
+  destruct (eq_dec w e); reflexivity.
+  destruct (eq_dec s s'); try (subst s'; tauto); reflexivity.
+Qed.
+
+Lemma lt_csubst_sem: forall  D (Itp: Interp D) l env s v c t, 
+  lt_sem (add v (csem c) env) l t <-> lt_sem env (lt_subst v (Cst s c) l) t.
+Proof.
+  intros until l; destruct l; simpl; intros; auto.
+  split; intro.
+  psemTac.
+  rewrite tm_csubst_sem.
+  reflexivity.
+  psemTac.
+  rewrite tm_csubst_sem.
+  reflexivity.
+Qed.
+
+Lemma lt_vsubst_sem: forall  D (Itp: Interp D) l env s v w t, 
+  lt_sem (add v (env s w) env) l t <-> lt_sem env (lt_subst v (Var s w) l) t.
+Proof.
+  intros until l; destruct l; simpl; intros; auto.
+  split; intro.
+  psemTac.
+  rewrite tm_vsubst_sem.
+  reflexivity.
+  psemTac.
+  rewrite tm_vsubst_sem.
+  reflexivity.
+Qed.
+
+Lemma lt_swap_sem: forall  D (Itp: Interp D) l env s v w t, 
+  lt_sem (add v (env s w) (add w (env s v) env)) l t <-> lt_sem env (lt_swap v w l) t.
+Proof.
+  intros until l; destruct l; simpl; intros; auto.
+  split; intro.
+  psemTac.
+  rewrite tm_swap_sem.
+  reflexivity.
+  psemTac.
+  rewrite tm_swap_sem.
+  reflexivity.
+Qed.
+
+Lemma at_csubst_sem: forall  D (Itp: Interp D) a env s v (c: constant s) t, 
+  at_sem (add v (csem c) env) a t <->
+    at_sem env (at_subst v (Cst s c) a) t.
+Proof.
+  intros until a; destruct a; simpl; intros; auto.
+  rewrite lt_csubst_sem; reflexivity.
+  rewrite lt_csubst_sem; reflexivity.
+  do 2 rewrite tm_csubst_sem; reflexivity.
+  do 2 rewrite tm_csubst_sem; reflexivity.
+Qed.
+
+Lemma at_vsubst_sem: forall  D (Itp: Interp D) a env s v (w: variable s) t, 
+  at_sem (add v (env s w) env) a t <->
+    at_sem env (at_subst v (Var s w) a) t.
+Proof.
+  intros until a; destruct a; simpl; intros; auto.
+  rewrite lt_vsubst_sem; reflexivity.
+  rewrite lt_vsubst_sem; reflexivity.
+  do 2 rewrite tm_vsubst_sem; reflexivity.
+  do 2 rewrite tm_vsubst_sem; reflexivity.
+Qed.
+
+Lemma at_swap_sem: forall  D (Itp: Interp D) a env s (v w: variable s) t, 
+  at_sem (add v (env s w) (add w (env s v) env)) a t <->
+    at_sem env (at_swap v w a) t.
+Proof.
+  intros until a; destruct a; simpl; intros; auto.
+  rewrite lt_swap_sem; reflexivity.
+  rewrite lt_swap_sem; reflexivity.
+  do 2 rewrite tm_swap_sem; reflexivity.
+  do 2 rewrite tm_swap_sem; reflexivity.
+Qed.
+
+Lemma csubst_sem: forall  D (Itp: Interp D) f env s (v: variable s) (c: constant s) t, 
+  fm_sem (add v (csem c) env) f t <-> fm_sem env (csubst v c f) t.
+Proof.
+  induction f; simpl; intros; try tauto.
+  - apply at_csubst_sem.
+  - rewrite IHf1, IHf2; reflexivity.
+  - rewrite IHf1, IHf2; reflexivity.
+  - destruct (veq_dec v e).
+    injection e0; clear e0; intros; subst s0.
+    apply inj_pair2_eq_dec in H; try apply eq_dec; subst e.
+    setoid_rewrite add_add_eq.
+    setoid_rewrite Ex_sem.
+    reflexivity.
+    setoid_rewrite Ex_sem.
+    setoid_rewrite <-IHf; clear IHf.    
+    split; intro H; destruct H as [d H]; exists d.
+    setoid_rewrite add_add_ne_swp; try apply H.
+    intro.
+    inversion H0; tauto.
+    setoid_rewrite add_add_ne_swp; try apply H.
+    intro.
+    inversion H0.
+    symmetry in H3; tauto.
+  - destruct (veq_dec v e).
+    injection e0; clear e0; intros; subst s0.
+    apply inj_pair2_eq_dec in H; try apply eq_dec; subst e.
+    setoid_rewrite add_add_eq.
+    setoid_rewrite All_sem.
+    reflexivity.
+    setoid_rewrite All_sem.
+    setoid_rewrite <-IHf; clear IHf.    
+    split; intros H d; specialize (H d).
+    setoid_rewrite add_add_ne_swp in H; try apply H.
+    intro.
+    inversion H0; symmetry in H3; tauto.
+    setoid_rewrite add_add_ne_swp in H; try apply H.
+    intro.
+    inversion H0; tauto.
+  - setoid_rewrite IHf; reflexivity.
+  - setoid_rewrite IHf; reflexivity.
+Qed.
+
+Lemma vswap_sem: forall  D (Itp: Interp D) f env s (v w: variable s) t, 
+  fm_sem (add v (env s w) (add w (env s v) env)) f t <-> fm_sem env (vswap v w f) t.
+Proof.
+  induction f; simpl; intros; try tauto.
+  - apply at_swap_sem.
+  - rewrite IHf1, IHf2; reflexivity.
+  - rewrite IHf1, IHf2; reflexivity.
+  - destruct (veq_dec v e).
+    injection e0; clear e0; intros; subst s0.
+    apply inj_pair2_eq_dec in H; try apply eq_dec; subst e.
+    setoid_rewrite add_add_eq.
+    setoid_rewrite Ex_sem.
+    setoid_rewrite <-IHf.
+    setoid_rewrite add_add_eq.
+    setoid_rewrite add_eq.
+    destruct (eq_dec v w).
+    subst w.
+    repeat setoid_rewrite add_eq.
+    setoid_rewrite add_add_eq.
+    reflexivity.
+    assert (w<>v) by (intro; subst w; tauto); clear n.
+    split; intro h; destruct h as [d h]; exists d; revert h; 
+      setoid_rewrite (add_ne D env s w v); now auto.
+
+    destruct (veq_dec w e).
+    injection e0; clear e0; intros; subst s0.
+    apply inj_pair2_eq_dec in H; try apply eq_dec; subst e.
+    assert (v <> w) by (intro; subst w; tauto); clear n.
+    setoid_rewrite add_add_ne_swp.
+    setoid_rewrite add_add_eq.
+    setoid_rewrite Ex_sem.
+    setoid_rewrite <-IHf.
+    setoid_rewrite add_eq.
+    split; intro h; destruct h as [d h]; exists d; revert h.
+    rewrite add_ne; auto.
+    rewrite (add_add_ne_swp D (add v d env) v w); auto.
+    rewrite add_add_eq; now auto.
+    intro e; apply inj_pair2_eq_dec in e; try apply eq_dec; tauto.
+    rewrite add_ne; auto.
+    rewrite (add_add_ne_swp D (add v d env) v w); auto.
+    rewrite add_add_eq; now auto.
+    intro e; apply inj_pair2_eq_dec in e; try apply eq_dec; tauto.
+    intro e; apply inj_pair2_eq_dec in e; try apply eq_dec; tauto.
+    
+    setoid_rewrite Ex_sem.
+    setoid_rewrite <-IHf.
+    split; intro h; destruct h as [d h]; exists d; revert h.
+    rewrite add_ne2; auto.
+    rewrite add_ne2; auto.
+    rewrite (add_add_ne_swp D _ w e); auto.
+    rewrite (add_add_ne_swp D _ v e); now auto.
+    
+    rewrite add_ne2; auto.
+    rewrite add_ne2; auto.
+    rewrite (add_add_ne_swp D _ w e); auto.
+    rewrite (add_add_ne_swp D _ v e); now auto.
+
+  - destruct (veq_dec v e).
+    injection e0; clear e0; intros; subst s0.
+    apply inj_pair2_eq_dec in H; try apply eq_dec; subst e.
+    setoid_rewrite add_add_eq.
+    setoid_rewrite All_sem.
+    setoid_rewrite <-IHf.
+    setoid_rewrite add_add_eq.
+    setoid_rewrite add_eq.
+    destruct (eq_dec v w).
+    subst w.
+    repeat setoid_rewrite add_eq.
+    setoid_rewrite add_add_eq.
+    reflexivity.
+    assert (w<>v) by (intro; subst w; tauto); clear n.
+    split; intros h d; specialize (h d); revert h; 
+      setoid_rewrite (add_ne D env s w v); now auto.
+
+    destruct (veq_dec w e).
+    injection e0; clear e0; intros; subst s0.
+    apply inj_pair2_eq_dec in H; try apply eq_dec; subst e.
+    setoid_rewrite All_sem.
+    setoid_rewrite <-IHf.
+    setoid_rewrite add_eq.
+    assert (w<>v) by (intro; subst w; tauto); clear n.
+    split; intros h d; specialize (h d); revert h; 
+      setoid_rewrite (add_ne D env s v w); auto.
+    rewrite (add_add_ne_swp D _ w v); auto.
+    rewrite add_add_eq.
+    rewrite (add_add_ne_swp D env w v); auto.
+    rewrite add_add_eq; now auto.
+    intro h; apply inj_pair2_eq_dec in h; try apply eq_dec; tauto.
+    intro h; apply inj_pair2_eq_dec in h; try apply eq_dec; tauto.
+    rewrite (add_add_ne_swp D _ w v); auto.
+    rewrite add_add_eq.
+    rewrite (add_add_ne_swp D (add w (env s v) env) w v); auto.
+    rewrite add_add_eq; auto.
+    intro h; apply inj_pair2_eq_dec in h; try apply eq_dec; tauto.
+    intro h; apply inj_pair2_eq_dec in h; try apply eq_dec; tauto.
+        
+    setoid_rewrite All_sem.
+    setoid_rewrite <-IHf.
+    split; intros h d; specialize (h d); revert h.
+    rewrite add_ne2; auto.
+    rewrite add_ne2; auto.
+    rewrite (add_add_ne_swp D _ w e); auto.
+    rewrite (add_add_ne_swp D _ v e); now auto.
+    
+    rewrite add_ne2; auto.
+    rewrite add_ne2; auto.
+    rewrite (add_add_ne_swp D _ w e); auto.
+    rewrite (add_add_ne_swp D _ v e); now auto.
+  - setoid_rewrite IHf; reflexivity.
+  - setoid_rewrite IHf; reflexivity.
+Qed.
+
+Lemma vsubst_sem: forall  D (Itp: Interp D) f env s (v w: variable s) t, 
+  fm_sem (add v (env s w) env) f t <-> fm_sem env (vsubst v w f) t.
+Proof.
+  induction f; intros; try (simpl; auto; tauto); simpl.
+  - rewrite at_vsubst_sem; reflexivity.
+  - rewrite IHf1, IHf2; reflexivity.
+  - rewrite IHf1, IHf2; reflexivity.
+  - destruct (veq_dec v e).
+    injection e0; intros; subst s0.
+    apply inj_pair2_eq_dec in e0; try apply eq_dec; subst e.
+    rewrite Ex_sem.
+    split; intro h; destruct h as [d h]; exists d; revert h;
+      rewrite add_add_eq; now auto.
+    destruct (veq_dec w e); auto.
+    injection e0; intros; subst s0.
+    apply inj_pair2_eq_dec in e0; try apply eq_dec; subst e.
+    rewrite Ex_sem.
+    setoid_rewrite <-vswap_sem.
+    assert (v <> w) by (intro; subst w; tauto); clear n H.
+    split; intro h; destruct h as [d h]; exists d; revert h.
+    rewrite add_eq.
+    rewrite add_ne; auto.
+    rewrite (add_add_ne_swp D (add v d env) v w); auto.
+    rewrite add_add_eq; now auto.
+    intro h; apply inj_pair2_eq_dec in h; try apply eq_dec; tauto.
+
+    rewrite add_eq.
+    rewrite add_ne; auto.
+    rewrite (add_add_ne_swp D (add v d env) v w); auto.
+    rewrite add_add_eq; now auto.
+    intro h; apply inj_pair2_eq_dec in h; try apply eq_dec; tauto.
+
+    rewrite Ex_sem.
+    setoid_rewrite <-IHf.
+    split; intro h; destruct h as [d h]; exists d; revert h.
+    rewrite (add_ne2 _ _ _ e _ w); auto.
+    rewrite add_add_ne_swp; now auto.
+    rewrite (add_ne2 _ _ _ e _ w); auto.
+    rewrite add_add_ne_swp; now auto.
+    
+  - destruct (veq_dec v e).
+    injection e0; intros; subst s0.
+    apply inj_pair2_eq_dec in e0; try apply eq_dec; subst e.
+    rewrite All_sem.
+    split; intros h d; specialize (h d); revert h;
+      rewrite add_add_eq; now auto.
+    destruct (veq_dec w e); auto.
+    injection e0; intros; subst s0.
+    apply inj_pair2_eq_dec in e0; try apply eq_dec; subst e.
+    rewrite All_sem.
+    setoid_rewrite <-vswap_sem.
+    assert (v <> w) by (intro; subst w; tauto); clear n H.
+    split; intros h d; specialize (h d); revert h.
+    rewrite add_eq.
+    rewrite add_ne; auto.
+    rewrite (add_add_ne_swp D (add v d env) v w); auto.
+    rewrite add_add_eq; now auto.
+    intro h; apply inj_pair2_eq_dec in h; try apply eq_dec; tauto.
+
+    rewrite add_eq.
+    rewrite add_ne; auto.
+    rewrite (add_add_ne_swp D (add v d env) v w); auto.
+    rewrite add_add_eq; now auto.
+    intro h; apply inj_pair2_eq_dec in h; try apply eq_dec; tauto.
+
+    rewrite All_sem.
+    setoid_rewrite <-IHf.
+    split; intros h d; specialize (h d); revert h.
+    rewrite (add_ne2 _ _ _ e _ w); auto.
+    rewrite add_add_ne_swp; now auto.
+    rewrite (add_ne2 _ _ _ e _ w); auto.
+    rewrite add_add_ne_swp; now auto.
+  - setoid_rewrite <-IHf; reflexivity.
+  - setoid_rewrite <-IHf; reflexivity.
+Qed.
 
 Notation "'[' x ':=' y ']'" := (subst x y).  
 
@@ -933,6 +1387,27 @@ Fixpoint isFO f :=
   | Atom a => at_noX a
   | _ => True
   end.
+
+Lemma lt_noX_dec: forall l, {lt_noX l}+{not (lt_noX l)}.
+Proof.
+  intro l; destruct l; simpl.
+  destruct n; [left|right]; auto.
+Qed.
+
+Lemma at_noX_dec: forall a, {at_noX a}+{not (at_noX a)}.
+Proof.
+  intro a; destruct a; simpl; try (left; tauto).
+  apply lt_noX_dec.
+  apply lt_noX_dec.
+Qed.
+
+Lemma isFO_dec: forall f, {isFO f}+{not (isFO f)}.
+Proof.
+  induction f; simpl; intros; auto; try (left; tauto); try (right; tauto).
+  apply at_noX_dec.
+  destruct IHf1; try (right; tauto); destruct IHf2; try (right; tauto); left; tauto.
+  destruct IHf1; try (right; tauto); destruct IHf2; try (right; tauto); left; tauto.  
+Qed.
 
 Fixpoint isProp f :=
   match f with
