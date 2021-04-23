@@ -102,6 +102,14 @@ Next Obligation.
   f_equal; apply proof_irrelevance.
 Qed.
 
+Lemma InFin: forall `{T:EqDec} (s: SV.set T) (x: asFinite s), In (proj1_sig x) s.
+Proof.
+  intros.
+  generalize (fin_all x).
+  destruct x; simpl; intros.
+  apply SV.InCUnion_elim in H; auto.
+Qed.
+
 Definition DepPairSet `{T1: EqDec} {U: T1 -> Type} {T2: forall t, @EqDec (U t)}  {e1: SV.set T1} (e2: forall x, SV.set (T2 x)): SV.set (DepPairDec T1 T2) :=
     SV.GUnion (T1 := T1) (T2 := DepPairDec T1 T2)
       e1 e1

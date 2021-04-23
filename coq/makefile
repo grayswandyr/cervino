@@ -44,7 +44,7 @@ HASNATDYNLINK     := $(COQMF_HASNATDYNLINK)
 OCAMLWARN         := $(COQMF_WARN)
 
 makefile.conf: 
-	/Applications/CoqIDE_8.12.0.app/Contents/Resources/bin/coq_makefile -o makefile abstraction.v api.v api2coq.v buchi.v cervino.v cextension.v closure.v coq2ml.v dec.v elimeq.v env.v eqsat.v extend.v extension.v extract.v finite.v foltl.v foltl_diff.v fosem.v fragments.v hdex.v instanciation.v itps.v mlUtils.v quantifiers.v sat.v set.v skolem.v stability.v subItp.v transfo.v utils.v vars.v varset.v
+	/Applications/CoqIDE_8.12.0.app/Contents/Resources/bin/coq_makefile -o makefile abstraction.v cextension.v closure.v coq2ml.v dec.v elimeq.v env.v eqsat.v extend.v extension.v finite.v foltl.v foltl_diff.v fosem.v fragments.v hdex.v instanciation.v itps.v  quantifiers.v set.v skolem.v stability.v subItp.v utils.v vars.v varset.v
 
 # This file can be created by the user to hook into double colon rules or
 # add any other Makefile code he may need
