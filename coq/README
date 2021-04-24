@@ -1,0 +1,22 @@
+This undocumented contents is left as it. It is part of an in-development project about FO-LTL, its syntax, semantics and transformations preserving satisfiability.
+
+* abstraction.v: transformation removing universal quantifiers under existential quantifiers
+  
+* cextension.v: extension of signature by new constants
+* dec.v: composition of decidable types
+* finite.v: composition of finite types
+* elimeq.v: abstraction eliminating equalities
+* env.v: environment management fonctions
+* foltl.v: FO-LTL syntax and semantics
+* fosem.v: some semantic results about FO-LTL 
+* hdex.v: a finite model property
+* instanciation.v: sat preservation by forall instanciation
+* propagation.v: abstraction of closure operation
+* quantifiers.v: top quantifier extraction
+* set.v: set library
+* skolem.v: skolemisation
+* stability.v: soundness of stability criteria
+* subItp.v: relation between interpretations
+* utils.v: various list utility fonctions
+* vars.v: extraction of free variables
+* varset.v: indexed sets of variables
