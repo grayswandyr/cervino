@@ -1,4 +1,4 @@
-This undocumented contents is left as it. It is part of an in-development project about FO-LTL, its syntax, semantics and transformations preserving satisfiability.
+This undocumented contents is left as it. It is part of an in-development project about FO-LTL, its syntax, semantics and transformations preserving satisfiability. Proofs referenced by CAV paper are tagged 'Paper' in the Coq source code. The 'make' command compiles all the files.
 
 * abstraction.v: transformation removing universal quantifiers under existential quantifiers
   
