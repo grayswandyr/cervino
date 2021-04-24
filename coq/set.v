@@ -1485,18 +1485,4 @@ Qed.
   tauto.
  Qed. 
  
- Lemma pow_union: forall `{T: EqDec} (s1 s2 s: set T),
-  set_In (T:=setDec T) s1 (pow s) -> set_In (T:=setDec T) s2 (pow s) -> set_In (T:=setDec T) (union s1 s2) (pow s).
- Proof.
-  intros.
-  apply InPow_elim in H.
-  apply InPow_elim in H0.
-  assert (subset (union s1 s2) s).
-  repeat intro.
-  apply InUnion in H1.
-  destruct H1 as [H1 | H1]; [apply H in H1 | apply H0 in H1]; now auto.
-  generalize (InPow_intro H1); intro.
-  
- Admitted.
- 
 End SV.
