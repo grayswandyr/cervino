@@ -134,7 +134,7 @@ Section Abstraction.
     | G _ f => G dstSig (fm_dstSig f)
     end.
 
-  Definition tm_abstract {s} (tm: term srcSig s): term dstSig s :=
+  Definition tm_abstract_U {s} (tm: term srcSig s): term dstSig s :=
   match tm with
     Var _ _ v => Var dstSig s (inl v)
   | Cst _ _ c => Cst dstSig s c
@@ -176,12 +176,12 @@ Section Abstraction.
     RQ: pas de X sur E
   *)
   
-  Definition lt_abstract (a: literal srcSig) :=
+  Definition lt_abstract_U (a: literal srcSig) :=
     match a with
       PApp _ n p args => 
         Or dstSig
           (mk_disj args)
-          (Atom _ (Literal _ (PApp dstSig n (OldPred p) (fun i => tm_abstract (args i)))))
+          (Atom _ (Literal _ (PApp dstSig n (OldPred p) (fun i => tm_abstract_U (args i)))))
     end.
 
   (*
@@ -190,12 +190,12 @@ Section Abstraction.
     RQ: pas de X sur E
   *)
 
-  Definition nlt_abstract (a: literal srcSig) :=
+  Definition nlt_abstract_U (a: literal srcSig) :=
     match a with
       PApp _ n p args => 
         Or dstSig
           (mk_disj args)
-          (Atom _ (NLiteral _ (PApp dstSig n (OldPred p) (fun i => tm_abstract (args i)))))
+          (Atom _ (NLiteral _ (PApp dstSig n (OldPred p) (fun i => tm_abstract_U (args i)))))
     end.
   
   Definition eq_yy {s} (v: variable s) (hv: SV.set_In v (exv s)) (w: variable s) (hw: SV.set_In w (exv s)) :=
@@ -221,7 +221,7 @@ Section Abstraction.
     
     RQ: pas de X sur E
   *)
-  Definition eq_abstract {s} (t1 t2: term srcSig s): formula dstSig :=
+  Definition eq_abstract_U {s} (t1 t2: term srcSig s): formula dstSig :=
     match t1,t2 with
       Var _ _ v1, Var _ _ v2 =>
         match SV.In_dec v1 (exv s) with
@@ -259,7 +259,7 @@ Section Abstraction.
     RQ: pas de X sur E
   *)
   
-    Definition neq_abstract {s} (t1 t2: term srcSig s): formula dstSig :=
+    Definition neq_abstract_U {s} (t1 t2: term srcSig s): formula dstSig :=
     match t1,t2 with
       Var _ _ v1, Var _ _ v2 =>
         match SV.In_dec v1 (exv s) with
@@ -287,12 +287,12 @@ Section Abstraction.
      | Cst _ _ c1, Cst _ _ c2 => Atom _ (NEq dstSig s (Cst dstSig _ c1) (Cst dstSig _ c2))
      end.
 
-  Definition at_abstract (a: atom srcSig): formula dstSig :=
+  Definition at_abstract_U (a: atom srcSig): formula dstSig :=
     match a with
-    | Literal _ a => lt_abstract a
-    | NLiteral _ a => nlt_abstract a
-    | Eq _ _ t1 t2 => eq_abstract t1 t2
-    | NEq _ _ t1 t2 => neq_abstract t1 t2
+    | Literal _ a => lt_abstract_U a
+    | NLiteral _ a => nlt_abstract_U a
+    | Eq _ _ t1 t2 => eq_abstract_U t1 t2
+    | NEq _ _ t1 t2 => neq_abstract_U t1 t2
     end.
 
   Definition vsMap (f : forall s, variable (Sig:=srcSig) s -> variable (Sig:=dstSig) s) e: VarSet dstSig := fun s => List.map (f s) (e s).
@@ -438,17 +438,17 @@ Section Abstraction.
     constructor.
   Qed.
   
-  Fixpoint abstract (f: formula srcSig): isProp srcSig f -> vsSubset _ (free srcSig f) (vsUnion _ exv allv) -> formula dstSig :=
+  Fixpoint abstract_U (f: formula srcSig): isProp srcSig f -> vsSubset _ (free srcSig f) (vsUnion _ exv allv) -> formula dstSig :=
   match f return isProp srcSig f -> vsSubset _ (free srcSig f) (vsUnion _ exv allv) -> formula dstSig with
   | FTrue _ => fun hn fv => FTrue _
   | FFalse _ => fun hn fv => FFalse _
-  | Atom _ a => fun hn fv => at_abstract a
+  | Atom _ a => fun hn fv => at_abstract_U a
   | And _ f1 f2 => fun hn fv => 
-      And dstSig (abstract f1 (proj1 hn) (vsSubsetUnion_elim_l _ _ _ _ fv))
-                   (abstract f2 (proj2 hn) (vsSubsetUnion_elim_r _ _ _ _ fv))
+      And dstSig (abstract_U f1 (proj1 hn) (vsSubsetUnion_elim_l _ _ _ _ fv))
+                   (abstract_U f2 (proj2 hn) (vsSubsetUnion_elim_r _ _ _ _ fv))
   | Or _ f1 f2 => fun hn fv => 
-      Or dstSig (abstract f1 (proj1 hn) (vsSubsetUnion_elim_l _ _ _ _ fv))
-                 (abstract f2 (proj2 hn) (vsSubsetUnion_elim_r _ _ _ _ fv))
+      Or dstSig (abstract_U f1 (proj1 hn) (vsSubsetUnion_elim_l _ _ _ _ fv))
+                 (abstract_U f2 (proj2 hn) (vsSubsetUnion_elim_r _ _ _ _ fv))
   | Ex _ s v f | All _ s v f => fun hn fv => match hn with end
   | F _ f | G _ f => fun hn fv => match hn with end
   end.
@@ -573,7 +573,7 @@ Section Abstraction.
     destruct H.
   Qed.
 
-  Lemma free_tm_abstract: forall s (tm: term _ s) s' (v: variable s'), vsIn _ v (tm_vars _ (tm_abstract tm)) -> exists v', v=inl v' /\ vsIn _ v' (tm_vars _ tm).
+  Lemma free_tm_abstract_U: forall s (tm: term _ s) s' (v: variable s'), vsIn _ v (tm_vars _ (tm_abstract_U tm)) -> exists v', v=inl v' /\ vsIn _ v' (tm_vars _ tm).
   Proof.
     intros; destruct tm; simpl in *.
     apply vsSing_elim in H.
@@ -582,7 +582,7 @@ Section Abstraction.
     destruct H.
   Qed.
 
-  Lemma free_lt_abstract: forall l s (v: variable s), vsIn _ v (free _ (lt_abstract l)) -> exists v', v=inl v' /\ vsIn _ v' (lt_vars _ l).
+  Lemma free_lt_abstract_U: forall l s (v: variable s), vsIn _ v (free _ (lt_abstract_U l)) -> exists v', v=inl v' /\ vsIn _ v' (lt_vars _ l).
   Proof.
     intros; destruct l; simpl in *.
     apply vsUnion_elim in H; destruct H.
@@ -594,13 +594,13 @@ Section Abstraction.
     
     apply (vsGUnion_elim dstSig) in H; destruct H as [k H].
     simpl in H.
-    apply free_tm_abstract in H.
+    apply free_tm_abstract_U in H.
     destruct H as [v' [h H]]; subst v.
     exists v'; split; auto.
     apply vsGUnion_intro with (k0:=k); apply H.
   Qed.
   
-  Lemma free_nlt_abstract: forall l s (v: variable s), vsIn _ v (free _ (nlt_abstract l)) -> exists v', v=inl v' /\ vsIn _ v' (lt_vars _ l).
+  Lemma free_nlt_abstract_U: forall l s (v: variable s), vsIn _ v (free _ (nlt_abstract_U l)) -> exists v', v=inl v' /\ vsIn _ v' (lt_vars _ l).
   Proof.
     intros; destruct l; simpl in *.
     apply vsUnion_elim in H; destruct H.
@@ -612,7 +612,7 @@ Section Abstraction.
     
     apply (vsGUnion_elim dstSig) in H; destruct H as [k H].
     simpl in H.
-    apply free_tm_abstract in H.
+    apply free_tm_abstract_U in H.
     destruct H as [v' [h H]]; subst v.
     exists v'; split; auto.
     apply vsGUnion_intro with (k0:=k); apply H.
@@ -635,13 +635,13 @@ Section Abstraction.
     apply (vsUnion_elim dstSig) in H; destruct H; apply (vsGUnion_elim dstSig) in H; destruct H as [k H]; apply H.
   Qed.
   
-  Lemma free_eq_abstract: forall s (t1 t2: term _ s) s' (v: variable s'), vsIn _ v (free _ (eq_abstract t1 t2)) -> exists v', v=inl v' /\ vsIn _ v' (vsUnion _ (tm_vars _ t1) (tm_vars _ t2)).
+  Lemma free_eq_abstract_U: forall s (t1 t2: term _ s) s' (v: variable s'), vsIn _ v (free _ (eq_abstract_U t1 t2)) -> exists v', v=inl v' /\ vsIn _ v' (vsUnion _ (tm_vars _ t1) (tm_vars _ t2)).
   Proof.
     intros.
     destruct t1; destruct t2; simpl in *.
     destruct (SV.In_dec e (exv s)).
     destruct (SV.In_dec e0 (exv s)).
-    unfold eq_abstract in H.
+    unfold eq_abstract_U in H.
     apply free_eq_yy in H; destruct H; apply vsSing_elim in H.
     inversion H; clear H; subst s'; apply inj_pair2_eq_dec in H2; try apply eq_dec; subst v.
     exists e; split; auto; apply vsUnion_l; apply vsSing_intro.
@@ -697,13 +697,13 @@ Section Abstraction.
     apply vsUnion_elim in H; destruct H; destruct H.
   Qed.
   
-  Lemma free_neq_abstract: forall s (t1 t2: term _ s) s' (v: variable s'), vsIn _ v (free _ (neq_abstract t1 t2)) -> exists v', v=inl v' /\ vsIn _ v' (vsUnion _ (tm_vars _ t1) (tm_vars _ t2)).
+  Lemma free_neq_abstract_U: forall s (t1 t2: term _ s) s' (v: variable s'), vsIn _ v (free _ (neq_abstract_U t1 t2)) -> exists v', v=inl v' /\ vsIn _ v' (vsUnion _ (tm_vars _ t1) (tm_vars _ t2)).
   Proof.
     intros.
     destruct t1; destruct t2; simpl in *.
     destruct (SV.In_dec e (exv s)).
     destruct (SV.In_dec e0 (exv s)).
-    unfold eq_abstract in H.
+    unfold eq_abstract_U in H.
     apply free_eq_yy in H; destruct H; apply vsSing_elim in H.
     inversion H; clear H; subst s'; apply inj_pair2_eq_dec in H2; try apply eq_dec; subst v.
     exists e; split; auto; apply vsUnion_l; apply vsSing_intro.
@@ -759,19 +759,19 @@ Section Abstraction.
     apply vsUnion_elim in H; destruct H; destruct H.
   Qed.
   
-  Lemma free_at_abstract: forall a s (v: variable s), vsIn _ v (free _ (at_abstract a)) -> exists v', v=inl v' /\ vsIn _ v' (at_free _ a).
+  Lemma free_at_abstract_U: forall a s (v: variable s), vsIn _ v (free _ (at_abstract_U a)) -> exists v', v=inl v' /\ vsIn _ v' (at_free _ a).
   Proof.
     intros; destruct a; simpl in *.
-    apply free_lt_abstract in H; auto.
-    apply free_nlt_abstract in H; auto.
-    apply free_eq_abstract in H; auto.
-    apply free_neq_abstract in H; auto.
+    apply free_lt_abstract_U in H; auto.
+    apply free_nlt_abstract_U in H; auto.
+    apply free_eq_abstract_U in H; auto.
+    apply free_neq_abstract_U in H; auto.
   Qed.
   
-  Lemma free_abstract: forall f hn fv s (v: variable s), vsIn _ v (free _ (abstract f hn fv)) -> vsIn _ v (vsMap (fun s v => inl v) (vsUnion _ exv allv)).
+  Lemma free_abstract_U: forall f hn fv s (v: variable s), vsIn _ v (free _ (abstract_U f hn fv)) -> vsIn _ v (vsMap (fun s v => inl v) (vsUnion _ exv allv)).
   Proof.
     induction f; simpl; intros; auto; try (now inversion H); try tauto.
-    - apply free_at_abstract in H.
+    - apply free_at_abstract_U in H.
       destruct H as [v' [h H]]; subst v.
       apply (vsMap_In_intro (fun s v => inl v)).
       apply fv in H; apply H.
@@ -975,13 +975,13 @@ Qed.
   Definition ItpEnvSing {D: Dom srcSig} (env: Env srcSig D) (Itp': Interp (tfr_dom D)) t : Prop :=
     forall s v h (d: ssem (Sg:=dstSig) s), psem (Sg:=dstSig) (NewPred s v h) t (fun _ => d) -> env s v = d.
 
-  Lemma lt_abstract_sem: forall (D: Dom srcSig) (env: Env srcSig D) (Itp: Interp D) Itp' t (hx: isExtItp Itp Itp' t) (he: ItpEnvSing env Itp' t) l (fv: vsSubset _ (lt_vars _ l) (vsUnion _ exv allv)),
+  Lemma lt_abstract_U_sem: forall (D: Dom srcSig) (env: Env srcSig D) (Itp: Interp D) Itp' t (hx: isExtItp Itp Itp' t) (he: ItpEnvSing env Itp' t) l (fv: vsSubset _ (lt_vars _ l) (vsUnion _ exv allv)),
     forall env' : Env dstSig (tfr_dom D),
       lt_sem srcSig (pAdd env (get_pe env')) l t ->
-        fm_sem dstSig (Itp:=Itp') env' (lt_abstract l) t.
+        fm_sem dstSig (Itp:=Itp') env' (lt_abstract_U l) t.
   Proof.
     intros.
-    unfold lt_abstract.
+    unfold lt_abstract_U.
     destruct l; auto.
     rewrite Or_sem.
     match goal with
@@ -1010,13 +1010,13 @@ Qed.
     symmetry; apply (is_eqc Itp Itp' _ hx).
   Qed.
 
-  Lemma nlt_abstract_sem: forall (D: Dom srcSig) (env: Env srcSig D) (Itp: Interp D) Itp' t (hx: isExtItp Itp Itp' t) (he: ItpEnvSing env Itp' t) l (fv: forall s, SV.subset (lt_vars _ l s) (vsUnion _ exv allv s)),
+  Lemma nlt_abstract_U_sem: forall (D: Dom srcSig) (env: Env srcSig D) (Itp: Interp D) Itp' t (hx: isExtItp Itp Itp' t) (he: ItpEnvSing env Itp' t) l (fv: forall s, SV.subset (lt_vars _ l s) (vsUnion _ exv allv s)),
     forall env' : Env dstSig (tfr_dom D),
       not (lt_sem srcSig (pAdd env (get_pe env')) l t) ->
-        fm_sem dstSig (Itp:=Itp') env' (nlt_abstract l) t.
+        fm_sem dstSig (Itp:=Itp') env' (nlt_abstract_U l) t.
   Proof.
     intros.
-    unfold nlt_abstract.
+    unfold nlt_abstract_U.
     destruct l.
     rewrite Or_sem; simpl in *.
     match goal with
@@ -1041,15 +1041,15 @@ Qed.
     apply (is_eqc Itp Itp' _ hx).
   Qed.
   
-  Lemma eq_abstract_sem:  forall (D: Dom srcSig) (env: Env srcSig D) (Itp: Interp D) Itp' t (hx: isExtItp Itp Itp' t) s (t1 t2: term srcSig s) (he: ItpEnvSing env Itp' t) 
+  Lemma eq_abstract_U_sem:  forall (D: Dom srcSig) (env: Env srcSig D) (Itp: Interp D) Itp' t (hx: isExtItp Itp Itp' t) s (t1 t2: term srcSig s) (he: ItpEnvSing env Itp' t) 
   (fv1: vsSubset _ (tm_vars _ t1) (vsUnion _ exv allv))
   (fv2: vsSubset _ (tm_vars _ t2) (vsUnion _ exv allv)),
     forall env' : Env dstSig (tfr_dom D),
       tm_sem srcSig (pAdd env (get_pe env')) t1 = tm_sem srcSig (pAdd env (get_pe env')) t2 ->
-        fm_sem dstSig (Itp:=Itp') env' (eq_abstract t1 t2) t.
+        fm_sem dstSig (Itp:=Itp') env' (eq_abstract_U t1 t2) t.
   Proof.
     intros.
-    destruct t1; destruct t2; unfold eq_abstract; repeat (rewrite And_sem, Or_sem); auto.
+    destruct t1; destruct t2; unfold eq_abstract_U; repeat (rewrite And_sem, Or_sem); auto.
     destruct (SV.In_dec e (exv s)).
     destruct (SV.In_dec e0 (exv s)).
     generalize (pAdd_exv D env env' s e s0); intro.
@@ -1156,15 +1156,15 @@ Qed.
     apply H.
   Qed.
   
-  Lemma neq_abstract_sem:  forall (D: Dom srcSig) (env: Env srcSig D) (Itp: Interp D) Itp' t (hx: isExtItp Itp Itp' t) s (t1 t2: term srcSig s) (he: ItpEnvSing env Itp' t)
+  Lemma neq_abstract_U_sem:  forall (D: Dom srcSig) (env: Env srcSig D) (Itp: Interp D) Itp' t (hx: isExtItp Itp Itp' t) s (t1 t2: term srcSig s) (he: ItpEnvSing env Itp' t)
   (fv1: forall s, SV.subset (tm_vars srcSig t1 s) (vsUnion _ exv allv s))
   (fv2: forall s, SV.subset (tm_vars srcSig t2 s) (vsUnion _ exv allv s)),
     forall env' : Env dstSig (tfr_dom D),
       tm_sem srcSig (pAdd env (get_pe env')) t1 <> tm_sem srcSig (pAdd env (get_pe env')) t2 ->
-        fm_sem dstSig (Itp:=Itp') env' (neq_abstract t1 t2) t.
+        fm_sem dstSig (Itp:=Itp') env' (neq_abstract_U t1 t2) t.
   Proof.
     intros.
-    unfold neq_abstract.
+    unfold neq_abstract_U.
     destruct t1; destruct t2; simpl in *.
     destruct (SV.In_dec e (exv s)).
     rewrite pAdd_exv with (v:=e) in H; auto.
@@ -1227,19 +1227,19 @@ Qed.
     do 2 rewrite <-(is_eqc _ _ _ hx); apply H.
   Qed.
 
-  Lemma at_abstract_sem: forall (D: Dom srcSig) Itp Itp' t (hx: isExtItp Itp Itp' t) (env: Env srcSig D) (he: ItpEnvSing env Itp' t) a (fv: vsSubset _ (at_free _ a) (vsUnion _ exv allv)),
+  Lemma at_abstract_U_sem: forall (D: Dom srcSig) Itp Itp' t (hx: isExtItp Itp Itp' t) (env: Env srcSig D) (he: ItpEnvSing env Itp' t) a (fv: vsSubset _ (at_free _ a) (vsUnion _ exv allv)),
     forall env', 
       at_sem srcSig (Itp:=Itp) (pAdd env (get_pe env')) a t ->
-        fm_sem dstSig (Itp:=Itp') env' (at_abstract a) t.
+        fm_sem dstSig (Itp:=Itp') env' (at_abstract_U a) t.
   Proof.
     intros.
     destruct a; simpl.
-    revert H; apply lt_abstract_sem; auto.
-    revert H; apply nlt_abstract_sem; auto.
-    revert H; apply eq_abstract_sem; auto.
+    revert H; apply lt_abstract_U_sem; auto.
+    revert H; apply nlt_abstract_U_sem; auto.
+    revert H; apply eq_abstract_U_sem; auto.
       apply vsSubsetUnion_elim_l in fv; auto.
       apply vsSubsetUnion_elim_r in fv; auto.
-    revert H; apply neq_abstract_sem; auto.
+    revert H; apply neq_abstract_U_sem; auto.
       apply vsSubsetUnion_elim_l in fv; auto.
       apply vsSubsetUnion_elim_r in fv; auto.
   Qed.
@@ -1248,13 +1248,13 @@ Qed.
     |- (EX ALL phi) => ALL abs(phi)
   *)
   
-  Lemma abstract_sem: forall (D: Dom srcSig) Itp Itp' t (hx: isExtItp Itp Itp' t) (env: Env srcSig D) (he: ItpEnvSing env Itp' t) f (nfo: isProp srcSig f) (fv: vsSubset _ (free _ f) (vsUnion _ exv allv)),
+  Lemma abstract_U_sem: forall (D: Dom srcSig) Itp Itp' t (hx: isExtItp Itp Itp' t) (env: Env srcSig D) (he: ItpEnvSing env Itp' t) f (nfo: isProp srcSig f) (fv: vsSubset _ (free _ f) (vsUnion _ exv allv)),
     forall env', 
       fm_sem srcSig (Itp:=Itp) (pAdd env (get_pe env')) f t ->
-        fm_sem dstSig (Itp:=Itp') env' (abstract f nfo fv) t.
+        fm_sem dstSig (Itp:=Itp') env' (abstract_U f nfo fv) t.
   Proof.
     induction f; intros; try (simpl; tauto).
-    - revert H; apply at_abstract_sem; eauto.
+    - revert H; apply at_abstract_U_sem; eauto.
     - simpl in H.
       destruct H.
       split; [revert H; apply IHf1 | revert H0; apply IHf2]; intros; auto.
@@ -1544,8 +1544,8 @@ Qed.
     injection H2; tauto.
   Qed.
 
-  Definition abstract_ExAll f (hf: isExAll _ f) (fv: forall s, SV.is_empty (free _ f s)) :=
-    (mkAll (Sg:=dstSig (getExF f)) (vsMap _ (fun s v => inl v) (getExF f)) (mkAll (Sg:=dstSig (getExF f)) (vsMap _ (fun s v => inl v) (getAll (EX f))) (abstract _ _ (EX_ALL f) (isExAll_Prop _ hf) (close_EXfALL fv) ))).
+  Definition abstract_U_ExAll f (hf: isExAll _ f) (fv: forall s, SV.is_empty (free _ f s)) :=
+    (mkAll (Sg:=dstSig (getExF f)) (vsMap _ (fun s v => inl v) (getExF f)) (mkAll (Sg:=dstSig (getExF f)) (vsMap _ (fun s v => inl v) (getAll (EX f))) (abstract_U _ _ (EX_ALL f) (isExAll_Prop _ hf) (close_EXfALL fv) ))).
   
   Definition tfr_env {D: Dom srcSig} V (env: Env srcSig D): Env (dstSig V) (tfr_dom V D) := 
     fun s v => match v with inl v' => env s v' | inr v' => neDom s end.
@@ -1634,7 +1634,7 @@ Qed.
   Qed.
   
   Lemma preLemma4: forall (f: formula srcSig) (hf: isExAll _ f) (hv: forall s, SV.is_empty (free _ f s)),
-    forall D (env: Env srcSig D) itp t, fm_sem (Itp:=itp) (dstSig _) (tfr_env _ env) (bar f) t -> fm_sem (dstSig _) (Itp:=itp) (tfr_env _ env) (abstract_ExAll f hf hv) t.
+    forall D (env: Env srcSig D) itp t, fm_sem (Itp:=itp) (dstSig _) (tfr_env _ env) (bar f) t -> fm_sem (dstSig _) (Itp:=itp) (tfr_env _ env) (abstract_U_ExAll f hf hv) t.
   Proof.
     intros.
     assert (forall s0 : Sort, SV.disjoint (getExF f s0) (getAll (EX f) s0)) as dsj.
@@ -1648,7 +1648,7 @@ Qed.
     apply semEx_elim in H2.
     destruct H2 as [pe1 H2].
     destruct H2 as [H2 H3].
-    unfold abstract_ExAll.
+    unfold abstract_U_ExAll.
     apply semAll_intro; intro pe2.
     apply semAll_intro; intro pe3.
     apply semAll_elim with (pe:=pe3) in H3.
@@ -1658,7 +1658,7 @@ Qed.
         (pAdd (pAdd (tfr_env (getExF f) env) pe2) pe3))) ).
     
     rewrite <-fm_dst_sem with (env:=env') (Itp:=rtfr_itp' itp) in H3.
-    - apply (abstract_sem (getExF f) (getAll (EX f))) with (D:=D) (Itp:=rtfr_itp' itp) (env:=pAdd env pe'); simpl.
+    - apply (abstract_U_sem (getExF f) (getAll (EX f))) with (D:=D) (Itp:=rtfr_itp' itp) (env:=pAdd env pe'); simpl.
       * apply dsj.
       * split; intros.
         apply (AxE_sem H1 H H0 Fin.F1).
@@ -1734,7 +1734,7 @@ Qed.
   (* PaperLemma 4 *)
   Lemma Lemma4: forall (f: formula srcSig) (hf: isExAll _ f) (hv: forall s, SV.is_empty (free _ f s)),
     forall (D: Dom (dstSig _)) (env: Env _ D) itp t, fm_sem (Itp:=itp) (dstSig _) env (bar f) t -> 
-      fm_sem (dstSig _) (Itp:=itp) env (abstract_ExAll f hf hv) t.
+      fm_sem (dstSig _) (Itp:=itp) env (abstract_U_ExAll f hf hv) t.
   Proof.
     intros until D.
     rewrite <-(tfr_rtfr_dom D); intro env.
@@ -1744,7 +1744,7 @@ Qed.
 
     apply fm_sem_equiv with (e1:=env').
     intros.
-    unfold abstract_ExAll, mkAll in H0; simpl in H0.
+    unfold abstract_U_ExAll, mkAll in H0; simpl in H0.
     match goal with
      H:SV.set_In v (free _ (IAll _ _ _ _ ?f) s) |- _ => set (fk := f)
     end.
@@ -1753,7 +1753,7 @@ Qed.
      H: vsIn _ v (free _ (IAll _ _ _ _ ?f)) |- _ => set (fk := f)
     end.
     apply free_IAll with (f0:=fk) in H0; apply proj1 in H0; unfold fk in H0; clear fk.
-    apply free_abstract in H0.
+    apply free_abstract_U in H0.
     apply vsMap_In_ran in H0.
     destruct H0 as [v' H0]; subst v.
     reflexivity.
@@ -1923,7 +1923,7 @@ Qed.
     fm_sem (Itp:=itp) srcSig env (And _ f (G _ g)) t -> exists pe, 
       fm_sem (Itp:=tfr_itp (getExF g) itp pe) (dstSig (getExF g)) (tfr_env (getExF g) env)
         (And _ (fm_dstSig _ f) 
-          (And _ (G _ (abstract_ExAll g hg hv)) (AxE (getExF g)))) t.
+          (And _ (G _ (abstract_U_ExAll g hg hv)) (AxE (getExF g)))) t.
   Proof.
     intros.
     rewrite And_sem in H; destruct H.
@@ -1976,7 +1976,7 @@ Qed.
   Lemma Lemma5: forall (f g: formula srcSig) (hg: isExAll srcSig g) (hv: forall s, SV.is_empty (free _ g s)),
     isSat _ (And _ f (G _ g)) ->
       isSat _ (And _ (fm_dstSig _ f) 
-          (And _ (G _ (abstract_ExAll g hg hv)) (AxE (getExF g)))).
+          (And _ (G _ (abstract_U_ExAll g hg hv)) (AxE (getExF g)))).
   Proof.
     intros.
     destruct H as [D [itp [env [t H]]]].
