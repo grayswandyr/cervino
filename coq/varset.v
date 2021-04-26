@@ -143,6 +143,14 @@ Proof.
   destruct H; tauto.
 Qed.
 
+Lemma vsUnion_equiv: forall {s} {v: variable s} {e1 e2: VarSet},
+  vsIn v (vsUnion e1 e2) <-> vsIn v e1 \/ vsIn v e2.
+Proof.
+  intros; split; intro.
+  apply vsUnion_elim in H; apply H.
+  destruct H; [apply vsUnion_l | apply vsUnion_r]; apply H.
+Qed.
+
 Definition vsInter (e1 e2: VarSet): VarSet :=
   fun s => SV.inter (e1 s) (e2 s).
 
@@ -255,6 +263,14 @@ Proof.
   apply H.
   intro; apply n; clear n.
   injection H0; intro; auto.  
+Qed.
+
+Lemma vsRemove_equiv: forall {s} {v: variable s} {e: VarSet} s' (v': variable s'),
+  vsIn v' (vsRemove v e) <-> vsIn v' e /\ not (isEq2 (U:=variable) s v s' v').
+Proof.
+  intros; split; intro.
+  apply vsInRemove_elim in H; apply H.
+  apply vsInRemove_intro; tauto.
 Qed.
 
 Definition vsFinite (vs: VarSet): Finite :=

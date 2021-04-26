@@ -25,14 +25,16 @@ let apply_transformation preinstantiate (using : Ast.transfo option) : t =
   let steps : t list =
     match using with
     | Some TEA ->
-        [ Instantiation.convert_ae;
+        [ Add_between_axioms.convert;
+          Instantiation.convert_ae;
           Expand_modifies.convert;
           (* NEVER CALL Cervino_semantics.convert AS THE SEMANTICS
              IS ENSURED BY TEA IN THIS CASE! *)
           Transfo_TEA.convert
         ]
     | Some (TTC _) ->
-        [ Instantiation.convert_ae;
+        [ Add_between_axioms.convert;
+          Instantiation.convert_ae;
           Transfo_TTC.convert_instantiated_TC_axiom;
           Remove_equalities.add_eq_relations;
           Expand_modifies.convert;
@@ -42,7 +44,8 @@ let apply_transformation preinstantiate (using : Ast.transfo option) : t =
           (if preinstantiate then Id.convert else Instantiation.convert)
         ]
     | Some (TFC _) ->
-        [ Instantiation.convert_ae;
+        [ Add_between_axioms.convert;
+          Instantiation.convert_ae;
           Transfo_TFC.convert;
           Remove_equalities.add_eq_relations;
           Expand_modifies.convert;
@@ -52,7 +55,10 @@ let apply_transformation preinstantiate (using : Ast.transfo option) : t =
           (if preinstantiate then Id.convert else Instantiation.convert)
         ]
     | None ->
-        [ Expand_modifies.convert; Cervino_semantics.convert ]
+        [ Add_between_axioms.convert;
+          Expand_modifies.convert;
+          Cervino_semantics.convert
+        ]
   in
   compose steps
 

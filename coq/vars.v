@@ -1,3 +1,6 @@
+Require Import Coq.Logic.JMeq.
+Require Import Eqdep_dec.
+
 
 Require Import foltl.
 Require Import varset.
@@ -83,6 +86,58 @@ Fixpoint free f: VarSet Sg :=
   Lemma free_Ex: forall s (v: variable s) f, (free (Ex Sg s v f)) = (vsRemove Sg v (free f)).
   Proof.
     intros; reflexivity.
+  Qed.
+
+  Lemma free_IAll: forall `{K: Finite} {sk} vk f {s} (v: variable s), vsIn _ v (free (IAll Sg K sk vk f)) -> (vsIn _ v (free f) /\ forall k, existT variable (sk k) (vk k) <> existT variable s v).
+  Proof.
+    assert (forall `{K: Finite} {sk:K -> Sort} (vk: forall k, variable (sk k)) f {s} (v: variable s), vsIn _ v (free (IAll Sg K sk vk f)) -> (vsIn _ v (free f) /\ forall k, List.In k fin_set -> existT variable (sk k) (vk k) <> existT variable s v)).
+    intros T K; unfold IAll.
+    generalize (@fin_set T K) as l.
+    induction l; simpl; intros; auto.
+    apply vsInRemove_elim in H.
+    destruct H as [H1 H2].
+    split; intros; auto.
+    apply (IHl sk vk f); auto.
+    destruct H.
+    subst.
+    intro; apply H2; clear H2.
+    inversion H; subst s; reflexivity.
+    intro.
+    inversion H0; subst s.
+    apply inj_pair2_eq_dec in H5; try apply eq_dec.
+    subst v.
+    now apply (proj2 (IHl sk vk f _ (vk k) H1) _ H).
+
+    intros.
+    specialize (H T K sk vk f s v H0); destruct H; split; intros; auto.
+    apply H1.
+    apply fin_all.
+  Qed.
+
+  Lemma free_IEx: forall `{K: Finite} {sk} vk f {s} (v: variable s), vsIn _ v (free (IEx Sg K sk vk f)) -> (vsIn _ v (free f) /\ forall k, existT variable (sk k) (vk k) <> existT variable s v).
+  Proof.
+    assert (forall `{K: Finite} {sk:K -> Sort} (vk: forall k, variable (sk k)) f {s} (v: variable s), vsIn _ v (free (IEx Sg K sk vk f)) -> (vsIn _ v (free f) /\ forall k, List.In k fin_set -> existT variable (sk k) (vk k) <> existT variable s v)).
+    intros T K; unfold IEx.
+    generalize (@fin_set T K) as l.
+    induction l; simpl; intros; auto.
+    apply vsInRemove_elim in H.
+    destruct H as [H1 H2].
+    split; intros; auto.
+    apply (IHl sk vk f); auto.
+    destruct H.
+    subst.
+    intro; apply H2; clear H2.
+    inversion H; subst s; reflexivity.
+    intro.
+    inversion H0; subst s.
+    apply inj_pair2_eq_dec in H5; try apply eq_dec.
+    subst v.
+    now apply (proj2 (IHl sk vk f _ (vk k) H1) _ H).
+
+    intros.
+    specialize (H T K sk vk f s v H0); destruct H; split; intros; auto.
+    apply H1.
+    apply fin_all.
   Qed.
   
   Lemma free_And: forall f1 f2, free (And _ f1 f2) = (vsUnion Sg (free f1) (free f2)).

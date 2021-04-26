@@ -29,7 +29,44 @@ let pp_header ppf (l, h) =
       @@ Option.map_or ~default:(keyword l) (fun s -> short l ^ s) h
 
 
+let run_electrum java_exe electrum_jar property file =
+  (* Inspired by nunchaku-inria/logitest/src/Misc.ml (BSD licence). *)
+  let sigterm_handler =
+    Sys.Signal_handle
+      (fun _ ->
+        print_endline "Received termination signal! Exiting.";
+        Unix.kill 0 Sys.sigterm;
+        (* kill children *)
+        exit 1)
+  in
+  let previous_handler = Sys.signal Sys.sigterm sigterm_handler in
+  let to_call =
+    Printf.sprintf "%s -jar %s --cli --nuXmv %s" java_exe electrum_jar file
+  in
+  Logs.app (fun m -> m "Calling solver:@[<h2>@ %s@]" to_call);
+  (* currently, EA prints on the error output rather than the standard one, even for working runs *)
+  let _okout, errout, errcode = CCUnix.call "%s" to_call in
+  (* go back to default behavior *)
+  Sys.set_signal Sys.sigterm previous_handler;
+  if errcode <> 0
+  then
+    Msg.err (fun m ->
+        m
+          "Error when running the Electrum Analyzer solver:@\n\
+           Error code: %d@\n\
+           Full output: %s"
+          errcode
+          errout)
+  else if (* currently, EA prints on the error output rather than the standard one, even for working runs *)
+          String.Find.(find ~pattern:(compile "(outcome UNSAT)") errout) > -1
+  then Logs.app (fun m -> m "Analysis done: property `%s` is valid" property)
+  else Logs.app (fun m -> m "Analysis done: cannot conclude")
+
+
 let main
+    call_solver
+    electrum_jar
+    java_exe
     verbosity
     nobound
     preinstantiate_only
@@ -43,6 +80,14 @@ let main
   Logs.set_reporter (Logs_fmt.reporter ~pp_header ());
   Fmt_tty.setup_std_outputs ();
   Logs.set_level ~all:true verbosity;
+  if call_solver && String.is_empty electrum_jar
+  then
+    Msg.err (fun m ->
+        m
+          "Error: no known path to the Electrum Analyzer JAR (check usage of \
+           --ej option or ELECTRUM_JAR environment variable)");
+  if call_solver && output_cervino
+  then Msg.err (fun m -> m "Error: incompatible flags: -s and -c");
   if preinstantiate_only && instantiate_only
   then Msg.err (fun m -> m "Error: incompatible flags: -p and -i");
   let version =
@@ -84,11 +129,19 @@ let main
     in
     match output with
     | None ->
-        pp Fmt.stdout result
+        if call_solver
+        then (
+          let s = Filename.temp_file "cervino" ".als" in
+          IO.with_out s (fun out ->
+              let fmt = Format.formatter_of_out_channel out in
+              pp fmt result);
+          run_electrum java_exe electrum_jar property s )
+        else pp Fmt.stdout result
     | Some s ->
         IO.with_out s (fun out ->
             let fmt = Format.formatter_of_out_channel out in
-            pp fmt result)
+            pp fmt result);
+        if call_solver then run_electrum java_exe electrum_jar property s
   with
   | Exit ->
       ()
