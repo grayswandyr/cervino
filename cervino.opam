@@ -15,6 +15,7 @@ depends: [
   "cmdliner"
   "containers" {>= "3.0"}
   "containers-data"
+  "containers-unix"
   "dune-build-info"
   "fmt"
   "hashcons"
