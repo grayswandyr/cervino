@@ -4,4 +4,5 @@
  (promote
   (until-clean)
   (into ..))
- (libraries cmdliner containers dune-build-info fmt.tty libcervino logs.cli))
+ (libraries cmdliner containers containers.unix dune-build-info fmt.tty
+   libcervino logs.cli))

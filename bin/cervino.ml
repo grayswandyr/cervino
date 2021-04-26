@@ -3,7 +3,7 @@ open Cmdliner
 (* DOC *)
 
 let main_info =
-  let doc = "complete verification of (some) Cervino models" in
+  let doc = "verification of Cervino models" in
   let man =
     [ `S Manpage.s_authors;
       `P
@@ -22,11 +22,11 @@ let main_info =
       `S "THIRD-PARTY SOFTWARE";
       `P
         {|Cervino relies on third-party free software, 
-         please refer to the Cervino 
-         OPAM repository for the full text of their licenses.|}
+         please refer to their respective OPAM 
+         repository for the full text of their licenses.|}
     ]
   in
-  Term.info "cervino" ~doc ~man ~exits:Term.default_exits
+  Term.info "cervino.exe" ~doc ~man ~exits:Term.default_exits
 
 
 (* OPTIONS *)
@@ -64,11 +64,11 @@ let output_cervino =
 
 
 let check =
-  let doc = "Check command to execute." in
+  let doc = "Name of the property to check." in
   Arg.(
     required
-    & pos 0 (some ~none:"missing CHECK" string) None
-    & info [] ~docv:"CHECK" ~doc)
+    & pos 0 (some ~none:"missing PROPERTY" string) None
+    & info [] ~docv:"PROPERTY" ~doc)
 
 
 let infile =
@@ -80,8 +80,37 @@ let infile =
 
 
 let outfile =
-  let doc = "Output (Electrum) file." in
+  let doc =
+    "Name of the file to generate. If absent, the file is printed on the \
+     standard output (except if the -s option is present)."
+  in
   Arg.(value & pos 2 (some string) None & info [] ~docv:"OUTPUT_FILE" ~doc)
+
+
+let call_electrum =
+  let doc =
+    "If present, let Cervino call the Electrum Analyzer solver (with the nuXmv \
+     model checker) on the generated Electrum file and report its result. The \
+     Electrum Analyzer and nuXmv must be properly installed. The path to the \
+     JAR containing the Electrum Analyzer must be set using the --ej option or \
+     ELECTRUM_JAR environment variable. The `java` program must also be in the \
+     PATH."
+  in
+  Arg.(value & flag & info [ "s"; "solve" ] ~doc)
+
+
+let electrum_jar =
+  let doc = "Path to the Electrum Analyzer JAR file" in
+  let env = Arg.env_var ~doc "ELECTRUM_JAR" in
+  Arg.(
+    value
+    & opt non_dir_file ""
+    & info [ "ej"; "electrum-jar" ] ~docv:"PATH" ~doc ~env)
+
+
+let java_exe =
+  let doc = "Path to the `java` program" in
+  Arg.(value & opt non_dir_file "java" & info [ "java" ] ~docv:"PATH" ~doc)
 
 
 (* verbosity options (already def'd in Logs_cli, thx!) *)
@@ -90,6 +119,9 @@ let verbosity = Logs_cli.level ()
 let main_term =
   Term.(
     const Main.main
+    $ call_electrum
+    $ electrum_jar
+    $ java_exe
     $ verbosity
     $ nobound
     $ preinstantiate_only
