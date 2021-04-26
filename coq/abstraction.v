@@ -438,6 +438,7 @@ Section Abstraction.
     constructor.
   Qed.
   
+  (* U_y in Definition 24 *)
   Fixpoint abstract_U (f: formula srcSig): isProp srcSig f -> vsSubset _ (free srcSig f) (vsUnion _ exv allv) -> formula dstSig :=
   match f return isProp srcSig f -> vsSubset _ (free srcSig f) (vsUnion _ exv allv) -> formula dstSig with
   | FTrue _ => fun hn fv => FTrue _
