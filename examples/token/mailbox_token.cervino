@@ -1,0 +1,61 @@
+//Token ring cervino file
+//Safety verification terminates using TFC
+//Liveness verification terminates using TTC
+
+//set of nodes
+sort Node
+
+relation token in Node
+relation mailbox in Node
+relation succ in Node * Node
+relation succ_tc in Node * Node
+
+paths[succ, succ_tc] //succ_tc is the reflexive transitive closure of succ
+
+axiom ring {
+	G {(all x,y,z : Node | (succ(x,y) && succ(x,z)) => y=z) //successor is a partial function
+	(all x,y,z : Node | (succ(x,z) && succ(y,z)) => y=x) //successor is injective
+	(all x,y : Node | succ_tc(x,y))} //any node is reachable from any other node
+}
+
+axiom init { //at the initial state
+	(some x : Node | (all y: Node | token(y) <=> x=y )) //there is a unique token
+	(all x : Node | !mailbox(x)) //all mailbox are empty
+}
+
+event send[sender: Node] modifies mailbox, token at {sender} { //send a message for the token
+	//guard
+	token(sender)
+	
+	//postconditions
+	!token'(sender)
+	{all receiver: Node | succ(sender, receiver) => mailbox'(receiver)} //send message to all successors
+	
+	//frame condition
+	{all n: Node | !succ(sender, n) => (mailbox'(n) <=> mailbox(n))}
+}
+
+event receive[receiver: Node] modifies mailbox at {receiver}, token at {receiver} { //aknowledge the reception of the token
+	//guard
+	mailbox(receiver)
+	
+	//postconditions
+	!mailbox'(receiver)
+	token'(receiver)
+}
+
+check Safety { G ( all x,y : Node | (token(x) && token(y)) => x = y ) } 
+using TFC[send,{ all n: Node | (n != sender => !token(n)) && (!succ(sender,n) => !mailbox(n))}, receive,{ all n: Node | n != receiver => (!token(n) && !mailbox(n))}]
+
+check Liveness { (all y: Node | F ( token(y) ) ) } 
+assuming {
+	//weak fairness conditions
+	(all sender : Node | F G (token(sender) ) => G F {
+	!token'(sender)
+	{all receiver: Node | succ(sender, receiver) => mailbox'(receiver)}
+	{all n: Node | !succ(sender, n) => (mailbox'(n) <=> mailbox(n))}})
+	(all receiver : Node | F G (mailbox(receiver)) => G F {
+	!mailbox'(receiver)
+	token'(receiver)})
+	} 
+using TTC[succ,[x,Node],[],{token(x)}]
