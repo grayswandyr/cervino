@@ -29,7 +29,7 @@ let pp_header ppf (l, h) =
       @@ Option.map_or ~default:(keyword l) (fun s -> short l ^ s) h
 
 
-let run_electrum java_exe electrum_jar property file =
+let run_electrum java_exe electrum_jar cervino_file property electrum_file =
   (* Inspired by nunchaku-inria/logitest/src/Misc.ml (BSD licence). *)
   let sigterm_handler =
     Sys.Signal_handle
@@ -41,7 +41,7 @@ let run_electrum java_exe electrum_jar property file =
   in
   let previous_handler = Sys.signal Sys.sigterm sigterm_handler in
   let to_call =
-    Printf.sprintf "%s -jar %s --cli --nuXmv %s" java_exe electrum_jar file
+    Printf.sprintf "%s -jar %s --cli --nuXmv %s" java_exe electrum_jar electrum_file
   in
   Logs.app (fun m -> m "Calling solver:@[<h2>@ %s@]" to_call);
   (* currently, EA prints on the error output rather than the standard one, even for working runs *)
@@ -59,8 +59,8 @@ let run_electrum java_exe electrum_jar property file =
           errout)
   else if (* currently, EA prints on the error output rather than the standard one, even for working runs *)
           String.Find.(find ~pattern:(compile "(outcome UNSAT)") errout) > -1
-  then Logs.app (fun m -> m "Analysis done: property `%s` is valid" property)
-  else Logs.app (fun m -> m "Analysis done: cannot conclude")
+  then Logs.app (fun m -> m "File %S, property %S: valid." cervino_file property)
+  else Logs.app (fun m -> m "File %S, property %S: cannot conclude." cervino_file property)
 
 
 let main
@@ -74,8 +74,8 @@ let main
     unfold_event_axiom
     output_cervino
     property
-    input
-    output =
+    input_file
+    output_file =
   Printexc.record_backtrace true;
   Logs.set_reporter (Logs_fmt.reporter ~pp_header ());
   Fmt_tty.setup_std_outputs ();
@@ -101,8 +101,8 @@ let main
       m "%a" Fmt.(styled `Bold string) ("cervino (C) 2020 ONERA " ^ version));
   (* real work done here *)
   try
-    Msg.info (fun m -> m "Processing file %S." input);
-    let model = Parsing.parse_file input in
+    Logs.app (fun m -> m "Processing file %S." input_file);
+    let model = Parsing.parse_file input_file in
     Msg.info (fun m -> m "Parsing done.");
     Msg.debug (fun m -> m "Recognized model:@.%a" Cst.pp model);
     let ast = Cst_to_ast.convert model property in
@@ -127,21 +127,21 @@ let main
       then Ast.Cervino.pp
       else Ast.pp_electrum ast.check.chk_using
     in
-    match output with
+    match output_file with
     | None ->
         if call_solver
         then (
-          let s = Filename.temp_file "cervino" ".als" in
-          IO.with_out s (fun out ->
+          let electrum_file = Filename.temp_file "cervino" ".als" in
+          IO.with_out electrum_file (fun out ->
               let fmt = Format.formatter_of_out_channel out in
               pp fmt result);
-          run_electrum java_exe electrum_jar property s )
+          run_electrum java_exe electrum_jar input_file property electrum_file )
         else pp Fmt.stdout result
-    | Some s ->
-        IO.with_out s (fun out ->
+    | Some electrum_file ->
+        IO.with_out electrum_file (fun out ->
             let fmt = Format.formatter_of_out_channel out in
             pp fmt result);
-        if call_solver then run_electrum java_exe electrum_jar property s
+        if call_solver then run_electrum java_exe electrum_jar input_file property electrum_file
   with
   | Exit ->
       ()
