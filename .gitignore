@@ -1,24 +1,50 @@
 
-# Created by https://www.toptal.com/developers/gitignore/api/ocaml
-# Edit at https://www.toptal.com/developers/gitignore?templates=ocaml
+# Created by https://www.toptal.com/developers/gitignore/api/ocaml,coq
+# Edit at https://www.toptal.com/developers/gitignore?templates=ocaml,coq
+
+### Coq ###
+.*.aux
+.*.d
+*.a
+*.cma
+*.cmi
+*.cmo
+*.cmx
+*.cmxa
+*.cmxs
+*.glob
+*.ml.d
+*.ml4.d
+*.mli.d
+*.mllib.d
+*.mlpack.d
+*.native
+*.o
+*.v.d
+*.vio
+*.vo
+*.vok
+*.vos
+.coq-native/
+.csdp.cache
+.lia.cache
+.nia.cache
+.nlia.cache
+.nra.cache
+csdp.cache
+lia.cache
+nia.cache
+nlia.cache
+nra.cache
 
 ### OCaml ###
 *.annot
-*.cmo
-*.cma
-*.cmi
-*.a
-*.o
-*.cmx
-*.cmxs
-*.cmxa
 
 # ocamlbuild working directory
 _build/
 
 # ocamlbuild targets
 *.byte
-*.native
 
 # oasis generated files
 setup.data
@@ -33,7 +59,8 @@ setup.log
 # Local OPAM switch
 _opam/
 
-# End of https://www.toptal.com/developers/gitignore/api/ocaml
+# End of https://www.toptal.com/developers/gitignore/api/ocaml,coq
+
 
 grammar/*
 .vscode/*
