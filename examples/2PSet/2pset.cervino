@@ -1,0 +1,49 @@
+//2pset cervino file
+//Liveness verification terminates using TEA
+
+//sortes of set and of elements
+sort Set
+sort Element
+
+relation added in Set*Element //represents elements added to a set
+relation removed in Set*Element //represents elements removed from a set
+
+axiom init { //at the initial state
+{all p:Set, e:Element | !added(p,e) && !removed(p,e)} //no element is added nor removed
+}
+
+event add[s: Set, e: Element] modifies added at {(s,e)}{ //add element e to set s
+
+	//postcondition
+	added'(s,e)
+	}
+
+event remove[s: Set, e: Element] modifies removed at {(s,e)}{ //remove element e from set s
+	//guard
+	added(s,e)
+
+	//postcondition
+	removed'(s,e)
+	}
+
+event merge[s1,s2: Set] modifies added, removed{ //merges 2 sets
+
+	//postcondition
+	(all e:Element | added'(s1,e) <=> (added(s1,e) || added(s2,e)))
+	(all e:Element | removed'(s1,e) <=> (removed(s1,e) || removed(s2,e)))
+
+	(all s:Set, e:Element | s=s1 || (added'(s,e) <=> added(s,e)))
+	(all s:Set, e:Element | s=s1 || (removed'(s,e) <=> removed(s,e)))
+	}
+
+check Liveness { all s1,s2:Set, e:Element | G ((added(s1,e) => F (added(s2,e)) ) &&  (removed(s1,e) => F (removed(s2,e)) ) )} 
+assuming {
+	//fairness on merge operation
+	all s1,s2:Set | G F {
+	(all e:Element | added'(s1,e) <=> (added(s1,e) || added(s2,e)))
+	(all e:Element | removed'(s1,e) <=> (removed(s1,e) || removed(s2,e)))
+	(all s:Set, e:Element | s=s1 || (added'(s,e) <=> added(s,e)))
+	(all s:Set, e:Element | s=s1 || (removed'(s,e) <=> removed(s,e)))
+	}
+} 
+using TEA

@@ -1,0 +1,70 @@
+//Dinning philosophers cervino file
+//Safety verification terminates using TEA
+
+//set of philosophers
+sort Philo
+
+relation right in Philo * Philo //right neighbors of a philosophers
+relation right_tc in Philo * Philo //transitive closure of right
+
+relation right_fork in Philo //set of philosphers having their right fork
+relation left_fork in Philo //set of philosphers having their left fork
+relation hungry in Philo //set of hungry philosphers
+
+paths[right, right_tc]
+
+axiom loneright{
+	G {all p1,p2,p3: Philo | (right(p1,p2) && right(p1,p3)) => p2 = p3} //right defines a partial function
+}
+
+axiom ring{
+	{all p1,p2:Philo | right_tc(p1,p2)} //all philosophers are reachable from any philosopher 
+}
+
+axiom init  {
+	{all p: Philo | hungry(p)} //all philo are hungry
+	{all p: Philo | !right_fork(p) && !left_fork(p)} //no fork is taken
+}
+
+event take_left[p: Philo] modifies left_fork at {p}{
+	//guard
+	!left_fork(p)
+	hungry(p)
+	{all ps:Philo | right(ps,p) => !right_fork(ps)} //the left fork is not taken 
+	
+	//postcondition
+	left_fork'(p)
+	}
+
+event take_right[p: Philo] modifies right_fork at {p}{
+	//guard
+	!right_fork(p)
+	hungry(p)
+	{all ps:Philo | right(p,ps) => !left_fork(ps)} //the right fork is not taken 
+	
+	//postcondition
+	right_fork'(p)
+	}
+
+event skip []{}
+
+event eat[p: Philo] modifies right_fork at {p}, left_fork at {p}, hungry at {p} {
+	//guard
+	right_fork(p)
+	left_fork(p)
+	
+	//postcondition
+	!right_fork'(p)
+	!left_fork'(p)
+	!hungry'(p)
+	}
+
+event hunger [p: Philo] modifies hungry at {p}{
+	//guard
+	!hungry(p)
+	
+	//postcondition
+	!hungry'(p)
+	}
+	
+check Safety {all p1,p2: Philo |G ( (right_fork(p1) && left_fork(p2)) => (!right(p1,p2)))} using TEA	

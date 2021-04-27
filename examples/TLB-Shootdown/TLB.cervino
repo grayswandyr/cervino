@@ -1,0 +1,278 @@
+//TLB shootdown cervino file
+//Safety verification terminates using TEA
+sort CPU //set of cpus
+
+relation active in CPU //set of active CPU
+relation actionneeded in CPU //flag for notifying that a flushing is needed
+relation plock in CPU //holds the lock for modifying the page map
+relation labeled in CPU*CPU //set of cpus looked over ina  loop
+relation interrupt in CPU //the cpu is intterupted
+
+//cpus is in initial state
+relation main in CPU
+
+//different states of the initatialization of the flushing procedure, each corresponds to some step of the programm
+relation init1 in CPU
+relation init2 in CPU
+relation init3 in CPU
+relation init5 in CPU
+relation init6 in CPU
+relation init7 in CPU
+relation init8 in CPU
+relation init9 in CPU
+relation init10 in CPU
+relation init11 in CPU
+relation init13 in CPU
+relation init14 in CPU
+relation init15 in CPU
+
+relation modif in CPU
+relation updated in CPU
+
+relation loop in CPU*CPU
+relation actionlock in CPU*CPU
+
+relation modifying in CPU
+
+//different states for responding to the flushing procedure, each corresponds to some step of the programm
+relation responding1 in CPU
+relation responding2 in CPU
+relation responding3 in CPU
+relation responding5 in CPU
+relation responding6 in CPU
+relation responding7 in CPU
+relation responding8 in CPU
+
+
+axiom init { //at the initial state all cpus are in the main loop
+	{all p:CPU | main(p) && !modif(p) && !updated(p) && !init1(p) && !init2(p) && !init3(p) && !init5(p) && !init6(p) && !init7(p) && !init8(p) && !init9(p) && !init10(p) && !init11(p) && !init13(p) && !init14(p) && !init15(p) && !responding1(p) && !responding2(p) && !responding3(p) && !responding5(p) && !responding6(p) && !responding7(p) && !responding8(p)}
+}
+
+event skip[]{}//nothing happens
+
+event initiate[p:CPU] modifies init1 at {p}, main at {p}{//enters initiator phase
+	main(p)
+	
+	!main'(p)
+	init1'(p)
+}
+event initiate1[p:CPU] modifies main at {p}, init1 at {p}, active at {p}{//deactivate the cpu
+	init1(p)
+	
+	!active'(p)
+	!init1'(p)
+	init2'(p)
+}
+
+event initiate2[p:CPU] modifies plock at {p}, init2 at {p}, init3 at {p}{//take the lock
+	init2(p)
+	
+	plock'(p)
+	!init2'(p)
+	init3'(p)
+}
+
+event initiate3[p:CPU, cpu:CPU] modifies init3 at {p}, init5 at {p}, loop at {(p,cpu)}, labeled at {(p,cpu)}{//run the loop for cpu
+	init3(p)
+	!labeled(p,cpu)
+	
+	!init3'(p)
+	init5'(p)
+	loop'(p,cpu)
+	labeled'(p,cpu)
+}
+
+event initiate5[p:CPU, cpu:CPU] modifies actionlock at {(p,cpu)}, init5 at {p}, init6 at {p}{// lock actionlock
+	init5(p)
+	loop(p,cpu)
+	{all p2: CPU | !actionlock(p2,cpu)}
+	
+	actionlock'(p,cpu)
+	!init5'(p)
+	init6'(p)
+}
+
+event initiate6[p:CPU, cpu:CPU] modifies actionneeded at {cpu}, init6 at {p}, init7 at {p}{//set flag actionneeded to true
+	init6(p)
+	loop(p,cpu)
+	
+	actionneeded'(cpu)
+	!init6'(p)
+	init7'(p)
+}
+
+event initiate7[p:CPU, cpu:CPU] modifies actionlock at {(p,cpu)}, init7 at {p}, init8 at {p}{//free actionlock
+	init7(p)
+	loop(p,cpu)
+	
+	!actionlock'(p,cpu)
+	!init7'(p)
+	init8'(p)
+}
+
+event initiate8for[p:CPU, cpu:CPU] modifies loop at {(p,cpu)}, interrupt at {cpu}, init8 at {p}, init3 at {p}{//set cpu as interrupted, restart the loop
+	init8(p)
+	loop(p,cpu)
+	
+	interrupt'(cpu)
+	!loop'(p,cpu)
+	!init8'(p)
+	init3'(p)
+}
+
+event initiate8end[p:CPU, cpu:CPU] modifies loop at {(p,cpu)}, labeled, interrupt at {cpu}, init8 at {p}, init9 at {p}{//exit the loop
+	init8(p)
+	loop(p,cpu)
+	{all p2: CPU | labeled(p,p2)}
+	
+	{all p2: CPU | !labeled'(p,p2)}
+	interrupt'(cpu)
+	!loop'(p,cpu)
+	!init8'(p)
+	init9'(p)
+}
+
+event initiate9[p:CPU, cpu:CPU] modifies init9 at {p}, init10 at {p}, loop at {(p,cpu)}, labeled at {(p,cpu)}{//runs teh second loop
+	init9(p)
+	!labeled(p,cpu)
+	
+	!init9'(p)
+	init10'(p)
+	loop'(p,cpu)
+	labeled'(p,cpu)
+}
+
+event initiate10for[p:CPU, cpu:CPU] modifies init10 at {p}, init9 at {p}, loop at {(p,cpu)}{//restart the loop
+	init10(p)
+	loop(p,cpu)
+	!active(cpu)
+	
+	!init10'(p)
+	init9'(p)
+	!loop'(p,cpu)
+}
+
+event initiate10end[p:CPU, cpu:CPU] modifies init10 at {p}, init11 at {p}, loop at {(p,cpu)}, labeled{//end the loop
+	init10(p)
+	loop(p,cpu)
+	!active(cpu)
+	{all p2: CPU | labeled(p,p2)}
+	
+	{all p2: CPU | !labeled'(p,p2)}
+	!init10'(p)
+	init11'(p)
+	!loop'(p,cpu)
+}
+
+event initiate11[p:CPU] modifies init11 at {p}, init13 at {p}, modif at {p}{//the pmap is modified
+	init11(p)
+	
+	modif'(p)
+	!init11'(p)
+	init13'(p)
+}
+
+event initiate13[p:CPU] modifies init13 at {p}, init14 at {p}, modif at {p}{//tlb is flushed
+	init13(p)
+	
+	!modif'(p)
+	!init13'(p)
+	init14'(p)
+}
+
+event initiate14[p:CPU] modifies init14 at {p}, init15 at {p}, plock at {p}{//free plock
+	init14(p)
+	
+	!plock'(p)
+	!init14'(p)
+	init15'(p)
+}
+
+event initiate15[p:CPU] modifies init15 at {p}, main at {p}, active at {p}{//re-activate the cpu et come back to the main loop
+	init15(p)
+	
+	active'(p)
+	!init15'(p)
+	main'(p)
+}
+
+
+event respond[p:CPU] modifies interrupt at {p}, main at {p}, responding1 at {p}, updated at {p}{//enters responder phase
+	main(p)
+	interrupt(p)
+	
+	!interrupt'(p)
+	!main'(p)
+	!updated'(p)
+	responding1'(p)
+}
+
+event respond1loop[p:CPU] modifies responding1 at {p}, responding2 at {p}{//runs the loop if actionneeded is set to true
+	responding1(p)
+	actionneeded(p)
+	
+	!responding1'(p)
+	responding2'(p)
+}
+
+event respond1end[p:CPU] modifies responding1 at {p}, main at {p}{//exit the responder loop and go to the main loop
+	responding1(p)
+	!actionneeded(p)
+	
+	!responding1'(p)
+	main'(p)
+}
+
+event respond2[p:CPU] modifies responding2 at {p}, responding3 at {p}, active at {p}{//deactivate the cpu
+	responding2(p)
+	
+	!active'(p)
+	!responding2'(p)
+	responding3'(p)
+}
+
+event respond3[p:CPU] modifies responding3 at {p}, responding5 at {p}, actionlock at {(p,p)}{//wait until plock is freed then lock actionlock, this is assumed to be done atomically
+	responding3(p)
+	{all c : CPU | !plock(c)}
+	{all c: CPU | !actionlock(c, p)}
+	
+	actionlock'(p, p)
+	!responding3'(p)
+	responding5'(p)
+}
+
+event respond5[p:CPU] modifies responding5 at {p}, responding6 at {p}, modif at {p}{//update the tlb
+	responding5(p)
+	
+	!modif'(p)
+	!responding5'(p)
+	responding6'(p)
+}
+
+event respond6[p:CPU] modifies responding6 at {p}, responding7 at {p}, actionneeded at {p}{//set actionneeded to false
+	responding6(p)
+	
+	!actionneeded'(p)
+	!responding6'(p)
+	responding7'(p)
+}
+
+event respond7[p:CPU] modifies responding7 at {p}, responding8 at {p}, actionlock at {(p,p)}{//unlock actionlock
+	responding7(p)
+	
+	!actionlock'(p,p)
+	!responding7'(p)
+	responding8'(p)
+}
+
+event respond8[p:CPU] modifies responding8 at {p}, responding1 at {p}, active at {p}{//reactivate the cpu
+	responding8(p)
+	
+	active'(p)
+	!responding8'(p)
+	responding1'(p)
+}
+
+
+check Safety { (all p, p2: CPU | G ((modif(p) && main(p2)) => updated(p2)))} //if some cpu has updated the usermap then any process updates it beforfe coming back to the mail loop
+using TEA
