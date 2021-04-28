@@ -16,7 +16,7 @@ relation critical in Process //process is in critical
 relation critical_ticket in Ticket //next ticket to enter critical
 relation current in Ticket //next ticket to be given to a waiting process
 
-path[prev_ticket, prev_tc]
+paths[prev_ticket, prev_tc]
 
 axiom DefTicket {
 G{all i1,i2,i3:Ticket | { //defines prev on tickets

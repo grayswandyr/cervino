@@ -56,7 +56,7 @@ If the Electrum Analyzer prints `outcome UNSAT` (among other messages) then the 
 
 ## Cervino models
 
-For a detailed view of the syntax, please refer to files in the `benchmarks` directory, as well as our paper. Remark also that the syntax is heavily inspired by that of Alloy or Electrum. Finally, the grammar can be generated using the `make grammar-html` command (you must first install the `obelisk` tool through opam, using `opam install obelisk`).
+For a detailed view of the syntax, please refer to files in the `CERVINO/examples` directory, as well as our paper. Remark also that the syntax is heavily inspired by that of Alloy or Electrum. Finally, the grammar can be generated using the `make grammar-html` command (you must first install the `obelisk` tool through opam, using `opam install obelisk`).
 
 A Cervino *specification*  is described by various paragraphs, separated by blank characters:
 
@@ -85,3 +85,10 @@ A property to be checked is introduced by the `check` keyword, followed by the b
     * a distinguished variable and its sort
     * a list of *n** bound, sorted variables (for some *n*)
     * an atom (relation of arity *n+1* + its parameters)
+
+
+## Cervino source code
+
+The program is released under the free-software Mozilla Public License Version 2.0. It relies on third-party free software, the license of which can be found at various opam repositories.
+
+The entrypoint of the program is `bin/cervino.ml`, but the main program is in `bin/main.ml`. The essence of the program is to parse a Cervino model into a so-called concrete syntax tree (cf. `src/cst.ml`) and then, after a well-formedness analysis, to produce an abstract syntax tree (`src/ast.mli`). Then most of the work is implemented as transformations mapping an AST into another AST. The entrypoint for transformations is in `src/transfo.ml`. Notice that some processings done by the tool correspond to undocumented experiments, not mentioned in the CAV paper.

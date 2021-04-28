@@ -1,4 +1,6 @@
-This undocumented contents is left as it. It is part of an in-development project about FO-LTL, its syntax, semantics and transformations preserving satisfiability. Proofs referenced by CAV paper are tagged 'Paper' in the Coq source code. The 'make' command compiles all the files.
+The 'make' command compiles all the files. The `coqide` tool is available to explore the files.
+
+The Coq files are organized as follows:
 
 * abstraction.v: transformation removing universal quantifiers under existential quantifiers. Contains the proof of Lemma 4 and 5.
 * cextension.v: extension of signature by new constants
@@ -19,3 +21,5 @@ This undocumented contents is left as it. It is part of an in-development projec
 * utils.v: various list utility fonctions
 * vars.v: extraction of free variables
 * varset.v: indexed sets of variables
+
+Proofs referenced by CAV paper are tagged 'Paper' in comments, in the Coq source code.
