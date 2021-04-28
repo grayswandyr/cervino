@@ -111,7 +111,7 @@ let main
         "[" ^ Build_info.V1.Version.to_string v ^ "]"
   in
   Logs.app (fun m ->
-      m "%a" Fmt.(styled `Bold string) ("cervino (C) 2020 ONERA " ^ version));
+      m "%a" Fmt.(styled `Bold string) ("cervino (C) 2020-2021 ONERA " ^ version));
   (* real work done here *)
   try
     Msg.info (fun m -> m "Processing file %S." input_file);
