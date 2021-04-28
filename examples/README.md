@@ -42,7 +42,9 @@ Model in philo.cervino. It features a set of philosophers in a ring-shaped manee
 	-a philosopher become hungry
 
 ##TLB-Shootdown
-Model in TLB.cervino. 
+Model in TLB.cervino. The TLB Shootdown algorithm features a set of CPUs and a set of page tables, each CPU maintains a cache for a certain page table. The algorithm aims to keep this cache in sync when the page tables are updated. In our model we operated a simplification as we do not consider a set of page tables, we focus on CPUs and added a flag for CPUs indicating if some CPU has modified a page table or updated its cache.
+In this algorithm any update is done through four phases.
+The first phase is when a processor initiates an update phase then becoming an initiator, it set an "action needed" flag on other CPUs and send them a signal to interrupt them and waits for the response of others CPU. The second phase is when an other CPU receives the interrupt and then enters a responder phase. It then signals that it is not active by setting their active flag to false and waits. The initiator waits until all other CPUs have set their active flag to false, then it continues in phase 3. Phase 3 consists in the initiator updating the page table and its TLB, when the initiator has finished the responder then flush their own TLB and reset their "action needed" flag. Events correspond to executing an atomic operation of these phases. The safety property that is verified is that if a modification is done then any cpu do an update before coming back to its main loop.
 
 ##Token Ring
 Model in mailbox_token.cervino. The protocol features a ring-shaped network where nodes are passing a token to each others. Passing the token is done in two steps:
