@@ -18,7 +18,6 @@ axiom ring {
 
 axiom init {  //at the initial state
 	(some x : Node | (all y: Node | notified(y) <=> x=y )) //there is a unique notified node
-	(all x : Node | !mailbox(x)) //all mailbox are empty
 }
 
 event skip[] {} //nothing happens

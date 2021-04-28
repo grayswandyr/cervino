@@ -6,6 +6,7 @@ sort Process
 sort index
 
 constant zero in index //first index of the list
+constant ord_p in Process //some ordinary process for cheking that any ordinary process entering the list eventually exit it
 
 relation prev_index in index*index //previous index in the list
 relation prev_tc in index*index //transitive closure of prev_index
@@ -51,7 +52,7 @@ event exit_list[] modifies last_list, list, is_in_list { //the head of the list 
 	{all i,i2:index, p:Process | prev_index(i,i2) => (list(i,p) <=> list'(i2,p))} //updating the list by shifting the index
 }
 
-check Liveness {all i:index, psk: Process | G (list(i,psk) => F !is_in_list(psk))} 
+check Liveness {all i:index | G (list(i,ord_p) => F !is_in_list(ord_p))} //if a process (represented by ord_p) enters the list then it eventually exit the list
 assuming {
 //strong fairness
 (all p:Process | G F ( {all p: Process | is_in_list'(p) <=> (is_in_list(p) && !list(zero,p))} && {all i,last:index | last_list(last) => (last_list'(i) <=> prev_index(last,i))} && {all i,i2:index, p:Process | prev_index(i,i2) => (list(i,p) <=> list'(i2,p))}) )
