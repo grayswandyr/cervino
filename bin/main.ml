@@ -41,9 +41,13 @@ let run_electrum java_exe electrum_jar cervino_file property electrum_file =
   in
   let previous_handler = Sys.signal Sys.sigterm sigterm_handler in
   let to_call =
-    Printf.sprintf "%s -jar %s --cli --nuXmv %s" java_exe electrum_jar electrum_file
+    Printf.sprintf
+      "%s -jar %s --cli --nuXmv %s"
+      java_exe
+      electrum_jar
+      electrum_file
   in
-  Logs.app (fun m -> m "Calling solver:@[<h2>@ %s@]" to_call);
+  Msg.info (fun m -> m "Calling solver:@[<h2>@ %s@]" to_call);
   (* currently, EA prints on the error output rather than the standard one, even for working runs *)
   let _okout, errout, errcode = CCUnix.call "%s" to_call in
   (* go back to default behavior *)
@@ -59,8 +63,17 @@ let run_electrum java_exe electrum_jar cervino_file property electrum_file =
           errout)
   else if (* currently, EA prints on the error output rather than the standard one, even for working runs *)
           String.Find.(find ~pattern:(compile "(outcome UNSAT)") errout) > -1
-  then Logs.app (fun m -> m "File %S, property %S: valid." cervino_file property)
-  else Logs.app (fun m -> m "File %S, property %S: cannot conclude." cervino_file property)
+  then
+    Logs.app (fun m -> m "File %S, property %S: valid." cervino_file property)
+  else if String.Find.(find ~pattern:(compile "(outcome SAT)") errout) > -1
+  then
+    Logs.app (fun m ->
+        m "File %S, property %S: cannot conclude." cervino_file property)
+  else
+    Msg.err (fun m ->
+        m
+          "Error when running the Electrum Analyzer solver:@\nFull output: %s"
+          errout)
 
 
 let main
@@ -101,7 +114,7 @@ let main
       m "%a" Fmt.(styled `Bold string) ("cervino (C) 2020 ONERA " ^ version));
   (* real work done here *)
   try
-    Logs.app (fun m -> m "Processing file %S." input_file);
+    Msg.info (fun m -> m "Processing file %S." input_file);
     let model = Parsing.parse_file input_file in
     Msg.info (fun m -> m "Parsing done.");
     Msg.debug (fun m -> m "Recognized model:@.%a" Cst.pp model);
@@ -141,7 +154,9 @@ let main
         IO.with_out electrum_file (fun out ->
             let fmt = Format.formatter_of_out_channel out in
             pp fmt result);
-        if call_solver then run_electrum java_exe electrum_jar input_file property electrum_file
+        if call_solver
+        then
+          run_electrum java_exe electrum_jar input_file property electrum_file
   with
   | Exit ->
       ()
