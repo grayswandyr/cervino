@@ -76,3 +76,6 @@ The liveness property is that any process taking a ticket eventually enters crit
 Model in notification.cervino, the notification protocol is a toy protocol taken from [2]. It features a ring-shaped network where nodes can be notified or unnotified. There is only one operation that consists in a node notifying its successor. We verify that any node is eventually notified using TTC.
 
 
+[1] Padon, O., Hoenicke, J., Losa, G., Podelski, A., Sagiv, M., & Shoham, S. (2017). Reducing liveness to safety in first-order logic. Proceedings of the ACM on Programming Languages, 2(POPL), 1-33.
+[2] Peyras, Q., Brunel, J., & Chemouil, D. (2019). A bounded domain property for an expressive fragment of first-order linear temporal logic. In 26th International Symposium on Temporal Representation and Reasoning (TIME 2019).
+
