@@ -294,150 +294,8 @@ Section Abstraction.
     | Eq _ _ t1 t2 => eq_abstract_U t1 t2
     | NEq _ _ t1 t2 => neq_abstract_U t1 t2
     end.
-
-  Definition vsMap (f : forall s, variable (Sig:=srcSig) s -> variable (Sig:=dstSig) s) e: VarSet dstSig := fun s => List.map (f s) (e s).
   
-  Lemma vsSubset_map: forall {e1 e2}, vsSubset srcSig e1 e2 -> vsSubset dstSig (vsMap (fun s => inl) e1) (vsMap (fun s => inl) e2).
-  Proof.
-    unfold vsMap; repeat intro.
-    apply List.in_map_iff in H0.
-    destruct H0 as [x [h1 h2]]; subst v.
-    apply List.in_map_iff.
-    exists x; split; auto.
-    apply H in h2; auto.
-  Qed.
-
-  Lemma vsMap_In_intro: forall  (f : forall s, variable (Sig:=srcSig) s -> variable (Sig:=dstSig) s) {s v e},
-    vsIn srcSig v e -> vsIn dstSig (f s v) (vsMap f e).
-  Proof.
-    unfold vsIn, vsMap; intros.
-    apply List.in_map_iff.
-    exists v; split; auto.
-  Qed.
-  
-  Lemma vsUnion_map_l: forall  (f : forall s, variable (Sig:=srcSig) s -> variable (Sig:=dstSig) s) {e e1 e2},
-    vsSubset _ (vsUnion srcSig e1 e2) e -> vsSubset _ (vsUnion dstSig (vsMap f e1) (vsMap f e2)) (vsMap f e) .
-  Proof.
-    repeat intro.
-    apply (vsUnion_elim dstSig) in H0.
-    destruct H0; apply List.in_map_iff in H0; destruct H0 as [x [h1 h2]]; subst v;
-      apply List.in_map_iff; exists x; split; auto; apply H.
-    now apply vsUnion_l.
-    now apply vsUnion_r.
-  Qed.
-  
-  Lemma vsUnion_map_r: forall  (f : forall s, variable (Sig:=srcSig) s -> variable (Sig:=dstSig) s) {e e1 e2},
-    vsSubset _ e (vsUnion srcSig e1 e2) -> vsSubset _ (vsMap f e) (vsUnion dstSig (vsMap f e1) (vsMap f e2)).
-  Proof.
-    repeat intro.
-    apply List.in_map_iff in H0.
-    destruct H0 as [x [h1 h2]]; subst v.
-    apply H in h2.
-    apply vsUnion_elim in h2.
-    destruct h2; [apply SV.InUnion_l | apply SV.InUnion_r]; apply List.in_map_iff; exists x; auto.
-  Qed.
-  
-  Definition isInj {T1 T2} (f: T1 -> T2) := forall x1 x2, f x1 = f x2 -> x1 = x2.
-  
-  Lemma vsMap_add: forall s (v: variable s) (f: forall s, variable (Sig:=srcSig) s -> variable (Sig:=dstSig) s) (hf: forall s, isInj (f s)) e, 
-    vsAdd dstSig (f s v) (vsMap f e) = vsMap f (vsAdd srcSig v e).
-  Proof.
-    intros.
-    apply functional_extensionality_dep; intros s'.
-    unfold vsMap, vsAdd; simpl.
-    destruct (eq_dec s s'); auto.
-    subst s'.
-    generalize (hf s); generalize (f s); intros g hg; clear hf f.
-    generalize (e s); clear e; intro l.
-    induction l; simpl; intros; auto.
-    destruct (eq_dec v a).
-    subst a.
-    destruct (dec.SumDec_obligation_1 (Tv s) (variable s) bool TwoDec (g v) (g v)); tauto.
-    simpl; rewrite <-IHl; clear IHl.
-    destruct (dec.SumDec_obligation_1 (Tv s) (variable s) bool TwoDec (g v) (g a)); auto.
-    apply hg in e; tauto.
-  Qed.
-
-  Lemma vsMap_In_elim: forall  (f : forall s, variable (Sig:=srcSig) s -> variable (Sig:=dstSig) s) {s v e},
-    (forall s, isInj (f s)) -> vsIn dstSig (f s v) (vsMap f e) -> vsIn srcSig v e.
-  Proof.
-    unfold vsIn, vsMap; intros.
-    apply List.in_map_iff in H0.
-    destruct H0 as [x [h1 h2]].
-    apply H in h1; subst x; auto.
-  Qed.
-
-  Lemma vsMap_In_ran: forall  (f : forall s, variable (Sig:=srcSig) s -> variable (Sig:=dstSig) s) {s v e},
-    vsIn dstSig v (vsMap f e) -> exists v', v = f s v'.
-  Proof.
-    unfold vsIn, vsMap; intros.
-    apply List.in_map_iff in H.
-    destruct H as [x [h1 h2]].
-    exists x; symmetry; auto.
-  Qed.
-
-  Lemma vsMap_Union: forall  (f : forall s, variable (Sig:=srcSig) s -> variable (Sig:=dstSig) s) {e1 e2}, (forall s, isInj (f s)) -> forall s' (v': variable (Sig:=dstSig) s'),
-    vsIn _ v' (vsMap f (vsUnion srcSig e1 e2)) <-> vsIn _ v' (vsUnion dstSig (vsMap f e1) (vsMap f e2)).
-  Proof.
-    intros.
-    split; intro.
-    destruct (vsMap_In_ran f H0) as [v h]; subst v'.
-    apply (vsMap_In_elim f) in H0; auto.
-    apply vsUnion_elim in H0.
-    destruct H0; [apply vsUnion_l | apply vsUnion_r]; apply vsMap_In_intro; auto.
-
-    apply vsUnion_elim in H0; destruct H0.
-    destruct (vsMap_In_ran f H0) as [v h]; subst v'.
-    apply vsMap_In_elim in H0; auto.
-    apply vsMap_In_intro; apply vsUnion_l; apply H0.
-
-    destruct (vsMap_In_ran f H0) as [v h]; subst v'.
-    apply vsMap_In_elim in H0; auto.
-    apply vsMap_In_intro; apply vsUnion_r; apply H0.
-  Qed.
-
-  Lemma vsMap_Inter: forall  (f : forall s, variable (Sig:=srcSig) s -> variable (Sig:=dstSig) s) {e1 e2}, (forall s, isInj (f s)) -> forall s' (v': variable (Sig:=dstSig) s'),
-    vsIn _ v' (vsMap f (vsInter srcSig e1 e2)) <-> vsIn _ v' (vsInter dstSig (vsMap f e1) (vsMap f e2)).
-  Proof.
-    intros.
-    split; intro.
-    destruct (vsMap_In_ran f H0) as [v h]; subst v'.
-    apply (vsMap_In_elim f) in H0; auto.
-    apply vsInter_elim in H0; destruct H0.
-    apply vsInter_intro; apply vsMap_In_intro; auto.
-
-    apply vsInter_elim in H0; destruct H0.
-    destruct (vsMap_In_ran f H0) as [v h]; subst v'.
-    apply vsMap_In_intro.
-    apply (vsMap_In_elim f H) in H0.
-    apply (vsMap_In_elim f H) in H1.
-    apply vsInter_intro; auto.
-  Qed.
-  
-  Lemma vsMap_Remove: forall  (f : forall s, variable (Sig:=srcSig) s -> variable (Sig:=dstSig) s) {s v} {e}, (forall s, isInj (f s)) -> forall s' (v': variable (Sig:=dstSig) s'),
-    vsIn _ v' (vsMap f (vsRemove srcSig v e)) <-> vsIn _ v' (vsRemove dstSig (f s v) (vsMap f e)).
-  Proof.
-    intros; split; intro.
-    destruct (vsMap_In_ran _ H0) as [w h]; subst v'.
-    apply (vsMap_In_elim f) in H0; auto.
-    apply vsInRemove_elim in H0.
-    apply vsInRemove_intro; auto.
-    apply vsMap_In_intro; tauto.
-    intro; apply proj2 in H0; apply H0; clear H0.
-    inversion H1; clear H1; intros; subst s'.
-    apply inj_pair2_eq_dec in H3; try apply eq_dec.
-    apply (H s) in H3; subst w; constructor.
-    
-    apply vsInRemove_elim in H0; destruct H0.
-    destruct (vsMap_In_ran _ H0) as [w h]; subst v'.
-    apply (vsMap_In_elim f) in H0; auto.
-    apply vsMap_In_intro; auto.
-    apply vsInRemove_intro; auto.
-    intro; apply H1; clear H1.    
-    inversion H2; clear H2; intros; subst s'; auto.
-    constructor.
-  Qed.
-  
+  (* U_y in Definition 24 *)
   Fixpoint abstract_U (f: formula srcSig): isProp srcSig f -> vsSubset _ (free srcSig f) (vsUnion _ exv allv) -> formula dstSig :=
   match f return isProp srcSig f -> vsSubset _ (free srcSig f) (vsUnion _ exv allv) -> formula dstSig with
   | FTrue _ => fun hn fv => FTrue _
@@ -1298,11 +1156,11 @@ Qed.
   Qed.
   
   Lemma fm_dst_getALl: forall V (f: formula srcSig),
-    getAll (fm_dstSig V f) = vsMap V (fun s v => inl v) (getAll f).
+    getAll (fm_dstSig V f) = vsMap (dstSig:=dstSig V) (fun s v => inl v) (getAll f).
   Proof.
     induction f; simpl; intros; auto.
     simpl in *; rewrite IHf.
-    apply (vsMap_add V s e (fun s v => inl v)).
+    apply (vsMap_add (fun s v => inl v) s e).
     unfold isInj; intros.
     injection H; auto.
   Qed.
@@ -1449,10 +1307,10 @@ Qed.
   Definition bar f :=
     And (dstSig (getExF f))
       (AxE (getExF f))
-      (mkEx (Sg:=dstSig (getExF f)) (vsMap (getExF f) (fun s v => inl v) (getExF f))
+      (mkEx (Sg:=dstSig (getExF f)) (vsMap (fun s v => inl v) (getExF f))
         (And (dstSig (getExF f))
           (neE (getExF f))
-          (mkAll (Sg:=dstSig (getExF f)) (vsMap (getExF f) (fun s v => inl v) (getAll (EX f))) (fm_dstSig (getExF f) (EX_ALL f)))
+          (mkAll (Sg:=dstSig (getExF f)) (vsMap (fun s v => inl v) (getAll (EX f))) (fm_dstSig (getExF f) (EX_ALL f)))
         )).
 
   Lemma free_neE: forall V s (v: variable s), vsIn _ v (free _ (neE V)) -> exists v', v = inl v' /\ vsIn _ v' V.
@@ -1515,27 +1373,27 @@ Qed.
     apply vsUnion_elim in H; destruct H.
     apply free_neE in H.
     destruct H as [v' [h H]]; subst v.
-    apply (vsMap_In_intro (getExF f) (fun s v => inl v)) in H.
-    set (w := existT (fun s => asFinite (vsMap _ (fun s v=>inl v) (getExF f) s)) s 
+    apply (vsMap_In_intro (dstSig:=dstSig (getExF f)) (fun s v => inl v)) in H.
+    set (w := existT (fun s => asFinite (vsMap (fun s v=>inl v) (getExF f) s)) s 
       (exist _ (inl v') H)).
     apply (H0 w).
     reflexivity.
     
     apply (free_IAll (dstSig (getExF f))) in H; destruct H.
     apply free_dstSig in H.
-    generalize (vsMap_In_ran _ _ H); intro.
+    generalize (vsMap_In_ran _ H); intro.
     destruct H2 as [v' H2]; subst v.
-    apply (vsMap_In_elim _ (fun s v=>inl v)) in H.
+    apply (vsMap_In_elim (fun s v=>inl v)) in H.
 
     apply close_EXfALL in H; auto.
     apply vsUnion_elim in H; destruct H.
-    apply (vsMap_In_intro (getExF f) (fun s v => inl v)) in H.
-    set (w := existT (fun s => asFinite (vsMap _ (fun s v=>inl v) (getExF f) s)) s 
+    apply (vsMap_In_intro (dstSig:=dstSig (getExF f)) (fun s v => inl v)) in H.
+    set (w := existT (fun s => asFinite (vsMap (fun s v=>inl v) (getExF f) s)) s 
       (exist _ (inl v') H)).
     apply (H0 w).
     reflexivity.
-    apply (vsMap_In_intro (getAll (EX f)) (fun s v => inl v)) in H.
-    set (w := existT (fun s => asFinite (vsMap _ (fun s v=>inl v) (getAll (EX f)) s)) s 
+    apply (vsMap_In_intro (dstSig:=dstSig (getExF f)) (fun s v => inl v)) in H.
+    set (w := existT (fun s => asFinite (vsMap (fun s v=>inl v) (getAll (EX f)) s)) s 
       (exist _ (inl v') H)).
     apply (H1 w).
     reflexivity.
@@ -1545,7 +1403,7 @@ Qed.
   Qed.
 
   Definition abstract_U_ExAll f (hf: isExAll _ f) (fv: forall s, SV.is_empty (free _ f s)) :=
-    (mkAll (Sg:=dstSig (getExF f)) (vsMap _ (fun s v => inl v) (getExF f)) (mkAll (Sg:=dstSig (getExF f)) (vsMap _ (fun s v => inl v) (getAll (EX f))) (abstract_U _ _ (EX_ALL f) (isExAll_Prop _ hf) (close_EXfALL fv) ))).
+    (mkAll (Sg:=dstSig (getExF f)) (vsMap (fun s v => inl v) (getExF f)) (mkAll (Sg:=dstSig (getExF f)) (vsMap (fun s v => inl v) (getAll (EX f))) (abstract_U _ _ (EX_ALL f) (isExAll_Prop _ hf) (close_EXfALL fv) ))).
   
   Definition tfr_env {D: Dom srcSig} V (env: Env srcSig D): Env (dstSig V) (tfr_dom V D) := 
     fun s v => match v with inl v' => env s v' | inr v' => neDom s end.
@@ -1652,7 +1510,7 @@ Qed.
     apply semAll_intro; intro pe2.
     apply semAll_intro; intro pe3.
     apply semAll_elim with (pe:=pe3) in H3.
-    set (pe' := fun s v h => pe1 s (inl v) (vsMap_In_intro _ (fun s v => inl v) h)).
+    set (pe' := fun s v h => pe1 s (inl v) (vsMap_In_intro (fun s v => inl v) h)).
     set (env' := (pAdd (pAdd env pe')
      (get_pe (getExF f) (getAll (EX f))
         (pAdd (pAdd (tfr_env (getExF f) env) pe2) pe3))) ).
@@ -1677,7 +1535,7 @@ Qed.
         match goal with |- context [match ?cnd with _=>_ end] => destruct cnd end.
         intro; rewrite (proof_irrelevance _ _ i0); symmetry; now auto.
         exfalso; apply n; clear n.
-        apply vsMap_In_intro with (f:=fun s v => inl v); now auto.
+        apply (vsMap_In_intro (fun s v => inl v)); now auto.
       * apply H3.
     - now apply isExAll_Prop.
     - split; intros.
@@ -1691,29 +1549,21 @@ Qed.
     - unfold env'; repeat intro.
       unfold get_pe, pAdd, tfr_env.
       destruct (SV.set_In_dec v (getAll (EX f) s)).
-      destruct (SV.set_In_dec (inl v)
-    (vsMap (getExF f) (fun (s0 : Sort) (v0 : variable s0) => inl v0)
-       (getAll (EX f)) s)); auto.
+      match goal with |- match ?cnd with _=>_ end = _ => destruct cnd; auto end.
       exfalso; apply n; clear n.
-      apply (vsMap_In_intro _ (fun s v => inl v)); now auto.
-      destruct (SV.set_In_dec (inl v)
-    (vsMap (getExF f) (fun (s0 : Sort) (v0 : variable s0) => inl v0)
-       (getAll (EX f)) s)).
+      apply (vsMap_In_intro (fun s v => inl v)); now auto.
+      match goal with |- _=match ?cnd with _=>_ end => destruct cnd; auto end.
       exfalso; apply n; clear n.
-      apply (vsMap_In_elim _ (fun s v => inl v)) in i; auto.
+      apply (vsMap_In_elim (dstSig:=dstSig (getExF f)) (fun s v => inl v)) in i; auto.
       repeat intro; injection H; tauto.
       destruct (SV.set_In_dec v (getExF f s)).
-      destruct (SV.set_In_dec (inl v)
-    (vsMap (getExF f) (fun (s0 : Sort) (v0 : variable s0) => inl v0)
-       (getExF f) s)).
+      match goal with |- _=match ?cnd with _=>_ end => destruct cnd; auto end.
       unfold pe'; f_equal; apply proof_irrelevance.
       exfalso; apply n1; clear n1.
-      apply (vsMap_In_intro _ (fun s v => inl v)); now auto.
-      destruct (SV.set_In_dec (inl v)
-    (vsMap (getExF f) (fun (s0 : Sort) (v0 : variable s0) => inl v0)
-       (getExF f) s)); auto.
+      apply (vsMap_In_intro (fun s v => inl v)); now auto.
+      match goal with |- _=match ?cnd with _=>_ end => destruct cnd; auto end.
       exfalso; apply n1; clear n1.
-      apply (vsMap_In_elim _ (fun s v=>inl v)) in i; auto.
+      apply (vsMap_In_elim (dstSig:=dstSig (getExF f)) (fun s v=>inl v)) in i; auto.
       repeat intro; injection H; tauto.
   Qed.
   
@@ -1795,12 +1645,12 @@ Qed.
   Qed.
 
   Lemma getExF_dst_sub1: forall V g,
-      vsSubset (dstSig (getExF g)) (vsMap V (fun s v => inl v) (getExF g)) (getExF (fm_dstSig V g)) .
+      vsSubset (dstSig (getExF g)) (vsMap (dstSig:=dstSig V) (fun s v => inl v) (getExF g)) (getExF (fm_dstSig V g)) .
   Proof.
     induction g; simpl; repeat intro; auto.
     unfold getExF in *; simpl in *.
-    destruct (vsMap_In_ran _ _ H); subst v.
-    apply (vsMap_In_elim _ (fun s v => inl v)) in H.
+    destruct (vsMap_In_ran (fun s v => inl v) H); subst v.
+    apply (vsMap_In_elim (fun s v => inl v)) in H.
     apply vsInter_elim in H; destruct H.
     apply vsAdd_elim in H.
     apply (vsInter_intro (dstSig V)).
@@ -1811,25 +1661,25 @@ Qed.
     apply (vsAdd_r (dstSig V)).
     assert (vsIn _ x (vsInter srcSig (getEx g) (free srcSig (EX g)))).
       now apply vsInter_intro.
-    apply (vsMap_In_intro V (fun s v => inl v)) in H1.
+    apply (vsMap_In_intro (dstSig:=dstSig V) (fun s v => inl v)) in H1.
     apply IHg in H1.
     apply (vsInter_elim (dstSig V)) in H1; tauto.
     rewrite <-fm_dst_EX.
     apply free_dstSig.
-    apply (vsMap_In_intro V (fun s v => inl v)); auto.
+    apply (vsMap_In_intro (dstSig:=dstSig V)  (fun s v => inl v)); auto.
     repeat intro.
     injection H0; tauto.
   Qed.
 
   
   Program Definition tfr_pe {V} {D} (pe: pEnv D V): 
-    pEnv (tfr_dom V D) (vsMap V (fun s v => inl v) V) :=
-  fun s v => match v return vsIn _ v (vsMap V (fun s v => inl v) V) -> _ with
+    pEnv (tfr_dom V D) (vsMap (dstSig:=dstSig V)  (fun s v => inl v) V) :=
+  fun s v => match v return vsIn _ v (vsMap (dstSig:=dstSig V) (fun s v => inl v) V) -> _ with
     inl v' => fun h => pe s v' _
    | inr _ => fun h => _
    end.
   Next Obligation.
-    apply (vsMap_In_elim _ (fun s v => inl v)) in h.
+    apply (vsMap_In_elim (fun s v => inl v)) in h.
     apply h.
     repeat intro; injection H; intros; auto.
   Qed.
@@ -1851,17 +1701,17 @@ Qed.
     end.
     now rewrite (proof_irrelevance _ _ i).
     exfalso; apply n; clear n.
-    now apply (vsMap_In_intro _ (fun s v => inl v)).
+    now apply (vsMap_In_intro (fun s v => inl v)).
     match goal with
       |- match ?cnd with _=>_ end=_ => destruct cnd; auto
     end.
     exfalso; apply n; clear n.
-    apply (vsMap_In_elim _ (fun s v => inl v)) in i; auto.
+    apply (vsMap_In_elim (fun s v => inl v)) in i; auto.
     repeat intro; injection H; tauto.
     match goal with
       |- match ?cnd with _=>_ end=_ => destruct cnd; auto
     end.
-    exfalso; apply vsMap_In_ran in i.
+    exfalso; apply (vsMap_In_ran (dstSig:=dstSig V)) in i.
     destruct i as [v' h]; discriminate.
   Qed.
   
@@ -1878,16 +1728,16 @@ Qed.
     end.
     rewrite (proof_irrelevance _ _ i0); now auto.
     exfalso; apply n; clear n.
-    apply (vsMap_In_intro _ (fun s v => inl v)); auto.
+    apply (vsMap_In_intro (fun s v => inl v)); auto.
     match goal with
       |- context [match ?cnd with _=>_ end] => destruct cnd; auto
     end.
-    exfalso; apply (vsMap_In_elim _ (fun s v => inl v)) in i; auto.
+    exfalso; apply (vsMap_In_elim (fun s v => inl v)) in i; auto.
     repeat intro; injection H; tauto.
     match goal with
       |- context [match ?cnd with _=>_ end] => destruct cnd; auto
     end.
-    exfalso; apply (vsMap_In_ran _ (fun s v => inl v)) in i.
+    exfalso; apply (vsMap_In_ran (fun s v => inl v)) in i.
     destruct i as [v' h]; discriminate.
   Qed.
   
@@ -1896,7 +1746,7 @@ Qed.
     unfold tfr_env; simpl; intros.
     split; intros; auto.
   Qed.
-    
+  
   Lemma GEX_sem_t: forall (f: formula srcSig) (D: Dom srcSig) itp (env: Env srcSig D) t,
     fm_sem (Itp:=itp) srcSig env (G _ f) t ->
       exists (pe: nat -> pEnv D (getExF f)), forall t', t' >= t -> fm_sem (Itp:=itp) srcSig (pAdd env (pe t')) (EX f) t'.
@@ -1971,6 +1821,9 @@ Qed.
     apply isExtEnv_tfr.
     apply AxE_sem_intro.
   Qed.
+  
+  Definition abstract_G_f_and_EAg (f g: formula srcSig) (hg: isExAll srcSig g) (hv: forall s, SV.is_empty (free _ g s)) :=
+    (And _ (fm_dstSig _ f) (And _ (G _ (abstract_U_ExAll g hg hv)) (AxE (getExF g)))).
   
   (* PaperLemma 5 *)
   Lemma Lemma5: forall (f g: formula srcSig) (hg: isExAll srcSig g) (hv: forall s, SV.is_empty (free _ g s)),

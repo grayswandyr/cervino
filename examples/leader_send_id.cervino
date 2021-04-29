@@ -1,0 +1,67 @@
+//Leader election cervino files
+//only one identifier is sent in a send operation
+//Safety verification does not terminate (Timeout)
+//Liveness verification does not terminate (Timeout)
+sort Node // nodes are conflated with their identifiers
+
+relation succ in Node * Node // successor in the ring
+relation lte in Node * Node // "less than or equal" on node identifiers
+relation toSend in Node * Node // toSend(x ,id): id is in x's mailbox
+relation elected in Node // set of elected nodes
+relation succ_btw in Node * Node * Node
+
+constant lmax in Node //node with maximal indentifiers
+
+relation succ_tc in Node * Node
+paths[succ, succ_tc, succ_btw]
+
+axiom ring {
+  G { 
+      (all x, y, z: Node | (succ(x, y) && succ(x, z)) => y = z) //succ is a partial function
+      (all x, y: Node | succ_tc(x, y)) 
+      } 
+      }
+
+axiom order { 
+  G { all i : Node | lte(i,i) //reflexivity
+      (all i1, i2: Node | (lte(i1, i2) && lte(i2, i1)) => i1 = i2) //antisymmetry
+      all i1, i2, i3: Node | ((lte(i1, i2) && lte(i2, i3)) => lte(i1,i3) ) //transitivity
+      all i1, i2: Node | lte(i1, i2) || lte(i2, i1) //total
+      all id: Node | lte(id, lmax) } } //maximal element
+
+axiom is_elected {
+  G (all x: Node | elected'(x) <=> (elected(x) || toSend'(x, x))) //A node declares itself elected if it receives its own identifier
+  }
+
+axiom init { // in the initial state...
+  all x, id: Node | !toSend(x, id) // empty mailboxes
+  all x: Node | !elected(x) } // no one is elected
+	
+event send [src: Node, msg: Node]
+modifies toSend, elected{
+  //precondition
+  (msg = src || toSend(src,msg))	
+
+  // postconditions
+  !toSend'(src, msg) 
+  {all dst:Node | succ(src,dst) => (toSend'(dst, msg) <=> (toSend(dst, msg) || lte(dst, msg)) ) } //msg transmitted to succ
+  
+  //modifies
+  {all n:Node, id:Node | ((src != n && !succ(src,n)) || id != msg) => (toSend'(n, id) <=> toSend(n, id)) } 	
+  }
+
+check Safety { G (all x,y: Node | (elected(x) && elected(y)) => x = y ) }
+using TFC
+[send, { all x, y: Node | ((src != x && !succ(src,x)) || y != msg) => (toSend(x, y) =>  (x != lmax && succ_btw(x, lmax, y))) }]
+
+
+check Liveness { F (some y: Node | elected(y)) } 
+  assuming {
+    (some y: Node | succ(lmax, y))
+    all src, msg: Node | //strong fairness assumption
+	      (F G (toSend(src, msg) || src = msg))=> G F {
+  		  {all dst:Node | succ(src,dst) => (toSend'(dst, msg) <=> (toSend(dst, msg) || lte(dst, msg) )) }
+  		  }
+  		  } 
+using TTC
+[succ, [x, Node], [i: Node], {toSend(x, i)}]

@@ -14,7 +14,7 @@ let ( +|| ) = or_
 
 let ( @=> ) = implies
 
-let between_axioms base_rel ({ rel_profile; _ } as btw) =
+let between_axioms base_rel tc ({ rel_profile; _ } as btw) =
   assert (not @@ List.is_empty rel_profile);
   let sort = List.hd rel_profile in
   let p1 = fresh_var "p1" sort in
@@ -69,12 +69,17 @@ let between_axioms base_rel ({ rel_profile; _ } as btw) =
     @=> app [ v1; v2; v2 ]
         *&& (all p3 @@ app [ v1; v3; v3 ] @=> app [ v1; v2; v3 ])
   in
-  and_ axioms relation_to_base
+  let relation_to_rt_closure =
+    always
+    @@ all_many [ p1; p2 ]
+    @@ iff (app [ v1; v2; v2 ]) (lit @@ pos_app 0 tc [ v1; v2 ])
+  in
+  axioms *&& relation_to_base *&& relation_to_rt_closure
 
 
 let make_between_axioms (closures : path list) =
-  let make_between_axiom { base; between; _ } =
-    match between with None -> [] | Some btw -> [ between_axioms base btw ]
+  let make_between_axiom { base; between; tc } =
+    match between with None -> [] | Some btw -> [ between_axioms base tc btw ]
   in
   List.flat_map make_between_axiom closures
 

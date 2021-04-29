@@ -1,0 +1,35 @@
+//GSet cervino file
+//Liveness verification terminates using TEA
+
+//sortes of set and of elements
+sort Set
+sort Element
+
+relation contains in Set*Element //represents elements added to a set
+
+axiom init { //at the initial state
+{all p:Set, e:Element | !contains(p,e)} //all sets are empty
+}
+
+event add[s: Set, added: Element] modifies contains at {(s,added)}{ //add an element to a set
+
+	//postcondition
+	contains'(s,added)
+	}
+
+event merge[s1,s2: Set] modifies contains{ //merge two sets
+
+	//postcondition
+	(all e:Element | contains'(s1,e) <=> (contains(s1,e) || contains(s2,e)))
+	(all s:Set, e:Element | s=s1 || (contains'(s,e) <=> contains(s,e)))
+	}
+
+check Liveness { all s1,s2:Set, e:Element | G ( contains(s1,e) => F (contains(s2,e) ) ) } 
+assuming {
+	//fairness on merge operation
+	all s1,s2:Set | G F {
+	(all e:Element | contains'(s1,e) <=> (contains(s1,e) || contains(s2,e)))
+	(all s:Set, e:Element | s=s1 || (contains'(s,e) <=> contains(s,e)))
+	}
+} 
+using TEA

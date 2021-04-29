@@ -1,0 +1,95 @@
+//Ticket protocol cervino file
+//Liveness verification fails using TEA
+
+//there is two sorts, set of process and set of tickets
+sort Process
+sort Ticket
+
+constant zero in Ticket //minimal ticket
+relation prev_ticket in Ticket*Ticket //defines the previous ticket
+relation prev_tc in Ticket*Ticket //transitive closure of prev_ticket
+relation inf in Ticket*Ticket //defines order on ticket
+
+relation holds in Process*Ticket //a process holds some ticket
+relation waiting in Process //process is waiting to enters critical
+relation critical in Process //process is in critical
+relation critical_ticket in Ticket //next ticket to enter critical
+relation current in Ticket //next ticket to be given to a waiting process
+
+paths[prev_ticket, prev_tc]
+
+axiom DefTicket {
+G{all i1,i2,i3:Ticket | { //defines prev on tickets
+	!prev_ticket(zero,i1)
+	(prev_ticket(i1,i3) && prev_ticket(i1,i2)) => i2 = i3
+	(prev_ticket(i1,i3) && prev_ticket(i2,i3)) => i2 = i1
+	prev_tc(zero,i1) && prev_tc(i1,zero)
+	}
+}
+}
+
+axiom order { //defines the order inf
+	G {
+	{all i1: Ticket | inf(zero,i1) }
+	{all i1,i2: Ticket | inf(i1,i2) || inf(i2,i1)}
+	{all i1,i2: Ticket | (inf(i1,i2) && inf(i2,i1)) => i1 = i2}
+	{all i1,i2,i3: Ticket | (inf(i1,i2) && inf(i2,i3)) => inf(i1,i3)}
+	{all i1,i2: Ticket | prev_ticket(i1,i2) => inf(i2,i1)}
+	}
+} 
+
+axiom init { //at the initial state
+	{all p:Process | !waiting(p) && !critical(p)} //no process is waiting and no process is in critical
+	{all i:Ticket, p:Process | !holds(p,i)} //no process holds any ticket
+	{all i:Ticket | current(i) <=> i = zero} //zero is the first ticket to be given
+	{all i:Ticket | critical_ticket(i) <=> i = zero} //zero is the first ticket to allow entering critical
+}
+
+event take_ticket[p:Process, t:Ticket] modifies current,  holds at {(p,t)}, waiting at {p}{//a process take the next ticket
+	!waiting(p)
+	!critical(p)
+	current(t)
+	
+	holds'(p,t)
+	waiting'(p)
+	{all i:Ticket | current'(i) <=> prev_ticket(i,t)}
+}
+
+event enter_critical[p:Process,t:Ticket] modifies critical at {p}, waiting at {p}{// a process holding the minimal ticket enters critical
+	holds(p,t)
+	critical_ticket(t)
+	
+	!waiting'(p)
+	critical'(p)
+}
+
+event exit_critical[p:Process,t:Ticket] modifies critical at {p}, holds at {(p,t)}, critical_ticket{// a process exit critical
+	critical(p)
+	holds(p,t)
+	
+	!critical'(p)
+	!holds'(p,t)
+	{all i:Ticket | prev_ticket(i,t) <=> critical_ticket'(i)}
+}
+
+check Liveness {all p : Process | G (waiting(p) => F critical(p))} 
+assuming {
+	//Strong Fairness enter critical
+	{all p:Process,t:Ticket | G F {
+	holds(p,t)
+	critical_ticket(t)
+	} => G F {
+	!waiting'(p)
+	critical'(p)}}
+	
+	//Strong Fairness exit critical
+	{all p:Process,t:Ticket | G F {
+	critical(p)
+	holds(p,t)
+	} => G F {
+	!critical'(p)
+	!holds'(p,t)
+	{all i:Ticket | prev_ticket(i,t) <=> critical_ticket'(i)}
+	}}
+}
+using TEA

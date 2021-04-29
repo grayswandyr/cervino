@@ -1,0 +1,39 @@
+//Notification protocol cervino file
+//Liveness verification terminates using TETTCA
+
+//set of nodes
+sort Node
+
+relation notified in Node //set of notified nodes
+relation succ in Node * Node //represents the successor in the ring
+relation succ_tc in Node * Node
+
+paths[succ, succ_tc] //succ_tc is the reflexive transitive closure of succ
+
+axiom ring {
+	G {(all x,y,z : Node | (succ(x,y) && succ(x,z)) => y=z) //successor is a partial function
+	(all x,y,z : Node | (succ(x,z) && succ(y,z)) => y=x) //successor is injective
+	(all x,y : Node | succ_tc(x,y))} //any node is reachable from any other node
+}
+
+axiom init {  //at the initial state
+	(some x : Node | (all y: Node | notified(y) <=> x=y )) //there is a unique notified node
+}
+
+event skip[] {} //nothing happens
+
+event notify[sender: Node, receiver: Node] modifies notified at {receiver} {
+	//guard
+	notified(sender)
+	succ(sender, receiver)
+	
+	//postconditions
+	notified'(receiver)
+}
+
+check Liveness { (all y: Node | F ( notified(y) ) ) } 
+assuming {
+	//weak fairness conditions
+	(all sender, receiver : Node | F G (notified(sender) && succ(sender, receiver)) => G F {notified'(receiver)})
+	} 
+using TTC[succ,[x,Node],[],{notified(x)}]

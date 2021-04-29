@@ -356,3 +356,160 @@ Qed.
 
 End VarSet.
 
+Require Import Coq.Logic.FunctionalExtensionality.
+
+Section VSMap.
+  Context {Ts: Type}.
+  Context `{srcSig: Sig (Ts:=Ts)}.
+  Context `{dstSig: Sig (Ts:=Ts)}.
+  Variable f : forall s, variable (Sig:=srcSig) s -> variable (Sig:=dstSig) s.
+  
+  Definition vsMap e: VarSet dstSig := fun s => List.map (f s) (e s).
+  
+  Lemma vsSubset_map: forall {e1 e2}, vsSubset srcSig e1 e2 -> vsSubset dstSig (vsMap e1) (vsMap e2).
+  Proof.
+    unfold vsMap; repeat intro.
+    apply List.in_map_iff in H0.
+    destruct H0 as [x [h1 h2]]; subst v.
+    apply List.in_map_iff.
+    exists x; split; auto.
+    apply H in h2; auto.
+  Qed.
+
+  Lemma vsMap_In_intro: forall {s v e}, vsIn srcSig v e -> vsIn dstSig (f s v) (vsMap e).
+  Proof.
+    unfold vsIn, vsMap; intros.
+    apply List.in_map_iff.
+    exists v; split; auto.
+  Qed.
+  
+  Lemma vsUnion_map_l: forall {e e1 e2},
+    vsSubset _ (vsUnion srcSig e1 e2) e -> vsSubset _ (vsUnion dstSig (vsMap e1) (vsMap e2)) (vsMap e) .
+  Proof.
+    repeat intro.
+    apply (vsUnion_elim dstSig) in H0.
+    destruct H0; apply List.in_map_iff in H0; destruct H0 as [x [h1 h2]]; subst v;
+      apply List.in_map_iff; exists x; split; auto; apply H.
+    now apply vsUnion_l.
+    now apply vsUnion_r.
+  Qed.
+  
+  Lemma vsUnion_map_r: forall {e e1 e2},
+    vsSubset _ e (vsUnion srcSig e1 e2) -> vsSubset _ (vsMap e) (vsUnion dstSig (vsMap e1) (vsMap e2)).
+  Proof.
+    repeat intro.
+    apply List.in_map_iff in H0.
+    destruct H0 as [x [h1 h2]]; subst v.
+    apply H in h2.
+    apply vsUnion_elim in h2.
+    destruct h2; [apply SV.InUnion_l | apply SV.InUnion_r]; apply List.in_map_iff; exists x; auto.
+  Qed.
+  
+  Definition isInj {T1 T2} (f: T1 -> T2) := forall x1 x2, f x1 = f x2 -> x1 = x2.
+  
+  Lemma vsMap_add: forall s (v: variable s) (hf: forall s, isInj (f s)) e, 
+    vsAdd dstSig (f s v) (vsMap e) = vsMap (vsAdd srcSig v e).
+  Proof.
+    intros.
+    apply functional_extensionality_dep; intros s'.
+    unfold vsMap, vsAdd; simpl.
+    destruct (eq_dec s s'); auto.
+    subst s'.
+    match goal with |- match ?cnd with _=>_ end=_ => destruct cnd end.
+    rewrite (proof_irrelevance _ _ eq_refl).
+    generalize (hf s); generalize (f s); intros g hg; clear hf f.
+    generalize (e s); clear e; intro l.
+    induction l; simpl; intros; auto.
+    destruct (eq_dec v a).
+    subst a.
+    match goal with |- match ?cnd with _=>_ end=_ => destruct cnd; tauto end.
+    match goal with |- match ?cnd with _=>_ end=_ => destruct cnd end.
+    apply hg in e; tauto.
+    simpl; rewrite <-IHl; clear IHl.
+    reflexivity.
+    tauto.
+    match goal with |- match ?cnd with _=>_ end=_ => destruct cnd; tauto end.
+  Qed.
+
+  Lemma vsMap_In_elim: forall  {s v e},
+    (forall s, isInj (f s)) -> vsIn dstSig (f s v) (vsMap e) -> vsIn srcSig v e.
+  Proof.
+    unfold vsIn, vsMap; intros.
+    apply List.in_map_iff in H0.
+    destruct H0 as [x [h1 h2]].
+    apply H in h1; subst x; auto.
+  Qed.
+
+  Lemma vsMap_In_ran: forall {s v e},
+    vsIn dstSig v (vsMap e) -> exists v', v = f s v'.
+  Proof.
+    unfold vsIn, vsMap; intros.
+    apply List.in_map_iff in H.
+    destruct H as [x [h1 h2]].
+    exists x; symmetry; auto.
+  Qed.
+
+  Lemma vsMap_Union: forall {e1 e2}, (forall s, isInj (f s)) -> forall s' (v': variable (Sig:=dstSig) s'),
+    vsIn _ v' (vsMap (vsUnion srcSig e1 e2)) <-> vsIn _ v' (vsUnion dstSig (vsMap e1) (vsMap e2)).
+  Proof.
+    intros.
+    split; intro.
+    destruct (vsMap_In_ran H0) as [v h]; subst v'.
+    apply (vsMap_In_elim) in H0; auto.
+    apply vsUnion_elim in H0.
+    destruct H0; [apply vsUnion_l | apply vsUnion_r]; apply vsMap_In_intro; auto.
+
+    apply vsUnion_elim in H0; destruct H0.
+    destruct (vsMap_In_ran H0) as [v h]; subst v'.
+    apply vsMap_In_elim in H0; auto.
+    apply vsMap_In_intro; apply vsUnion_l; apply H0.
+
+    destruct (vsMap_In_ran H0) as [v h]; subst v'.
+    apply vsMap_In_elim in H0; auto.
+    apply vsMap_In_intro; apply vsUnion_r; apply H0.
+  Qed.
+
+  Lemma vsMap_Inter: forall {e1 e2}, (forall s, isInj (f s)) -> forall s' (v': variable (Sig:=dstSig) s'),
+    vsIn _ v' (vsMap (vsInter srcSig e1 e2)) <-> vsIn _ v' (vsInter dstSig (vsMap e1) (vsMap e2)).
+  Proof.
+    intros.
+    split; intro.
+    destruct (vsMap_In_ran H0) as [v h]; subst v'.
+    apply (vsMap_In_elim) in H0; auto.
+    apply vsInter_elim in H0; destruct H0.
+    apply vsInter_intro; apply vsMap_In_intro; auto.
+
+    apply vsInter_elim in H0; destruct H0.
+    destruct (vsMap_In_ran H0) as [v h]; subst v'.
+    apply vsMap_In_intro.
+    apply (vsMap_In_elim H) in H0.
+    apply (vsMap_In_elim H) in H1.
+    apply vsInter_intro; auto.
+  Qed.
+  
+  Lemma vsMap_Remove: forall {s v} {e}, (forall s, isInj (f s)) -> forall s' (v': variable (Sig:=dstSig) s'),
+    vsIn _ v' (vsMap (vsRemove srcSig v e)) <-> vsIn _ v' (vsRemove dstSig (f s v) (vsMap e)).
+  Proof.
+    intros; split; intro.
+    destruct (vsMap_In_ran H0) as [w h]; subst v'.
+    apply (vsMap_In_elim) in H0; auto.
+    apply vsInRemove_elim in H0.
+    apply vsInRemove_intro; auto.
+    apply vsMap_In_intro; tauto.
+    intro; apply proj2 in H0; apply H0; clear H0.
+    inversion H1; clear H1; intros; subst s'.
+    apply inj_pair2_eq_dec in H3; try apply eq_dec.
+    apply (H s) in H3; subst w; constructor.
+    
+    apply vsInRemove_elim in H0; destruct H0.
+    destruct (vsMap_In_ran H0) as [w h]; subst v'.
+    apply (vsMap_In_elim) in H0; auto.
+    apply vsMap_In_intro; auto.
+    apply vsInRemove_intro; auto.
+    intro; apply H1; clear H1.    
+    inversion H2; clear H2; intros; subst s'; auto.
+    constructor.
+  Qed.
+
+End VSMap.
+
