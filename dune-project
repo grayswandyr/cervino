@@ -33,9 +33,6 @@
   sexplib
   ;; Dev dependencies
   (bisect_ppx (and :dev (>= 2.5.0)))
-  (utop :dev)
-  (merlin :dev)
   (ocamlformat :dev)
-  (ocaml-lsp-server :dev)
   )
  (synopsis "Proof of concept for complete verification of models expressed in a fragment of MSFOLTL"))
