@@ -1,8 +1,9 @@
 # Protocol from the paper
 
-All models for the protocols presented in the paper are in the CAV2021 folder. Three other specifications are provided (see the bottom of the file).
+All models for the protocols presented in the paper are in the CAV2021 folder. Three other specifications are provided (see the bottom of this file).
 
 ## CAV models
+
 ### GSet
 Model in gset.cervino. G-Set consists in a set a sets containing some elements, there is two possible events :
 	-adding an element to a set
@@ -60,13 +61,13 @@ Model in mailbox_token.cervino. The protocol features a ring-shaped network wher
 We verify that the token is held by at most one node using TEA.
 
 
-## Other Models
+## Additional Models
 
 ### Leader election
-leader_send_id.cervino is the cervino file for another version of the leader election protocol where only one id is sent by the send operation, verification on this version of the protocol results on a timeout.
+leader_send_id.cervino is the cervino file for another version of the leader election protocol where only one id is sent by the send operation at a time. The verifications on this version of the protocol are longer than others (still less than 1 min. on our setup) and more memory is needed (a VM with less than 6 GB RAM crashes, in our tests).
 
 ### Ticket protocol
-Model in ticket.cervino. The tiket protocol taken from [1] features a set a processes waiting to enters a critical section. The processes than can take a ticket and the process with the lowest ticket can enters the critical section. There is three possible events :
+Model in ticket.cervino. The tiket protocol taken from [1] features a set a processes waiting to enters a critical section. The processes than can take a ticket and the process with the lowest ticket can enters the critical section. There are three possible events:
 	-some process take a ticket
 	-the process with the lowest ticket enters critical section
 	-the process in critical section exit it

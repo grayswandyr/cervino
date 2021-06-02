@@ -1,0 +1,40 @@
+Vagrant.configure("2") do |config|
+  # The most common configuration options are documented and commented below.
+  # For a complete reference, please see the online documentation at
+  # https://docs.vagrantup.com.
+
+  # Every Vagrant development environment requires a box. You can search for
+  # boxes at https://atlas.hashicorp.com/search.
+  config.vm.box = "ubuntu/focal64"
+
+  config.ssh.insert_key = false
+
+  config.vm.define "CAV2021_PEYRAS_ET_AL"
+
+  # Share an additional folder to the guest VM. The first argument is
+  # the path on the host to the actual folder. The second argument is
+  # the path on the guest to mount the folder. And the optional third
+  # argument is a set of non-required options.
+  # config.vm.synced_folder "../data", "/vagrant_data"
+
+ config.vm.provider "virtualbox" do |vb|
+
+   vb.gui = true   
+   vb.memory = 6144
+   vb.cpus = "2"
+   vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+
+ end
+
+  config.vm.provision :shell, privileged:true, path: "init.sh"
+
+  config.vm.provision :shell, privileged:false, path: "install-system.sh"
+  
+  # always => rerun at every `vagrant up` or `reload` 
+  # (hence must clean previous runs, if any, before new actions)
+  config.vm.provision :shell, privileged:false, run:"always", path: "install-artifact.sh"
+
+  config.vm.provision "shell", inline: <<-SHELL
+    shutdown -r now
+  SHELL
+end

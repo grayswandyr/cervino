@@ -1,0 +1,3 @@
+cd ~/ARTIFACT
+
+mkdir NUXMV

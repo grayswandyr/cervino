@@ -1,0 +1,84 @@
+# ARTIFACT
+
+Sound Verification Procedures for Temporal Properties of Infinite-State Systems
+Quentin Peyras, Jean-Paul Bodeveix, Julien Brunel and David Chemouil
+CAV 2021
+
+************************************************************************************
+* IMPORTANT: a tool must be downloaded for the evaluation to be doable, see below! *
+************************************************************************************
+
+## EVALUATED PARTS
+
+There are two parts in the artifact: some Coq files and the Cervino program described in the paper.
+
+### Coq files
+
+They are located in the `COQ` directory. The `coqide` program is installed to explore them. Some information on the formalization can be found in `COQ/README`.
+
+### Cervino program
+
+The program name is `cervino.exe`, located in the `CERVINO` directory and already added to the PATH.
+
+`cervino.exe` takes a Cervino model (including a property to check) as input and outputs an Electrum model (see below). Then, provided the user activates the `-s` option (detailed below), Cervino can run the Electrum Analyzer on the output file; three outcomes are possible:
+
+- the property is valid
+- the tool cannot conclude
+- the generated problem is too complex and the tool fails (e.g. due to lack of memory) or does not answer for a long time
+
+To address the last case, notice the `timeout` utility is installed, which can kill a program after a certain amount of time.
+
+## NON EVALUATED PARTS
+
+As explained above, an Electrum model must be processed by the Electrum Analyzer, a free/open-source tool already present in the `ELECTRUM` directory (for convenience, an alias `electrum` is available). The Electrum Analyzer *is not* part of the evaluation. Notice also that the Electrum Analyzer is only used in command-line mode in our work, although it also features a graphical interface.
+
+*************
+* IMPORTANT * 
+*************
+
+For the benchmarks described in our paper to be run, the Electrum Analyzer must call the `nuXmv` model checker. However, the license of `nuXmv` does not allow us to ship it ourselves. The user is kindly asked to retrieve it from the `nuXmv` web page:
+
+1. Launch Firefox
+2. Reach `https://nuxmv.fbk.eu`
+3. Go the `Download` section (click in the left pane)
+4. If you agree to the license, download the tool and put the nuXmv binary into the `~/ARTIFACT/NUXMV` directory under the name `nuXmv` (please respect this case and spelling exactly!)
+
+## RUNNING CERVINO 
+
+The simplified syntax of a command is:
+
+       cervino.exe [OPTIONS] PROPERTY CERVINO_FILE [OUTPUT_FILE]
+
+with arguments:
+
+       CERVINO_FILE (required)
+           Input (Cervino) file.
+
+       PROPERTY (required)
+           Name of the property to check.
+
+       OUTPUT_FILE
+           Name of the file to generate.
+
+Among OPTIONS, the following may be of interest:
+
+       -s, --solve
+           If present, let Cervino call the Electrum Analyzer solver (with the nuXmv model checker) on the generated Electrum file and report its result. The Electrum Analyzer and nuXmv must be properly installed. Notice also that, if this option is used, it's not necessary to provide the OUTPUT_FILE argument mentioned above (unless one wishes to read it later).
+
+Other command-line options are detailed in `CERVINO/README.md`; most of them are experimental and *not* meant to be used.
+
+## BENCHMARKS
+
+Benchmarks are situated in the `CERVINO/examples` directory. All benchmarks cited in the CAV paper can be run using the `cav-bench.sh` script in the same directory.
+
+We have also added further models:
+
+- notification.cervino: a simple system with a valid liveness property
+- ticket.cervino: a system with a liveness property for which Cervino cannot conclude
+- leader_send_id.cervino: a more realistic version of the leader election protocol
+
+The last 3 models are not launched by the script mentioned above.
+
+## CERVINO SYNTAX (INCL. DIFFERENCES WITH THE PAPER)
+
+The Cervino syntax is described in more detail in `CERVINO/README.md`. A grammar is also provided in `CERVINO/grammar/grammar.html`.

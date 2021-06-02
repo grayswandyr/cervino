@@ -1,0 +1,1 @@
+cp -r /vagrant/artifact/_root ~/ARTIFACT
