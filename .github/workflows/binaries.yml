@@ -18,8 +18,8 @@ jobs:
             ocaml-version: 4.11.0
             artifact-name: cervino-win32-x86_64
     steps:
-    - uses: actions/checkout@master
-    - uses: avsm/setup-ocaml@v1
+    - uses: actions/checkout@v2
+    - uses: avsm/setup-ocaml@v2
       with:
         ocaml-version: ${{ matrix.ocaml-version }}
     - run: opam pin add cervino -n .
