@@ -25,10 +25,7 @@ depends: [
   "ppx_sexp_conv"
   "sexplib"
   "bisect_ppx" {dev & >= "2.5.0"}
-  "utop" {dev}
-  "merlin" {dev}
   "ocamlformat" {dev}
-  "ocaml-lsp-server" {dev}
   "odoc" {with-doc}
 ]
 build: [
