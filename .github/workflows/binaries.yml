@@ -9,19 +9,19 @@ jobs:
         operating-system: [macos-latest, ubuntu-latest, windows-latest]
         include:
           - operating-system: ubuntu-latest
-            ocaml-version: 4.11.0
+            ocaml-compiler: 4.11.0
             artifact-name: cervino-linux-x86_64
           - operating-system: macos-latest
-            ocaml-version: 4.11.0
+            ocaml-compiler: 4.11.0
             artifact-name: cervino-macos-x86_64
           - operating-system: windows-latest
-            ocaml-version: 4.11.0
+            ocaml-compiler: 4.11.0
             artifact-name: cervino-win32-x86_64
     steps:
     - uses: actions/checkout@v2
     - uses: avsm/setup-ocaml@v2
       with:
-        ocaml-version: ${{ matrix.ocaml-version }}
+        ocaml-version: ${{ matrix.ocaml-compiler }}
     - run: opam pin add cervino -n .
     - name: Packages
       run: opam depext -yt cervino
@@ -29,7 +29,7 @@ jobs:
       run: opam install -t . --deps-only 
     - name: Build
       run: opam exec -- dune build @install
-    - uses: actions/upload-artifact@v1
+    - uses: actions/upload-artifact@v2
       with:
         name: ${{ matrix.artifact-name }}
         path: cervino.exe
