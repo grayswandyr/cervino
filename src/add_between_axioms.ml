@@ -26,7 +26,6 @@ let between_axioms base_rel tc ({ rel_profile; _ } as btw) =
   let v3 = var p3 in
   let v4 = var p4 in
   let app terms = lit @@ pos_app 0 btw terms in
-  let rotate = app [ v1; v2; v3 ] @=> app [ v2; v3; v1 ] in
   let transitivity =
     (app [ v4; v1; v2 ] *&& app [ v4; v2; v3 ]) @=> app [ v4; v1; v3 ]
   in
@@ -52,8 +51,7 @@ let between_axioms base_rel tc ({ rel_profile; _ } as btw) =
     always
     @@ all_many [ p1; p2; p3; p4 ]
     @@ conj
-         [ rotate;
-           transitivity;
+         [ transitivity;
            antisymmetry;
            partial_totality;
            partial_reflexivity;
