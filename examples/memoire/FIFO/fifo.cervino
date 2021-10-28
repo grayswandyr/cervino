@@ -1,0 +1,84 @@
+//FIFO cervino file
+//Liveness terminates using TTC
+
+//sortes of processes and index
+sort Process
+sort index
+
+constant zero in index //first index of the list
+constant ord_p in Process 
+//some ordinary process for cheking that any ordinary process entering the list eventually exit it
+
+relation prev_index in index*index //previous index in the list
+relation prev_tc in index*index //transitive closure of prev_index
+
+relation list in index*Process //list of processes
+relation is_in_list in Process //set of processes in the list
+relation last_list in index //last index of the list
+
+paths[prev_index, prev_tc]
+
+axiom DefIndex {
+G{all i1,i2,i3:index | {
+	!prev_index(zero,i1) //zero is the first index
+	(prev_index(i1,i3) && prev_index(i1,i2)) => i2 = i3 //prev is a partial function
+	(prev_index(i1,i3) && prev_index(i2,i3)) => i2 = i1 //prev is injective
+	prev_tc(i1,zero) //decreasing implies reaching zero
+	}
+}
+}
+
+axiom DefList { //list : index-> Process is a partial function
+	G (all i:index, p1,p2 : Process | (list(i,p1) && list(i,p2)) => p1 = p2 ) 
+}
+
+axiom init { //at the initial state
+	{all p:Process | !is_in_list(p)} //list is empty
+	{all i:index, p:Process | !list(i,p)} //list empty on all index
+	{all i:index | last_list(i) <=> i = zero} //zero is the minimal empty index of the list
+}
+
+event enter_list[p:Process, last:index] modifies last_list, list at {(last,p)}, is_in_list at {p}{ 
+	//some process enters the list
+	last_list(last)
+	!is_in_list(p)
+	
+	list'(last, p)
+	is_in_list'(p)
+	{all i:index | last_list'(i) <=> prev_index(i,last)} //incrementation of last_list
+}
+
+event exit_list[] modifies last_list, list, is_in_list { 
+	//the head of the list exit the list
+	
+	//only the head of the list exit the list	
+	{all p: Process | is_in_list'(p) <=> (is_in_list(p) && !list(zero,p))} 
+	
+	//decrementation of last_list
+	{all i,last:index | last_list(last) => (last_list'(i) <=> prev_index(last,i))} 
+	
+	//updating the list by shifting the index
+	{all i,i2:index, p:Process | prev_index(i,i2) => (list(i,p) <=> list'(i2,p))} 
+	
+}
+
+check FailLiveness {all i:index | G (list(i,ord_p) => F !is_in_list(ord_p))} 
+//if a process (represented by ord_p) enters the list then it eventually exit the list
+assuming {
+//strong fairness
+(all p:Process | G F ( {all p: Process | is_in_list'(p) <=> (is_in_list(p) && !list(zero,p))} 
+&& {all i,last:index | last_list(last) => (last_list'(i) <=> prev_index(last,i))} 
+&& {all i,i2:index, p:Process | prev_index(i,i2) => (list(i,p) <=> list'(i2,p))}) )
+}
+using TEA
+
+check Liveness {all i:index | G (list(i,ord_p) => F !is_in_list(ord_p))} 
+//if a process (represented by ord_p) enters the list then it eventually exit the list
+assuming {
+//strong fairness
+(all p:Process | G F ( {all p: Process | is_in_list'(p) <=> (is_in_list(p) && !list(zero,p))} 
+&& {all i,last:index | last_list(last) 
+=> (last_list'(i) <=> prev_index(last,i))} 
+&& {all i,i2:index, p:Process | prev_index(i,i2) => (list(i,p) <=> list'(i2,p))}) )
+}
+using TTC[prev_index,[i,index],[m:Process],{list(i,m)}]

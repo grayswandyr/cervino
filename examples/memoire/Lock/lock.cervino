@@ -1,0 +1,106 @@
+//Lock cervino file
+//Safety verification terminates using TEA
+
+//there is some clients and one server
+sort Client
+sort Server
+
+constant server in Server //defines the server
+
+relation List in Client //set of clients waiting or the lock
+relation succ in Client * Client //represent the ordre of clients waiting for the lock
+relation pending in Client * Server //list of clients that the server thinks they hold the lock
+relation Lock in Client //list of client thinking they holds the lock
+relation ack_lock in Server //represent if the server thinks that the lock is free
+
+
+relation last in Client //last element of the list
+relation first in Client //first element of the list
+relation prevs in Client * Client //total order on the list allowing to defines succ
+
+axiom DefList { //defines the list of request to the server
+G{all y,x:Client | (List(y) && List(x)) => {
+	(first(y) && List(x)) => prevs(y,x)
+	last(y) => !succ(y,x)
+	last(y) => (prevs(y,x) => x=y)
+	prevs(y,x) || prevs(x,y)
+	(prevs(y,x) && prevs(x,y)) => x=y
+	succ(y,x) => {all z:Client | List(z) => (prevs(y,x) && (x != y) && ((prevs(z,x) && x != z)=> prevs(z,y)))}}}
+	}
+
+axiom init { //at the initial state
+	{all p:Client | !Lock(p)} //no client holds the lock
+	{all p:Client | !last(p)} //no client is the last element of the waiting list
+	{all p:Client | !first(p)} //no client is the last element of the waiting list
+	{all p:Client | !List(p)} //no client is in the waiting list
+	{all p:Client | !pending(p,server)} //no request from a client is pending
+	ack_lock(server) //the server knows the lock is free
+}
+
+event skip {} //nothing happens
+
+//ask for the lock when there is other clients waiting for the lock
+event ask_lock_some_list[asking: Client, last_p: Client] 
+modifies List at {asking}, last at {(asking),(last_p)}, succ at {(last_p,asking)}{
+	//guard		
+	!List(asking)
+	last(last_p)
+
+	//postcondition
+	List'(asking)
+	!last'(last_p)
+	last'(asking)
+	succ'(last_p, asking)
+	}
+
+//ask for the lock when no other client is waiting for the lock
+event ask_lock_no_list[asking: Client] 
+modifies List at {asking}, last at {asking}, first at {asking}{
+	//guard	
+	!List(asking)
+	{all p: Client | !last(p)}
+	
+	//postcondition
+	List'(asking)
+	first'(asking)
+	last'(asking)	
+	}
+
+//the server give the lock to the first client of the list
+event give_lock[receiver: Client] 
+modifies ack_lock at {server}, List at {receiver}, Lock at {receiver}, first, pending at {(receiver,server)}{
+	//guard	
+	ack_lock(server)
+	first(receiver)
+	
+	//postcondition
+	!ack_lock'(server)	
+	!first'(receiver)
+	!List'(receiver)
+	Lock'(receiver)
+	pending'(receiver,server)
+	{all p:Client | first'(p) <=> succ(receiver,p)}
+	}
+
+
+//if the client holding the lock has notified the server that the lock is freed the server considers the lock free
+event receive_lock modifies ack_lock at {server}{
+	//guard	
+	{all p:Client | !pending(p, server)}
+
+	//postcondition
+	ack_lock'(server)
+	
+	}
+
+//releases the lock
+event release_lock[releaser: Client] modifies Lock at {releaser}, pending at {(releaser, server)}  {
+	//guard	
+	Lock(releaser)
+
+	//postcondition
+	!Lock'(releaser)
+	!pending'(releaser, server)
+	}
+
+check Safety {  (all p1,p2:Client | G( (Lock(p1) && Lock(p2)) => p1 = p2) ) } using TEA

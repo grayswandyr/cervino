@@ -1,0 +1,120 @@
+sort Proc
+
+relation undefined in Proc
+relation dirty in Proc
+relation sharedClean in Proc
+relation sharedDirty in Proc
+relation validExclusive in Proc
+
+axiom uniqueState {
+	G { all p : Proc | {
+	
+	!(undefined(p) && dirty(p))
+	!(undefined(p) && sharedClean(p))
+	!(undefined(p) && sharedDirty(p))
+	!(undefined(p) && validExclusive(p))
+	
+	!(dirty(p) && sharedClean(p))
+	!(dirty(p) && sharedDirty(p))
+	!(dirty(p) && validExclusive(p))
+	
+	!(sharedClean(p) && sharedDirty(p))
+	!(sharedClean(p) && validExclusive(p))
+	
+	!(sharedDirty(p) && validExclusive(p))
+	}}
+}
+
+axiom init {
+	{all p : Proc | undefined(p)}
+}
+
+event readNoBus[p: Proc] {
+	//guard
+	( validExclusive(p) || sharedClean(p) || dirty (p) || sharedDirty(p))
+}
+
+event readBusRdfromMem[p: Proc] 
+modifies sharedDirty, dirty, validExclusive, sharedClean, undefined at {p} {
+	//guard
+	(all p2 : Proc | undefined(p2))
+	
+	//postconditions
+	validExclusive'(p)
+	{all p2 : Proc | p2 != p => {
+		validExclusive(p2) => sharedClean'(p2)
+		sharedClean(p2) => sharedClean'(p2)
+		dirty(p2) => sharedDirty'(p2)
+		sharedDirty(p2) => sharedDirty'(p2)
+		}
+	}
+}
+
+event readBusRdfromCache[p: Proc] 
+modifies sharedDirty, dirty, validExclusive, sharedClean, undefined at {p} {
+	//guard
+	undefined(p)
+	
+	//postconditions
+	sharedClean'(p)
+	{all p2 : Proc | p2 != p => {
+		validExclusive(p2) => sharedClean'(p2)
+		sharedClean(p2) => sharedClean'(p2)
+		dirty(p2) => sharedDirty'(p2)
+		sharedDirty(p2) => sharedDirty'(p2)
+		}}}
+
+event writeNoBus[p: Proc] {
+	//guard
+	( validExclusive(p) || dirty (p)) }
+
+event writeBusRdXfromMem[p: Proc] 
+modifies sharedDirty, dirty, validExclusive, sharedClean, undefined at {p} {
+	//guard
+	{all p2 : Proc | undefined(p2)}
+	
+	//postconditions
+	dirty'(p)
+	{all p2 : Proc | p2 != p => {
+		validExclusive(p2) => sharedClean'(p2)
+		sharedClean(p2) => sharedClean'(p2)
+		dirty(p2) => sharedClean'(p2)
+		sharedDirty(p2) => sharedClean'(p2)
+		}}}
+
+event writeBusRdX[p: Proc] 
+modifies sharedDirty, dirty, validExclusive, sharedClean, undefined at {p} {
+	//guard
+	undefined(p)
+	
+	//postconditions
+	sharedDirty'(p)
+	{all p2 : Proc | p2 != p => {
+		validExclusive(p2) => sharedClean'(p2)
+		sharedClean(p2) => sharedClean'(p2)
+		dirty(p2) => sharedClean'(p2)
+		sharedDirty(p2) => sharedClean'(p2)
+		}
+	}
+}
+
+event writeBusUpg[p: Proc] 
+modifies sharedDirty, dirty, validExclusive, sharedClean {
+	//guard
+	(sharedClean(p) || sharedDirty(p))
+	
+	//postconditions
+	sharedDirty'(p)
+	{all p2 : Proc | p2 != p => {
+		validExclusive(p2) => sharedClean'(p2)
+		sharedClean(p2) => sharedClean'(p2)
+		dirty(p2) => sharedClean'(p2)
+		sharedDirty(p2) => sharedClean'(p2)
+		}
+	}
+}
+
+event skip[] {}
+
+check Safety {  all p1, p2 : Proc | G ((dirty(p1) && dirty(p2)) => (p1 = p2) ) } 
+using TEA

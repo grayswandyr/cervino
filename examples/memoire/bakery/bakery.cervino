@@ -1,0 +1,100 @@
+sort Process
+sort Ticket
+
+relation lte in Process * Process // "less than or equal" on Process identifiers
+relation inf in Ticket * Ticket
+relation has_ticket in Process * Ticket
+relation main in Process
+relation entering in Process
+relation for_loop in Process
+relation loop_label in Process * Process //used for labelling processes visited during a loop
+relation critical in Process
+relation current in Ticket
+
+constant zero in Ticket
+
+axiom order { //axioms for defining a total order on process
+  G { all i : Process | lte(i,i) //reflexivity
+      (all i1, i2: Process | (lte(i1, i2) && lte(i2, i1)) => i1 = i2) //antisymmetry
+      all i1, i2, i3: Process | ((lte(i1, i2) && lte(i2, i3)) => lte(i1,i3) ) //transitivity
+      all i1, i2: Process | lte(i1, i2) || lte(i2, i1) //total
+	}}
+	
+axiom orderTicket { //axioms for defining a total order on tickets
+  G { all i : Ticket | inf(i,i) //reflexivity
+      (all i1, i2: Ticket | (inf(i1, i2) && inf(i2, i1)) => i1 = i2) //antisymmetry
+      all i1, i2, i3: Ticket | ((inf(i1, i2) && inf(i2, i3)) => inf(i1,i3) ) //transitivity
+      all i1, i2: Ticket | inf(i1, i2) || inf(i2, i1) //total
+	}}
+
+axiom init { //at the initial state
+  (all p: Process | main(p) && !entering(p) && !for_loop(p) && !critical(p)) //all processes are in the main loop
+  (all p1,p2: Process | !loop_label(p1,p2)) 
+   }
+	
+event take_ticket[p: Process, t: Ticket] //a process takes a ticket
+modifies entering at {p}, main at {p}, has_ticket at {(p,t), (p,zero)} {
+	// preconditions
+	main(p)
+	current(t)
+
+	// postconditions
+	!main'(p)
+	!has_ticket'(p,zero)
+	entering'(p)
+	has_ticket'(p,t)
+	}
+
+event enter[p: Process] //a process enter the loop
+modifies entering at {p}, for_loop at {p}{
+	// preconditions
+	entering(p)
+
+	// postconditions
+	!entering'(p)
+	for_loop'(p)
+	}
+
+event loop[p: Process, p2: Process] 
+//a process executes a loop and compares its ticket with an other process
+modifies loop_label at {(p,p2)}{
+	// preconditions
+	for_loop(p)
+	!entering(p2)
+	(has_ticket(p2,zero) || (all t1, t2 : Ticket | (has_ticket(p,t1) && has_ticket(p2,t2)) 
+	=> ((inf(t1,t2) && t1 != t2) || (t1 = t2 && lte(p,p2)) ) ) )
+
+	// postconditions
+	loop_label'(p,p2)
+	}
+
+event enter_crit[p: Process] //a process enters critical section
+modifies loop_label, critical at {p}, for_loop at {p}{
+	// preconditions
+	for_loop(p)
+	{all p2 : Process | loop_label(p,p2)}
+
+	// postconditions
+	{all p2 : Process | !loop_label'(p,p2)}
+	{all p1,p2 : Process | p != p1 => (loop_label'(p1,p2) <=> loop_label(p1,p2))}
+	!for_loop'(p)
+	critical'(p)
+	}
+
+event exit_crit[p: Process] //a process exits critical section
+modifies critical at {p}, main at {p}, has_ticket{
+	// preconditions
+	critical(p)
+
+	// postconditions
+	{all t: Ticket | has_ticket'(p, t) <=> t = zero }
+	{all p2: Process, t: Ticket | p2 != p => (has_ticket'(p2, t) <=> has_ticket(p2, t)) }
+	!critical'(p)
+	main'(p)
+	}
+	
+event skip[]{}
+
+check Safety { //at most one process in critical section
+ all p1,p2: Process | G ( (critical(p1) && critical(p2)) => p1 = p2 ) }
+using TEA

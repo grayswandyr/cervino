@@ -1,0 +1,147 @@
+sort Coord
+sort Participant
+
+constant Coordinator in Coord
+
+relation queryphase in Coord
+relation query in Participant
+relation prepare in Participant
+relation abort in Participant
+relation commit in Participant
+relation waiting in Participant
+relation preparing in Coord*Participant
+relation aborting in Coord
+relation commitphase in Coord
+relation waitingphase in Coord
+
+axiom init { //at the init state
+	waitingphase(Coordinator) //Coordinator is waiting
+	!queryphase(Coordinator)
+	!aborting(Coordinator)
+	!commitphase(Coordinator)
+	{all p : Participant | 
+		waiting(p)
+		!query(p)
+		!prepare(p)
+		!abort(p)
+		!commit(p)
+		!preparing(Coordinator,p)} //all participants are waiting
+}
+
+event querying[p: Participant] modifies query at {p}, waiting at {p}{ 
+	//a participant initiates a query
+	//guard
+	waiting(p)
+	
+	//postconditions
+	query'(p)
+	!waiting'(p)
+}
+
+event query_coord[p : Participant] modifies queryphase, waitingphase{ 
+	//the coordinator receives a query
+	//guard
+	query(p)
+	waitingphase(Coordinator) 
+	
+	//postconditions
+	queryphase'(Coordinator)
+	!waitingphase'(Coordinator)
+}
+
+event prepares[p: Participant] modifies query at {p}, waiting at {p}, prepare at {p}{ 
+	//a participant prepares for the commit
+	//guard
+	(query(p) || waiting(p))
+	queryphase(Coordinator)
+	
+	//postconditions
+	!query'(p)
+	!waiting'(p)
+	prepare'(p)
+}
+
+event aborts[p: Participant] modifies waiting at {p}, abort at {p}{ 
+	//a participant asks for aborting the commit
+	//guard
+	waiting(p)
+	queryphase(Coordinator)
+	
+	//postconditions
+	!waiting'(p)
+	abort'(p)
+}
+
+event send_p[p: Participant] modifies preparing at {(Coordinator, p)}{ 
+	//the coordinator receives a confirmation message from a participant
+	//guard
+	prepare(p)
+	queryphase(Coordinator)
+	
+	//postconditions
+	preparing'(Coordinator, p)
+}
+
+event send_a[p: Participant] modifies aborting at {Coordinator}, queryphase at {Coordinator}{ 
+	//the coordinator receives an aborting message from a participant
+	//guard
+	abort(p)
+	queryphase(Coordinator)
+	
+	//postconditions
+	aborting'(Coordinator)
+	!queryphase'(Coordinator)
+}
+
+event commits[] modifies commitphase at {Coordinator}, queryphase at {Coordinator}{ 
+	//the coordinator confirm the commit
+	{all p: Participant | preparing(Coordinator, p)}
+	queryphase(Coordinator)
+	
+	!queryphase'(Coordinator)
+	commitphase'(Coordinator)
+}
+
+event commiting[p : Participant] modifies prepare at {p}, commit at {p}{ 
+	//a participant finish its transactions
+	commitphase(Coordinator)
+	prepare(p)
+	
+	!prepare'(p)
+	commit'(p)
+}
+
+event abortes[p : Participant] modifies prepare at {p}, abort at {p}{ 
+	//a participant cancel its transactions
+	aborting(Coordinator)
+	prepare(p)
+	
+	!prepare'(p)
+	abort'(p)
+}
+
+event restart[] 
+//the coordinator finishes the phase
+modifies commitphase at {Coordinator}, aborting at {Coordinator}, waitingphase at {Coordinator}{ 
+	{all p : Participant | (abort(p)||commit(p))}
+	(aborting(Coordinator)||commitphase(Coordinator))
+	
+	!aborting'(Coordinator)
+	!commitphase'(Coordinator)
+	waitingphase'(Coordinator)
+}
+
+event wait[p : Participant] modifies abort at {p}, commit at {p}, waiting at {p}{ 
+	//a participant restart its state
+	waitingphase(Coordinator)
+	(abort(p)||commit(p))
+	
+	waiting'(p)
+	!abort'(p)
+	!commit'(p)
+}
+
+event skip[] {}
+
+check Safety {  all p1, p2 : Participant | G (!commit(p1) || !abort(p2)) } 
+using TEA

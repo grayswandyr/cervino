@@ -5,19 +5,19 @@
 #
 
 SAFETY="
-CAV2021/leader.cervino
-CAV2021/lock.cervino
-CAV2021/mailbox_token.cervino
-CAV2021/philo.cervino
-CAV2021/TLB.cervino
+leader.cervino
+lock.cervino
+mailbox_token.cervino
+philo.cervino
+TLB.cervino
 "
 
 LIVENESS="
-CAV2021/2pset.cervino
-CAV2021/fifo.cervino
-CAV2021/gset.cervino
-CAV2021/leader.cervino
-CAV2021/mailbox_token.cervino
+2pset.cervino
+fifo.cervino
+gset.cervino
+leader.cervino
+mailbox_token.cervino
 "
 
 

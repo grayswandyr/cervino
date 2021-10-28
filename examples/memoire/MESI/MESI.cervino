@@ -1,0 +1,102 @@
+sort Proc
+
+relation undefined in Proc
+relation modified in Proc
+relation exclusive in Proc
+relation shared in Proc
+relation invalid in Proc
+
+axiom uniqueState {
+	G { all p : Proc | {
+	!(undefined(p) && modified(p))
+	!(undefined(p) && exclusive(p))
+	!(undefined(p) && shared(p))
+	!(undefined(p) && invalid(p))
+	!(modified(p) && exclusive(p))
+	!(modified(p) && shared(p))
+	!(modified(p) && invalid(p))
+	!(exclusive(p) && shared(p))
+	!(exclusive(p) && invalid(p))
+	!(shared(p) && invalid(p))
+	}}
+}
+
+axiom init {
+	{all p : Proc | undefined(p)}
+}
+
+event readNoBus[p: Proc] {
+	//guard
+	( exclusive(p) || shared(p) || modified (p))
+}
+
+event readBusRdfromMem[p: Proc] modifies modified, exclusive, shared, invalid, undefined at {p} {
+	//guard
+	(all p2 : Proc | invalid(p2) || undefined(p2))
+	
+	//postconditions
+	(invalid(p) => (shared'(p) || exclusive'(p)))
+	(undefined(p) => exclusive'(p))
+	{all p2 : Proc | p2 != p => {
+		invalid(p2) => invalid'(p2) 
+		exclusive(p2) => shared'(p2)
+		shared(p2) => shared'(p2)
+		modified(p2) => shared'(p2)
+		}
+	}
+}
+
+event readBusRdfromCache[p: Proc] modifies modified, exclusive, shared, invalid, undefined at {p} {
+	//guard
+	(invalid(p) || undefined(p))
+	
+	//postconditions
+	shared'(p)
+	{all p2 : Proc | p2 != p => {
+		invalid(p2) => invalid'(p2) 
+		exclusive(p2) => shared'(p2)
+		shared(p2) => shared'(p2)
+		modified(p2) => shared'(p2)
+		}
+	}
+}
+
+event writeNoBus[p: Proc] {
+	//guard
+	( exclusive(p) || modified (p))
+}
+
+event writeBusRdX[p: Proc] modifies modified, exclusive, shared, invalid {
+	//guard
+	invalid(p)
+	
+	//postconditions
+	modified'(p)
+	{all p2 : Proc | p2 != p => {
+		invalid(p2) => invalid'(p2) 
+		exclusive(p2) => invalid'(p2)
+		shared(p2) => invalid'(p2)
+		modified(p2) => invalid'(p2)
+		}
+	}
+}
+
+event writeBusUpg[p: Proc] modifies modified, exclusive, shared, invalid {
+	//guard
+	shared(p)
+	
+	//postconditions
+	modified'(p)
+	{all p2 : Proc | p2 != p => {
+		invalid(p2) => invalid'(p2) 
+		exclusive(p2) => invalid'(p2)
+		shared(p2) => invalid'(p2)
+		modified(p2) => invalid'(p2)
+		}
+	}
+}
+
+event skip[] {}
+
+check Safety {  all p1, p2 : Proc | G ((modified(p1) && modified(p2)) => (p1=p2) ) } 
+using TEA
